@@ -1,0 +1,100 @@
+/*!
+ * Clearest Framework
+ * Provided under MIT License.
+ * Copyright 2012-2015, Illya Kokshenev <sou@illya.com.br>
+ */
+// imports
+var commons = require("./commons.js"),
+    isArray = commons.is.array,
+    isFunction = commons.is.fun,
+    isValue = commons.is.value,
+    each = commons.each,
+    isComposit = commons.is.composit;
+
+// exports
+module.exports = html;
+
+/*
+
+ input:
+ - values
+ - composits
+ - plain objects
+
+ */
+function html(o, tag) {
+
+    var head, body, buf = '';
+
+    if (o === undefined || o === null) return buf; //FIXME: determine what todo with empty elements
+
+    if (tag !== undefined && tag !== '$') head = '<' + tag;
+
+    if (isValue(o))
+        if (typeof o === 'string')
+            body = o.replace(/</g, '&lt;');
+        else
+            body = o;
+    else if (isFunction(o)) body = o();
+    else {
+        var composit = isComposit(o), att;
+
+        if (!composit || head !== undefined) // no need to a composit objet without head
+            for (var k in o)
+                if (k !== '_' && ((att = (k.charAt(0) === '@')) || !composit)) // omit clearest data and composit properties
+                {
+                    var ok = o[k];
+                    if (ok !== undefined && ok !== null) // omit null data
+                    {
+                        if (!att) // data property
+                        {
+                            if (body === undefined) body = ''; // ensure body is initialized
+
+                            // render property
+                            each(ok, function (el) {
+                                body += html(el, k);
+                            });
+                        }
+                        else if (head !== undefined) // render attribute
+                        {
+
+                            head += ' ' + k.substring(1) + '="';
+                            each(ok, function (el) {
+                                head += html(el).replace(/"/g, '&quot;')
+                            });
+
+                            head += '"';
+                        }
+                    }
+                }
+
+        if (composit) {
+            // render composit sequence
+            if (o._.seq.length) {
+                if (body === undefined) body = ''; // ensure body is initialized
+
+                each(o._.seq, function (el) {
+                    body += html(el);
+                })
+            }
+        }
+    }
+
+    // close tags
+
+    if (head !== undefined)
+        if (body !== undefined) {
+            head += '>';
+            body += '</' + tag + '>';
+        }
+        else head += '/>';
+
+    // assembly output
+
+    if (head !== undefined)  buf += head;
+    if (body !== undefined)  buf += body;
+
+    return buf;
+}
+
+
