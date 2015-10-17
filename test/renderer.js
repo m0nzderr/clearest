@@ -50,10 +50,13 @@ describe("#renderer", function () {
 
             var compiledModule = processor.compile(decoder.write(fs.readFileSync(fixture + ".xml")));
             var loadedModule = interpreter(compiledModule, {require: require});
-            var outputHtml = decoder.write(fs.readFileSync(fixture + ".html")).trim();
+            var outputHtml = decoder.write(fs.readFileSync(fixture + ".html"))
+                                    .trim()
+                                    .replace(/\s/g," ");
 
             renderer.render({name: fixture}, loadedModule)
                 .trim()
+                .replace(/\s/g," ")
                 .should.be.exactly(outputHtml);
         });
 
