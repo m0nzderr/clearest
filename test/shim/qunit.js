@@ -1,6 +1,4 @@
 var chai = require("chai"), $q = require("q");
-
-
 var context = {expect: 0, deferred: {}};
 
 module.exports = {

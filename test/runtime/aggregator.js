@@ -17,7 +17,7 @@ describe("#clearest-runtime", function () {
             ok(is.composit(agg.compose(["foo", "bar"])), 'compose() returns composit');
 
             function check(seq, data, msg) {
-                data._ = {seq: seq};
+                data.__clearest__ = {seq: seq};
                 deepEqual(agg.compose(seq), data, msg);
             }
 
@@ -49,20 +49,18 @@ describe("#clearest-runtime", function () {
 
         });
 
-
         test("aggregation of objects with controllers", function () {
-
             var f1 = function () {
             }, f2 = function () {
             };
 
-            deepEqual(agg(f1), {_: {ctl: [f1]}}, 'controller only');
-            deepEqual(agg(f1, {}), {_: {ctl: [f1]}}, 'controller only');
-            deepEqual(agg(f2, null, f1, {}), {_: {ctl: [f2, f1]}}, 'controller only');
-            deepEqual(agg(f2, {foo: 'data'}, f1), {_: {ctl: [f2, f1]}, foo: 'data'}, 'controllers and data');
+            deepEqual(agg(f1), {__clearest__: {ctl: [f1]}}, 'controller only');
+            deepEqual(agg(f1, {}), {__clearest__: {ctl: [f1]}}, 'controller only');
+            deepEqual(agg(f2, null, f1, {}), {__clearest__: {ctl: [f2, f1]}}, 'controller only');
+            deepEqual(agg(f2, {foo: 'data'}, f1), {__clearest__: {ctl: [f2, f1]}, foo: 'data'}, 'controllers and data');
 
-            deepEqual(agg(agg(f1, {bar: 'data'}), agg(f2, {foo: 'data'}))._.ctl, [[f1], [f2]], 'controllers from different objects do combine now!');
-            deepEqual(agg(f1, {bar: 'data'}, f2, {foo: 'data'})._.ctl, [f1, f2], 'controllers from differente objects do combine!');
+            deepEqual(agg(agg(f1, {bar: 'data'}), agg(f2, {foo: 'data'})).__clearest__.ctl, [[f1], [f2]], 'controllers from different objects do combine now!');
+            deepEqual(agg(f1, {bar: 'data'}, f2, {foo: 'data'}).__clearest__.ctl, [f1, f2], 'controllers from differente objects do combine!');
 
         });
 

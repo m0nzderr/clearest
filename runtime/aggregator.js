@@ -45,6 +45,9 @@
  5) controller functions are gathered in .ctl array
  */
 
+
+//TODO: use constant instead of hardcodeded "_"
+
 // imports
 var commons = require("./commons.js"),
     $q = require("q"),
@@ -59,11 +62,15 @@ var commons = require("./commons.js"),
     each = commons.each,
     in_ = commons._in;
 
-// protected
+var TEXT = commons.constant.TEXT,
+    ATTR = commons.constant.ATTR,
+    CLEAREST = commons.constant.CLEAREST;
+
+//exports
+module.exports = agg;
+
 // builds a composit object
-// 
 // TODO: change summation logic for attributes (concat strings instead of push, add numbers)?
-//
 function compose(seq) // sequence is a plain array
 {
     var o = {}, // generate result object
@@ -73,19 +80,19 @@ function compose(seq) // sequence is a plain array
 
     function _put(k, v) {
 
-        if (v === undefined || v === null) return; //FIXME: check if nulls should not be preserved
+        if (v === undefined || v === null) {
+            return;
+        }
 
         var ok = o[k];
 
-        if (ok === undefined || ok === null) //FIXME: check if nulls should not be preserved
+        if (ok === undefined || ok === null) {
             o[k] = v;
+        }
         else {
-            //FIXME: decide, if arrays shoule be expanded or not!
-            if (!isArray(ok)) ok = o[k] = [ok];
-
-            //Expand value into a new array
-            //each(v,function(el){ ok.push(el); })
-
+            if (!isArray(ok)) {
+                ok = o[k] = [ok];
+            }
             // collect arrays by reference
             ok.push(v);
         }
@@ -97,10 +104,10 @@ function compose(seq) // sequence is a plain array
 
         if (el !== undefined && el !== null)
             if (isValue(el))
-                _put('$', el);
+                _put(TEXT, el);
             else
                 for (var k in el)
-                    if (k !== '_')
+                    if (k !== CLEAREST)
                         _put(k, el[k]);
     }
 
@@ -129,7 +136,7 @@ function agg() {
             else if (isValue(el) || isComposit(el))
                 seq.push(el); // compsit or values go thru
             else if (isPromise(el) || isIncomplete(el)) {
-                if (isIncomplete(el)) el = el._.complete();
+                if (isIncomplete(el)) el = el.__clearest__.complete();
 
                 // ensure deferred arguments are resolved
                 j.push(
@@ -164,9 +171,9 @@ function agg() {
 
         $q.all(j)
             .finally(function () {
-                // try to aggregate later
-                var res = agg.call({ctl: ctl}, seq);  //trick: store controllers in this object!
-                //woa!, it means we just can inject them as an argument! cool.
+                // aggregate later
+                var res = agg.call({ctl: ctl}, seq);
+
                 if (isPromise(res))
                     res.then(function (res) {
                         def.resolve(res);
@@ -197,15 +204,18 @@ function agg() {
 
         // attach controllers	
         if (ctl.length) {
-            if (isValue(res))
-                res = {$: res};
+            if (isValue(res)) {
+                res = {$: res}; //same as res = {}; res[TEXT]=res, but faster
+            }
 
             var _o = in_(res);
 
-            if (_o.ctl === undefined)
+            if (_o.ctl === undefined) {
                 _o.ctl = ctl;
-            else
+            }
+            else {
                 _o.ctl.push(ctl);
+            }
         }
 
         return res;
@@ -213,5 +223,5 @@ function agg() {
 }
 
 agg.compose = compose;
-module.exports = agg;
+
 

@@ -3,6 +3,10 @@
  * Provided under MIT License.
  * Copyright 2012-2015, Illya Kokshenev <sou@illya.com.br>
  */
+/**
+ * Gulp-fiendly Clearest Tool
+ *
+ */
 "use strict";
 var through = require('through2');
 var Processor = require('./processor');
@@ -10,8 +14,7 @@ var Renderer = require('./renderer');
 var interpreter = require('eval');
 var StringDecoder = require('string_decoder').StringDecoder;
 
-
-//TODO: use encoding from providede sources
+//TODO: pick encoding from sources instead of hard-coded utf8
 var decoder = new StringDecoder("utf8");
 
 module.exports = {
@@ -177,12 +180,6 @@ module.exports = {
 
                     // html output
                     file.contents = new Buffer(output);
-
-                    //TODO: add support for muliple resources
-                    if (output.script) {
-                        // bundle
-
-                    }
 
                 } catch (error) {
                     //FIXME: how not to write to file at all?
