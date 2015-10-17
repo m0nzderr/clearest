@@ -1,4 +1,4 @@
-# Clearest Framework (WIP)
+# Clearest Framework (WIP) [![Build Status](https://travis-ci.org/m0nzderr/clearest.svg?branch=2.0.0-wip)](https://travis-ci.org/m0nzderr/clearest)
 This is another front-end development framework for NodeJS.
 Despite of being created recently, the project already had a couple of years of mileage in highly complex projects.
 
