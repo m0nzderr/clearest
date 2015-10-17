@@ -1,3 +1,9 @@
+/*
+ * Clearest Framework
+ * Provided under MIT License.
+ * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
+ */
+
 var chai = require("chai"), $q = require("q");
 var context = {expect: 0, deferred: {}};
 

@@ -1,8 +1,9 @@
-/*!
+/*
  * Clearest Framework
  * Provided under MIT License.
- * Copyright 2012-2015, Illya Kokshenev <sou@illya.com.br>
+ * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 "use strict";
 
 var codegen = require("../codegen.js");

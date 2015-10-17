@@ -1,9 +1,11 @@
-/*!
+/*
  * Clearest Framework
  * Provided under MIT License.
- * Copyright 2012-2015, Illya Kokshenev <sou@illya.com.br>
+ * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 "use strict";
+
+//TODO: rewrite with BDD interface, stop using qunit shim
 var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
     commons = require("../../runtime/commons.js"),
     $q = require("q"),

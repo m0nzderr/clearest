@@ -1,7 +1,7 @@
-/*!
+/*
  * Clearest Framework
  * Provided under MIT License.
- * Copyright 2012-2015, Illya Kokshenev <sou@illya.com.br>
+ * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 /**
  * Static renderer
@@ -13,7 +13,6 @@ var aggregator = require("./runtime/aggregator.js"),
 
 function StaticAPI(streamAppender) {
     //TODO: implement api
-
 }
 
 function Renderer(userConfig) {
@@ -29,17 +28,13 @@ function Renderer(userConfig) {
         return config;
     })(userConfig || {});
 
-
     this.render = function (context, templateModule, streamAppender) {
-
         var output = templateModule(
             context,
             new StaticAPI(streamAppender),
             aggregator);
-
         return config.doctype + html(output);
     }
-
 
 }
 
