@@ -52,11 +52,11 @@ describe("#renderer", function () {
             var loadedModule = interpreter(compiledModule, {require: require});
             var outputHtml = decoder.write(fs.readFileSync(fixture + ".html"))
                                     .trim()
-                                    .replace(/\s/g," ");
+                                    .replace(/\s+/g," ");
 
             renderer.render({name: fixture}, loadedModule)
                 .trim()
-                .replace(/\s/g," ")
+                .replace(/\s+/g," ")
                 .should.be.exactly(outputHtml);
         });
 
