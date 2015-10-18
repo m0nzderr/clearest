@@ -4,14 +4,15 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 /**
- * Gulp-fiendly Clearest Tool
- *
+ * Gulp-fiendly Clearest buliding tool
  */
 "use strict";
 var through = require('through2');
 var Processor = require('./processor');
 var Renderer = require('./renderer');
 var interpreter = require('eval');
+var extend = require('extend');
+var codegen = require('./codegen');
 var StringDecoder = require('string_decoder').StringDecoder;
 
 //TODO: pick encoding from sources instead of hard-coded utf8
@@ -30,7 +31,12 @@ module.exports = {
                 console.log("compiling: " + file.relative);
             },
             error: function (file, error) {
-                console.log("error compiling " + file.relative + ":" + error);
+                console.log("error compiling " + file.relative + ":", error);
+
+                //FIXME: only print stack if error is runtime
+                //if (error.stack)
+                //    console.log(stack);
+
             }
         }, userConfig);
 
@@ -65,12 +71,12 @@ module.exports = {
 
                 try {
                     // compile and store contents
-                    file.contents = new Buffer(processor.compile(decoder.write(file.contents)));
+                    file.contents = new Buffer(processor.compile(decoder.write(file.contents)),'utf8');
                 } catch (error) {
                     //FIXME: how not to write to file at all?
                     // store error code
-                    file.contents = new Buffer("/** compilation of " + originalPath + " failed **/\n throw " + codegen.string(error.message || error));
-                    config.error(file);
+                    file.contents = new Buffer("/** compilation of " + originalPath + " failed **/\n throw " + codegen.string(error.message),'utf8');
+                    config.error(file, error);
                 }
             }
             cb(null, file);
@@ -88,8 +94,8 @@ module.exports = {
             verbose: false,
             context: function (file) {
                 return {
-                    uri: outputHtml(file.relative),
-                    name: pageName(file.relative)
+                    uri: config.outputHtml(file.relative),
+                    name: config.pageName(file.relative)
                 }
             },
             pageName: function (moduleUrl) {
@@ -102,7 +108,9 @@ module.exports = {
                 console.log("rendering: " + file.relative);
             },
             error: function (file, error) {
-                console.log("error rendering " + file.relative + ":" + error);
+                console.log("error rendering " + file.relative + ":", error);
+                if (error.stack)
+                    console.log(error.stack);
             }
         }, userConfig);
 
@@ -131,7 +139,7 @@ module.exports = {
                                 cwd: file.cwd,
                                 base: file.base,
                                 path: config.pageName(file.path) + "." + name,
-                                contents: new Buffer(content),
+                                contents: new Buffer(content, 'utf8'),
                                 stat: {
                                     isFile: ftrue,
                                     isDirectory: ffalse,
@@ -146,7 +154,7 @@ module.exports = {
                 }
                 else {
                     // append content
-                    streams[name].contents = Buffer.concat(streams[name].contents, new Buffer(content));
+                    streams[name].contents = Buffer.concat(streams[name].contents, new Buffer(content, 'utf8'));
                 }
             }
 
@@ -165,13 +173,15 @@ module.exports = {
 
                 file.path = config.outputHtml(file.path);
 
+                // TODO: provide external means for caching
+                // TODO: maybe require(file.path) will be better?
+                var module = interpreter(decoder.write(file.contents), originalPath, {require: function(path){
+                    console.log("file.base",file.base);
+                    return require(path.replace(/^\./, file.base));
+                }});
+
                 try {
-
                     // load module
-                    // TODO: provide external means for caching
-                    // TODO: maybe require(file.path) will be faster?
-                    var module = interpreter(decoder.write(file.contents), {require: require});
-
                     // generate output
                     var output = staticRenderer.render(
                         config.context(file),
@@ -179,13 +189,13 @@ module.exports = {
                         appender);
 
                     // html output
-                    file.contents = new Buffer(output);
+                    file.contents = new Buffer(output, 'utf8');
 
                 } catch (error) {
                     //FIXME: how not to write to file at all?
-                    file.contents = new Buffer("Rendering of " + originalPath + " failed:" + (error.message || error));
-                    config.error(file);
-                    //TODO: remove data produced by appender
+                    file.contents = new Buffer("Rendering of " + originalPath + " failed:" + (error.message), 'utf8');
+                    config.error(file, error);
+                    //TODO: files produced by appender
                 }
             }
             cb(null, file);

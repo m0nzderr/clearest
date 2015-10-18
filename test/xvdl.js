@@ -23,6 +23,9 @@ describe('#xvdl', function () {
         compiler.compile(dom.parseFromString('<foo/>'))
             .should.be.exactly('S({foo:0})');
 
+        compiler.compile(dom.parseFromString('<foo:bar/>'))
+            .should.be.exactly('S({"foo:bar":0})');
+
         compiler.compile(dom.parseFromString('<foo>bar<qux>dox</qux></foo>'))
             .should.be.exactly('S({foo:S("bar", {qux:"dox"})})');
 
@@ -78,6 +81,9 @@ describe('#xvdl', function () {
         compiler.compile(dom.parseFromString('<t:if test="mycondition"><t:then>foo</t:then><t:else>bar</t:else></t:if>'))
             .should.be.exactly('S((mycondition)?"foo":"bar")');
 
+        compiler.compile(dom.parseFromString('<t:if exist="a">bar</t:if>'))
+            .should.be.exactly('S(P.get(function ($1) {\nreturn $1?"bar":0\n}, P.cnt($context, ["a"])))');
+
         compiler.compile(dom.parseFromString('<t:if exist="a,b,!c" from="d" test="f"><t:then>foo</t:then><t:else>bar</t:else></t:if>'))
             .should.be.exactly('S(P.get(function ($1, $2, $3) {\nreturn $1&&$2&&!$3&&(f)?"foo":"bar"\n}, P.cnt(d, ["a", "b", "c"])))');
     });
@@ -132,6 +138,24 @@ describe('#xvdl', function () {
 
         compiler.compile(dom.parseFromString('<t:use template="foo" context="qux"></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo, qux))');
+
+    });
+
+    it("should process s:* instruction", function () {
+
+        var compiler = new Compiler({
+            symbol: {
+                aggregator: "S",
+                api: "P",
+                empty: "0"
+            }
+        });
+
+        compiler.compile(dom.parseFromString('<s:bar/>'))
+            .should.be.exactly('S(P.sel($context, "bar"))');
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo, "bar", function (bar, bar$index) {\nreturn S(bar)\n}))');
 
     });
 

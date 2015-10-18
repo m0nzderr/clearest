@@ -1,0 +1,5 @@
+<!-- test: dependency resolution -->
+<t:fragment>
+<t:require dep="./dependency.js"/>
+<t:use template="./layout.xml">Hello World <t:script>return dep()</t:script></t:use>
+</t:fragment>

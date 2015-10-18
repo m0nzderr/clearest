@@ -72,10 +72,12 @@ function XvdlCompiler(userConfig) {
 
     var api = {
             count: ".cnt",
+            select: ".sel",
             get: ".get",
             on: ".on",
             controller: ".ctl",
-            use: ".use"
+            use: ".use",
+            widget: ".wid"
         },
         config = {
             resolver: {
@@ -120,7 +122,8 @@ function XvdlCompiler(userConfig) {
             closure: {
                 control: {args: "$node"},
                 widget: {args: "$scope"},
-                event: {args: "$event"}
+                event: {args: "$event"},
+                select: { indexSuffix: "$index"}
             },
             environment: {}
         },
@@ -233,7 +236,7 @@ function XvdlCompiler(userConfig) {
                     var conditions = [],
                         closureArguments = [], // inner closure arguments: $1, $2, $3
                         countArguments = [], // count request arguments: ["foo","bar","qux"];
-                        countscope = scope;
+                        subContext = scope.$context;
 
                     if (node.hasAttribute("exist")) {
 
@@ -260,8 +263,11 @@ function XvdlCompiler(userConfig) {
                         }
 
                         if (node.hasAttribute("from")) {
-                            countscope = node.getAttribute("from");
+                            subContext = node.getAttribute("from");
                         }
+
+                        if (!subContext)
+                        throw compilerError("Context is not defined in scop",node);
                     }
 
                     if (node.hasAttribute("test"))
@@ -312,7 +318,7 @@ function XvdlCompiler(userConfig) {
                                 args: codegen.list(closureArguments),
                                 ret: conditionExpression
                             }),
-                            countCall = closure.apicall(api.count, [countscope, codegen.array(countArguments)]);
+                            countCall = closure.apicall(api.count, [subContext, codegen.array(countArguments)]);
 
                         acc.push(codegen.call({
                             fn: config.symbol.api + api.get,
@@ -365,7 +371,13 @@ function XvdlCompiler(userConfig) {
                             context = node.getAttribute("context");
                     }
 
-                    acc.push(closure.apicall(api.use, [config.resolver.template(template), context]));
+
+                     acc.push(
+                         //relay template through API call:
+                         closure.apicall(api.use, [config.resolver.template(template), context])
+                     );
+
+                    //Version 2:
 
                 },
 
@@ -402,7 +414,7 @@ function XvdlCompiler(userConfig) {
                  * @param scope
                  */
                 require: function (acc, node, scope) {
-                    if (node.childNodes && node.childNodes.length > 0)
+                    if (!isEmpty(node))
                         throw compilerError("h:require instruction has no body not allowed", node);
 
                     foreach(node.attributes, function (node) {
@@ -431,6 +443,46 @@ function XvdlCompiler(userConfig) {
                     );
                 }
 
+            },
+
+            /**
+             * Select instruction
+             *
+             */
+            select:function(acc, node, scope){
+
+                var context = node.getAttribute("from") || scope.$context;
+
+
+                if (!context)
+                    throw compilerError("Context is undefined", node);
+
+                if (isEmpty(node)) {
+                    // <s:foo/>
+                    acc.push(
+                        closure.apicall(api.select,[context, codegen.string(node.localName)])
+                    );
+                }
+                else {
+                    // <s:foo>...</s:foo>
+                    var newContext = node.localName,
+                        arguments = [newContext, newContext + config.closure.select.indexSuffix];
+
+                    //TODO: implement @where
+                    //TODO: implement @orderBy
+                    //TODO: implement @filter
+
+                    acc.push(
+                        closure.apicall(api.select,[
+                            context,
+                            codegen.string(node.localName),
+                            codegen.closure({
+                                args: codegen.list(arguments),
+                                ret: compileChildNodes([], node, {$context: newContext}, true)
+                            })
+                        ])
+                    );
+                }
             },
             header: {}
         };
@@ -476,7 +528,7 @@ function XvdlCompiler(userConfig) {
     function getInstruction(node) {
 
         var //isElement = (node.nodeType === node.ELEMENT_NODE),
-            isAttribute = (node.nodeType === node.ATTRIBUTE_NODE),
+            //isAttribute = (node.nodeType === node.ATTRIBUTE_NODE),
             key = getInstructionKey(node);
 
         if (!key)
@@ -486,14 +538,20 @@ function XvdlCompiler(userConfig) {
             elementInstructions[key] :
             attributeInstructions[key];
 
-        if (!instructionSet) {
+        /*if (!instructionSet) {
             if (isAttribute)
                 throw compilerError("unknown instruction", node);
             return; // not an instruction
-        }
+        }*/
 
-        if (isAttribute)
+        if (!instructionSet)
+            return;
+
+        // wildcard pattern instruction
+        if (typeof instructionSet === 'function')
             return instructionSet;
+
+        // specific instruction
 
         var instruction = instructionSet[node.localName];
 
@@ -602,7 +660,15 @@ function XvdlCompiler(userConfig) {
 
     this.compile = function (xmlDocument, scope) {
         var acc = [], initialScope = extend({}, config.scope, scope);
+
+        if (!xmlDocument.documentElement ||
+            !(xmlDocument.documentElement.nodeType === xmlDocument.ELEMENT_NODE)) {
+            throw compilerError("Document must have root element", (xmlDocument.documentElement || xmlDocument));
+        }
+
         compileElement(acc, xmlDocument.documentElement, initialScope);
+
+
         return aggregate(acc);
     }
 }

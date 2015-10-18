@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- test for static output generation -->
 <!DOCTYPE html>
 <html>
 <head>
 </head>
 <body>
+<t:context/>
 </body>
 </html>

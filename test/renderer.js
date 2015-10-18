@@ -36,30 +36,50 @@ describe('#interpreter', function () {
 });
 
 
+function onDemandCompileAndLoad(fixture, templatePath){
+    //console.log(templatePath,"compilation");
+    var processor = new Processor({xvdl: {code: {preserveSpaces: true}}});
+    var compiledModule = processor.compile(decoder.write(fs.readFileSync(templatePath)));
+    return interpreter(compiledModule, {require: function(path){
+        //console.log(templatePath,"required: "+path);
+        var modulePath = path.replace(/^\./,fixture);
+        //console.log(templatePath,"resolved: "+path);
+        if (modulePath.match(/\.tpl\.js$/) && !fs.existsSync(modulePath)){
+            var recurrentTemplate = modulePath.replace(/\.tpl\.js$/,".xml");
+            //console.log(templatePath,"recurring: "+recurrentTemplate);
+            return onDemandCompileAndLoad(fixture, recurrentTemplate);
+        }
+        else
+            return require(modulePath);
+    }});
+}
+
+
 describe("#renderer", function () {
 
     var fixtures = [
-        "./test/fixtures/1/index"
+        "./fixtures/1",
+        "./fixtures/2",
+        "./fixtures/3"
     ];
 
-    fixtures.forEach(function (fixture) {
+    fixtures.forEach(function (fixtureRelative) {
+
+        var fixture = fixtureRelative.replace(/^\./, __dirname );
 
         it("test:" + fixture, function () {
-            var processor = new Processor({xvdl: {code: {preserveSpaces: true}}});
             var renderer = new Renderer();
-
-            var compiledModule = processor.compile(decoder.write(fs.readFileSync(fixture + ".xml")));
-            var loadedModule = interpreter(compiledModule, {require: require});
-            var outputHtml = decoder.write(fs.readFileSync(fixture + ".html"))
+            var loadedModule = onDemandCompileAndLoad(fixture, fixture + "/index.xml");
+            var expectedHtml = decoder.write(fs.readFileSync(fixture + "/index.html"))
                                     .trim()
                                     .replace(/\s+/g," ");
 
-            renderer.render({name: fixture}, loadedModule)
+            var outputHtml =renderer.render({name: "index"}, loadedModule)
                 .trim()
-                .replace(/\s+/g," ")
-                .should.be.exactly(outputHtml);
-        });
+                .replace(/\s+/g," ");
 
+            outputHtml.should.be.exactly(expectedHtml);
+        });
 
     });
 

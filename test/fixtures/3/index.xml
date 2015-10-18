@@ -1,0 +1,4 @@
+<!-- test: context manipulation -->
+  <t:use template="./item.xml">
+    <t:use template="./music.xml"/>
+  </t:use>
