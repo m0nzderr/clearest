@@ -1,4 +1,5 @@
-# Clearest [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Dependency Status][depstat-image]][depstat-url]
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Dependency Status][depstat-image]][depstat-url]
+# Clearest Framework
 
 This is another front-end development framework for NodeJS.
 Despite of being created recently, the project already had a couple of years of mileage in highly complex projects.
@@ -71,3 +72,11 @@ Roadmap/Progress:
  V
 ```
 
+[npm-url]: https://www.npmjs.com/package/clearest
+[npm-image]: https://badge.fury.io/js/clearest.svg
+[travis-url]: https://travis-ci.org/m0nzderr/clearest
+[travis-image]: https://img.shields.io/travis/m0nzderr/clearest/2.0.0-wip.svg
+[coveralls-url]:  https://coveralls.io/github/m0nzderr/clearest
+[coveralls-image]: https://img.shields.io/coveralls/m0nzderr/clearest.svg
+[depstat-url]: https://david-dm.org/m0nzderr/clearest/2.0.0-wip
+[depstat-image]: https://david-dm.org/m0nzderr/clearest/2.0.0-wip.svg
