@@ -1,5 +1,4 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Dependency Status][depstat-image]][depstat-url]
-# Clearest Framework (WIP)
+# Clearest [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Dependency Status][depstat-image]][depstat-url]
 
 This is another front-end development framework for NodeJS.
 Despite of being created recently, the project already had a couple of years of mileage in highly complex projects.
