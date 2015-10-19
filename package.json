@@ -23,12 +23,17 @@
   },
   "devDependencies": {
     "chai": "^3.3.0",
+    "coveralls": "^2.11.4",
+    "istanbul": "^0.4.0",
+    "istanbul-coveralls": "^1.0.3",
     "mocha": "^2.3.3",
     "should": "^7.1.0",
     "stream-array": "^1.1.1",
     "vinyl": "^1.0.0"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha"
+    "test": "node_modules/.bin/mocha",
+    "cover": "istanbul cover ./node_modules/mocha/bin/_mocha",
+    "coveralls": "istanbul cover _mocha --report lcovonly && istanbul-coveralls"
   }
 }
