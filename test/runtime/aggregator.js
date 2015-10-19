@@ -66,7 +66,7 @@ describe("#clearest-runtime", function () {
         });
 
 
-        asyncTest("aggregation of asynchronous objects (promises)", function () {
+        asyncTest("aggregation of asynchronous objects (~100ms delayed promises)", function () {
 
             function cook(data) {
                 var def = $q.defer();

@@ -27,8 +27,8 @@ module.exports = {
                 // compiler settings
             },
             verbose: false,
-            log: function (file) {
-                console.log("compiling: " + file.relative);
+            log: function (file, msec) {
+                console.log("compiling: " + file.relative +"("+msec+"ms)");
             },
             error: function (file, error) {
                 console.log("error compiling " + file.relative + ":", error);
@@ -60,10 +60,10 @@ module.exports = {
                 return throwError('Streaming is not supported');
             }
             if (file.isBuffer()) {
-                if (config.verbose)
-                    config.log(file);
 
-                var originalPath = file.path;
+
+                var originalPath = file.path,
+                    msec = (new Date()).getTime();
 
 
                 // rename output file (as compiler/processor would see it)
@@ -72,6 +72,10 @@ module.exports = {
                 try {
                     // compile and store contents
                     file.contents = new Buffer(processor.compile(decoder.write(file.contents)),'utf8');
+
+                    if (config.verbose)
+                        config.log(file, (new Date()).getTime()-msec);
+
                 } catch (error) {
                     //FIXME: how not to write to file at all?
                     // store error code
@@ -104,8 +108,8 @@ module.exports = {
             outputHtml: function (moduleUrl) {
                 return config.pageName(moduleUrl) + '.html';
             },
-            log: function (file) {
-                console.log("rendering: " + file.relative);
+            log: function (file, msec) {
+                console.log("rendering: " + file.relative + "("+msec+"ms)");
             },
             error: function (file, error) {
                 console.log("error rendering " + file.relative + ":", error);
@@ -166,17 +170,16 @@ module.exports = {
                 return throwError('Streaming is not supported');
             }
             if (file.isBuffer()) {
-                if (config.verbose)
-                    config.log(file);
 
-                var originalPath = file.path;
+
+                var originalPath = file.path,
+                    msec = (new Date()).getTime();
 
                 file.path = config.outputHtml(file.path);
 
                 // TODO: provide external means for caching
                 // TODO: maybe require(file.path) will be better?
                 var module = interpreter(decoder.write(file.contents), originalPath, {require: function(path){
-                    console.log("file.base",file.base);
                     return require(path.replace(/^\./, file.base));
                 }});
 
@@ -187,6 +190,9 @@ module.exports = {
                         config.context(file),
                         module,
                         appender);
+
+                    if (config.verbose)
+                        config.log(file, (new Date()).getTime()-msec);
 
                     // html output
                     file.contents = new Buffer(output, 'utf8');
