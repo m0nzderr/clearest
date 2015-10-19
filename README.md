@@ -77,6 +77,6 @@ Roadmap/Progress:
 [travis-url]: https://travis-ci.org/m0nzderr/clearest
 [travis-image]: https://img.shields.io/travis/m0nzderr/clearest/2.0.0-wip.svg
 [coveralls-url]:  https://coveralls.io/github/m0nzderr/clearest
-[coveralls-image]: https://img.shields.io/coveralls/m0nzderr/clearest.svg
+[coveralls-image]: https://img.shields.io/coveralls/m0nzderr/clearest/2.0.0-wip.svg
 [depstat-url]: https://david-dm.org/m0nzderr/clearest/2.0.0-wip
 [depstat-image]: https://david-dm.org/m0nzderr/clearest/2.0.0-wip.svg
