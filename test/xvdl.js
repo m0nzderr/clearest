@@ -137,7 +137,16 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S(P.use(foo,bar))');
 
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/></t:use>'), {$context: "bar"})
-            .should.be.exactly('S(P.use(foo,S({bar:0})))');
+            .should.be.exactly('S(P.use(foo,{bar:0}))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><t:fragment foo="123"/></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,S({bar:0},{"@foo":"123"})))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><baz/></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,S({bar:0},{baz:0})))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo"><t:control>code</t:control></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,S(function($node){code})))');
 
         compiler.compile(dom.parseFromString('<t:use template="foo" context="qux"></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,qux))');
@@ -157,12 +166,12 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S($context)');
 
         compiler.compile(dom.parseFromString('<t:context foo="bar"><t:context/></t:context>'))
-            .should.be.exactly('S(P.get(function(foo){return S(foo)},[bar]))');
+            .should.be.exactly('S(P.get(function(foo){return foo},[bar]))');
 
         expect(function(){compiler.compile(dom.parseFromString('<t:context><t:context/></t:context>'))}).to.throw(Error);
 
         compiler.compile(dom.parseFromString('<t:context foo="bar" bar="mar"><t:context/></t:context>'))
-            .should.be.exactly('S(P.get(function(foo,bar){return S(foo)},[bar,mar]))');
+            .should.be.exactly('S(P.get(function(foo,bar){return foo},[bar,mar]))');
     });
 
     it("t:get", function () {
@@ -177,14 +186,11 @@ describe('tool / xvdl instructions', function () {
         expect(function(){compiler.compile(dom.parseFromString('<t:get/>'))}).to.throw(Error);
 
         compiler.compile(dom.parseFromString('<t:get foo="bar"><t:get foo="foo"/></t:get>'))
-            .should.be.exactly('S(P.get(function(foo){return S(foo)},[bar]))');
+            .should.be.exactly('S(P.get(function(foo){return foo},[bar]))');
 
         compiler.compile(dom.parseFromString('<t:get foo="bar" bar="mar"> </t:get>'))
             .should.be.exactly('S(P.get(function(foo,bar){return " "},[bar,mar]))');
     });
-
-
-
 
     it("s:*", function () {
         //TODO: @where
@@ -205,11 +211,11 @@ describe('tool / xvdl instructions', function () {
 
         // @from
         compiler.compile(dom.parseFromString('<s:bar from="foo"><t:context/></s:bar>'))
-            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return S(bar)}))');
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar}))');
 
         // @from @as
         compiler.compile(dom.parseFromString('<s:bar from="foo" as="baz"><t:context/></s:bar>'))
-            .should.be.exactly('S(P.sel(foo,"bar",function(baz,baz$index){return S(baz)}))');
+            .should.be.exactly('S(P.sel(foo,"bar",function(baz,baz$index){return baz}))');
     });
 
     it("@e:*", function () {

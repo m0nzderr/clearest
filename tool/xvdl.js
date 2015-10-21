@@ -337,8 +337,8 @@ function XvdlCompiler(userConfig) {
 
                     var conditionExpression = codegen.iff({
                         cond: conditions.join("&&"),
-                        then: thenBranch ? compileChildNodes([], thenBranch, scope, true) : config.symbol.empty,
-                        else: elseBranch ? compileChildNodes([], elseBranch, scope, true) : config.symbol.empty
+                        then: thenBranch ? compileChildNodes([], thenBranch, scope, {ignoreAttributes:true}) : config.symbol.empty,
+                        else: elseBranch ? compileChildNodes([], elseBranch, scope, {ignoreAttributes:true}) : config.symbol.empty
                     });
 
                     if (closureArguments.length == 0) {
@@ -397,7 +397,7 @@ function XvdlCompiler(userConfig) {
                         if (node.hasAttribute("context"))
                             throw compilerError("instruction body not allowed when used with @context attribute", node);
 
-                        context = compileChildNodes([], node, scope, true);
+                        context = compileChildNodes([], node, scope, {ignoreAttributes:true, callAggregator: true});
                     }
                     else {
                         if (node.hasAttribute("context"))
@@ -485,7 +485,7 @@ function XvdlCompiler(userConfig) {
                                 // template closure
                                 codegen.closure({
                                     args: codegen.list(variables),
-                                    ret: compileChildNodes([], node, scope, true) // compiled template body
+                                    ret: compileChildNodes([], node, scope, {ignoreAttributes:true}) // compiled template body
                                 }),
                                 codegen.array(expressions)
                             ])
@@ -574,7 +574,7 @@ function XvdlCompiler(userConfig) {
                             codegen.string(property),
                             codegen.closure({
                                 args: codegen.list(args),
-                                ret: compileChildNodes([], node, {$context: newContext}, true)
+                                ret: compileChildNodes([], node, {$context: newContext}, {ignoreAttributes:true})
                             })
                         ])
                     );
@@ -726,7 +726,7 @@ function XvdlCompiler(userConfig) {
         return hasInstructions;
     }
 
-    function aggregate(accumulator, direct) {
+    function aggregate(accumulator, call) {
 
         accumulator = accumulator.filter(function (o) {
             // drop empty nodes
@@ -736,24 +736,23 @@ function XvdlCompiler(userConfig) {
         if (accumulator.length == 0) {
             return config.symbol.empty;
         }
-        else if (direct && accumulator.length == 1) {
-            return accumulator[0];
-        }
-        else
-            return codegen.call({
+        else {
+            return call ? codegen.call({
                 fn: config.symbol.aggregator,
-                args: codegen.list(accumulator)
-            });
+                args: accumulator.length == 1 ? accumulator[0] : codegen.list(accumulator)
+            }):
+                accumulator.length == 1 ? accumulator[0] : codegen.array(accumulator);
+        }
     }
 
-    function compileChildNodes(acc, node, scope, ignoreAttributes) {
+    function compileChildNodes(acc, node, scope, options) {
         var hasInstructions = false;
-        if (!ignoreAttributes) {
+        if (!(options && options.ignoreAttributes)) {
             hasInstructions |= accumulateAttributes(acc, node.attributes, scope);
         }
         hasInstructions |= accumulateNodes(acc, node.childNodes, scope);
-        var direct = !hasInstructions && !hasChildrenOfType(node, node.ELEMENT_NODE);
-        return aggregate(acc, direct);
+        //var direct = !hasInstructions && !hasChildrenOfType(node, node.ELEMENT_NODE);
+        return aggregate(acc, (options && options.callAggregator) && (acc.length>1 || hasInstructions));
     }
 
     function compileElement(acc, node, scope) {
@@ -766,7 +765,7 @@ function XvdlCompiler(userConfig) {
             acc.push(
                 codegen.object(
                     node.nodeName,
-                    compileChildNodes([], node, scope)
+                    compileChildNodes([], node, scope, {callAggregator:true})
                 )
             );
         }
@@ -802,7 +801,7 @@ function XvdlCompiler(userConfig) {
 
         compileElement(acc, xmlDocument.documentElement, initialScope);
 
-        return aggregate(acc);
+        return aggregate(acc, true);
     }
 
 }
