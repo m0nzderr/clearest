@@ -4,11 +4,13 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 /**
- *  XVDL Javascript compiler
- *
+ *  XVDL JavasSript compiler
  */
 var codegen = require("./codegen"),
-    extend = require("extend");
+    extend = require("extend"),
+    commons = require("../commons");
+
+//------------------------------------- helpers -----------------------------------
 
 function isText(node) {
     return node.nodeType === node.TEXT_NODE;
@@ -18,10 +20,12 @@ function isEmpty(node) {
     return !node.childNodes || node.childNodes.length === 0;
 }
 
-function foreach(nodeSet, iterate) {
+function foreach(nodeSet, iterate, stopCriterion) {
     if (nodeSet)
         for (var i = 0, l = nodeSet.length; i < l; i++)
-            iterate(nodeSet.item(i), i);
+            if (iterate(nodeSet.item(i), i) && stopCriterion) {
+                break;
+            }
 }
 
 function hasChildrenOfType(node, nodeType) {
@@ -67,6 +71,38 @@ function textContent(node) {
     return content;
 }
 
+//------------------- Compiler Errors -------------------------------------
+
+/*commons.inherit(CompilerError,Error);
+function CompilerError(message){
+    CompilerError.super(this, message);
+}
+CompilerError.prototype.toString=function(){return this.message;}*/
+var CompilerError={};
+CompilerError.UNDEFINED_CONTEXT="No context object defined in scope";
+
+function compilerError(msg, node) {
+    //TODO: get line number and stuff...
+    if (node) {
+        if (node.nodeType === node.ELEMENT_NODE) {
+            return new Error("<" + node.nodeName + "> : " + msg);
+        } else if (node.nodeType === node.ATTRIBUTE_NODE) {
+            return new Error("@" + node.nodeName + " : " + msg);
+        }
+    }
+    else
+        return new Error(msg);
+}
+
+function undefinedContextError(node){
+    return compilerError(CompilerError.UNDEFINED_CONTEXT, node);
+}
+
+function invalidIdentifier(id, node) {
+    throw compilerError("'"+id + "' is not a valid identifier", node);
+}
+
+//------------------------ Compiler implementation ----------------------
 
 function XvdlCompiler(userConfig) {
 
@@ -87,9 +123,6 @@ function XvdlCompiler(userConfig) {
                 dependency: function (name, module) {
                     return name;
                 }
-            },
-            code: {
-                preserveSpaces: false
             },
             namespace: {
                 template: "http://xvdl.illya.com.br/1.2/template",
@@ -112,16 +145,16 @@ function XvdlCompiler(userConfig) {
                 header: "h:"
             },
             symbol: {
+                $context: "$context",
                 aggregator: "\u01A9", // symbol used for aggregator call
                 api: "\u03A0", // symbol used for api call
-                empty: "\u00D8"
+                empty: "{}"
             },
-            scope: {
-                $context: "$context"
-            },
+            scope:['$context'],
             closure: {
+                template: ['$context','api','aggregator'],
                 control: {args: "$node"},
-                widget: {args: "$scope"},
+                //widget: {args: "$scope"},
                 event: {args: "$event"},
                 select: { indexSuffix: "$index"}
             },
@@ -267,7 +300,7 @@ function XvdlCompiler(userConfig) {
                         }
 
                         if (!subContext)
-                        throw compilerError("Context is not defined in scop",node);
+                            throw compilerError("Context is not defined in scop", node);
                     }
 
                     if (node.hasAttribute("test"))
@@ -372,10 +405,10 @@ function XvdlCompiler(userConfig) {
                     }
 
 
-                     acc.push(
-                         //relay template through API call:
-                         closure.apicall(api.use, [config.resolver.template(template), context])
-                     );
+                    acc.push(
+                        //relay template through API call:
+                        closure.apicall(api.use, [config.resolver.template(template), context])
+                    );
 
                     //Version 2:
 
@@ -392,18 +425,73 @@ function XvdlCompiler(userConfig) {
                  * </t:context>
                  */
                 context: function (acc, node, scope) {
-
-                    //<t:context> - closed form
+                    //<t:context/> - closed form
                     if (isEmpty(node) && !node.hasAttributes()) {
-                        if (!scope.$context)
-                            throw compilerError("no context in scope", node);
 
+                        if (!scope.$context)
+                            throw undefinedContextError(node);
+
+                        // output context
                         acc.push(scope.$context);
                     } else {
-                        throw "not implemented yet"
+                    //<t:context newContext="...">....</t:context> - context switch
+
+                        if (!node.hasAttributes())
+                            throw compilerError("there must be at least one expression attribute for context switch", node);
+
+                        var newContext ;
+                        foreach(node.attributes, function(attribute){
+                            if (attribute.localName === attribute.nodeName){
+                                newContext = attribute.localName;
+                                return true;
+                            }
+                        }, true);
+                        // delegate to get instruction, it will put variable in scope
+                        return elementInstructions.template.get(acc, node, extend({},scope,{$context: newContext}))
                     }
                 },
+                get: function (acc, node, scope) {
 
+                    // <t:get foo="expression"/>
+                    if (!node.hasAttributes())
+                        throw compilerError("must be at least one expresson/attribute specified", node);
+
+                    if (isEmpty(node)) {
+                        // pass through all expressions as is
+                        foreach(node.attributes, function(attribute){
+                            var expression = attribute.nodeValue;
+                            // implement other expression syntaxes here
+                            acc.push(expression);
+                        });
+                    } else {
+                        // <t:get foo="expression">....</t:get>
+                        // compiles to api.get(function(a,b,c){return template...},[expr1, expr2, expr3...])
+
+                        var variables = [],
+                            expressions = [];
+
+                        foreach(node.attributes, function(attribute){
+                            if (!codegen.isValidIdentifier(attribute.localName)) {
+                                throw invalidIdentifier(attribute.nodeName, node);
+
+                            }
+                            variables.push(attribute.localName);
+                            //TODO: implement other expression syntaxes here
+                            expressions.push(attribute.nodeValue);
+                        });
+
+                        acc.push(
+                            closure.apicall(api.get, [
+                                // template closure
+                                codegen.closure({
+                                    args: codegen.list(variables),
+                                    ret: compileChildNodes([], node, scope, true) // compiled template body
+                                }),
+                                codegen.array(expressions)
+                            ])
+                        );
+                    }
+                },
 
                 /**
                  *
@@ -427,7 +515,7 @@ function XvdlCompiler(userConfig) {
 
                 /**
                  *
-                 * t:require
+                 * t:script
                  *
                  * @param acc
                  * @param node
@@ -443,16 +531,18 @@ function XvdlCompiler(userConfig) {
                     );
                 }
 
+                //TODO: implement t:get
+                //TODO: implement t:catch
             },
 
             /**
              * Select instruction
-             *
+             * s:* [@from @as (@where @orderby || @filter)]
              */
             select:function(acc, node, scope){
 
+                // deal witrh @from attribute
                 var context = node.getAttribute("from") || scope.$context;
-
 
                 if (!context)
                     throw compilerError("Context is undefined", node);
@@ -465,26 +555,69 @@ function XvdlCompiler(userConfig) {
                 }
                 else {
                     // <s:foo>...</s:foo>
-                    var newContext = node.localName,
-                        arguments = [newContext, newContext + config.closure.select.indexSuffix];
+
+                    var property = node.localName;
+                    // deal witrh @as attribute
+                    var newContext = node.getAttribute("as") || property;
+
+                    if (!codegen.isValidIdentifier(newContext))
+                        throw invalidIdentifier(newContext,node);
+
+                    var args = [newContext, newContext + config.closure.select.indexSuffix];
 
                     //TODO: implement @where
                     //TODO: implement @orderBy
                     //TODO: implement @filter
-
                     acc.push(
                         closure.apicall(api.select,[
                             context,
-                            codegen.string(node.localName),
+                            codegen.string(property),
                             codegen.closure({
-                                args: codegen.list(arguments),
+                                args: codegen.list(args),
                                 ret: compileChildNodes([], node, {$context: newContext}, true)
                             })
                         ])
                     );
                 }
             },
-            header: {}
+            header: {},
+
+            //TODO: implement widget
+            /**
+             * w:*
+             *
+             * Creates a wdiget component
+             *
+             * @param acc
+             * @param node
+             * @param scope
+
+            widget:function(acc, node, scope){
+            //TODO: implement widget attributes processing (w:@*)
+
+                if (node.hasAttribute("template")) {
+                    // external:
+                    // <w:* template='...'>...
+                    if (isEmpty(node)){
+                        // implicit context: <w:* template='..'.../>
+
+                        var context = scope.$context || node.getAttribute("context");
+                        if (!context)
+                            throw undefinedContextError(node);
+
+
+                    }
+                    else {
+
+
+                    }
+                }
+                else {
+                    // inline <w:*>....<w:*>
+
+                }
+            }
+             */
         };
 
     (this.configure = function (userConfig) {
@@ -498,18 +631,7 @@ function XvdlCompiler(userConfig) {
         return config;
     })(userConfig || {});
 
-    function compilerError(msg, node) {
-        //TODO: get line number and stuff...
-        if (node) {
-            if (node.nodeType === node.ELEMENT_NODE) {
-                return new Error("<" + node.nodeName + "> : " + msg);
-            } else if (node.nodeType === node.ATTRIBUTE_NODE) {
-                return new Error("@" + node.nodeName + " : " + msg);
-            }
-        }
-        else
-            return new Error(msg);
-    }
+
 
     function getInstructionKey(node) {
         var isElement = (node.nodeType === node.ELEMENT_NODE),
@@ -547,7 +669,7 @@ function XvdlCompiler(userConfig) {
         if (!instructionSet)
             return;
 
-        // wildcard pattern instruction
+        // wildcard pattern instruction (like t:* or @t:*)
         if (typeof instructionSet === 'function')
             return instructionSet;
 
@@ -593,7 +715,7 @@ function XvdlCompiler(userConfig) {
                     return; // skip xmlns declarations
 
                 // put only non-instruction attributes here
-                o["@" + node.nodeName] = codegen.string(node.nodeValue);
+                o["@" + node.nodeName] = codegen.string(node.nodeValue, true); // spaces are preserved
             }
         });
 
@@ -608,7 +730,7 @@ function XvdlCompiler(userConfig) {
 
         accumulator = accumulator.filter(function (o) {
             // drop empty nodes
-            return o != "{}";
+            return o != "undefined";
         });
 
         if (accumulator.length == 0) {
@@ -650,7 +772,9 @@ function XvdlCompiler(userConfig) {
         }
         else if (isText(node)) {
             acc.push(
-                codegen.string(node.nodeValue, config.code.preserveSpaces)
+                codegen.string(node.nodeValue,
+                    node.previousSibling === null && node.nextSibling === null // preserve spaces when this is a content of text-only element, e.g. <foo>  text  </foo>
+                )
             );
         }
 
@@ -658,8 +782,18 @@ function XvdlCompiler(userConfig) {
         return false;
     }
 
+    /**
+     * Provides closure arguments for template
+     * @returns {Array|*}
+     */
+    this.templateArguments = function templateArguments(){
+        return config.closure.template.map(function(argument){
+            return config.symbol[argument];
+        });
+    }
+
     this.compile = function (xmlDocument, scope) {
-        var acc = [], initialScope = extend({}, config.scope, scope);
+        var acc = [], initialScope = extend({$context:config.symbol.$context},  scope);
 
         if (!xmlDocument.documentElement ||
             !(xmlDocument.documentElement.nodeType === xmlDocument.ELEMENT_NODE)) {
@@ -668,9 +802,9 @@ function XvdlCompiler(userConfig) {
 
         compileElement(acc, xmlDocument.documentElement, initialScope);
 
-
         return aggregate(acc);
     }
+
 }
 
 module.exports = {Compiler: XvdlCompiler};

@@ -5,10 +5,15 @@
  */
 "use strict";
 
-var constant ={
-   CLEAREST: '__clearest__',
-   ATTR: '@',
-   TEXT: '$'
+/**
+ * Promises implementation
+ */
+var promise = require("q");
+
+var constant = {
+    CLEAREST: '__clearest__',
+    ATTR: '@',
+    TEXT: '$'
 };
 
 var is_ = function (o) {
@@ -86,12 +91,69 @@ function _in(o) {
 }
 
 
+/**
+ * Wraps error into clearest object
+ */
+function error(e) {
+    return is.error(e)?e: {__clearest__:{error: e}};
+}
+
+function slice(args, n) {
+    var arr = [];
+    for (var i = n, l = args.length; i < l; i++)
+        arr.push(args[i]);
+    return arr;
+}
+
+/**
+ * Ridiculously simple inheritance pattern (similar to the one used by closure library)
+ *
+ * Usage:
+ *
+ * function Foo(){
+ *  // constructor of Foo
+ * }
+ *
+ * Foo.prototype.a=function(){...} // method A of Foo
+ * Foo.prototype.b=function(){...} // method B of Foo
+ *
+ * inherit(Bar,Foo) // inherits prototype of Foo
+ * // providing a sugar Bar.super, such that:
+ * // Bar.super()                  - returns a Foo.prototype
+ * // Bar.super(this,[arguments])  - equivalent to Foo.apply(this,[arguments])
+ *
+ * function Bar(){ // constructor of Bar
+ *  ...
+ *  Bar.super(this,[arguments]); // calls base class constructor with some arguments
+ *  ...
+ * }
+ *
+ * Bar.prototype.a = function(){ // overrides method A
+ *   var superA = Bar.super().a.bind(this);
+ *     superA(...) // calls original method a
+ * }
+ *
+ * @type {exports|module.exports}
+ */
+function inherit(childClass, baseClass) {
+    childClass.prototype = Object.create(baseClass.prototype);
+    childClass.prototype.constructor = childClass;
+    childClass.super = function (instance) {
+        return (instance === undefined) ?
+            baseClass.prototype :
+            baseClass.apply(instance, slice(arguments, 1));
+    };
+};
+
 module.exports = {
     is: is,
     fin: fin,
     _in: _in,
     each: each,
-    constant:constant
+    constant: constant,
+    promise: promise,
+    error: error,
+    inherit : inherit
 };
 
 

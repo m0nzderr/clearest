@@ -6,16 +6,16 @@
 
 "use strict";
 
-var codegen = require("../codegen.js");
+var codegen = require("../tool/codegen.js");
 
 
 describe('#codegen', function () {
     it("should generate closures", function () {
         codegen.closure({args: "foo"})
-            .should.be.exactly("function (foo) {\n}");
+            .should.be.exactly("function(foo){}");
 
         codegen.closure({args: "foo", call: "bar"})
-            .should.be.exactly("(function (foo) {\n})(bar)");
+            .should.be.exactly("(function(foo){})(bar)");
 
         codegen.closure({
             args: "foo",
@@ -23,8 +23,7 @@ describe('#codegen', function () {
             vars: "a,b,c",
             body: "c=c+b",
             ret: "a+b+c"
-        })
-            .should.be.exactly("(function (foo) {\nvar a,b,c;\nc=c+b\nreturn a+b+c\n})(bar)");
+        }).should.be.exactly("(function(foo){var a,b,c;c=c+b;return a+b+c})(bar)");
     });
 
     it("should generate objects", function () {

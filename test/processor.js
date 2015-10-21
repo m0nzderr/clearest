@@ -6,9 +6,10 @@
 "use strict";
 
 var chai = require("chai"),
-    Processor = require("../processor.js"),
+    Processor = require("../tool/processor.js"),
     aggregator = require("../runtime/aggregator.js"),
     interpreter = require("eval"),
+    Api = require("../runtime/api"),
     dep1 = require("./fixtures/2/dependency");
 
 
@@ -32,7 +33,12 @@ describe('#processor', function () {
         });
 
         //TODO:
-        //it("should handle recurrency", function () {});
+        it("should handle recurrency", function () {
+            var processor = new Processor({currentLocation:'./foo.xml' });
+            var moduleCode = processor.compile('<t:if test="$context.count>0"><t:then><t:use template="./foo.xml" context="{count:$context.count-1,seed:$context.seed+14}"/></t:then><t:else><t:script>return $context.seed</t:script></t:else></t:if>');
+            var template = interpreter(moduleCode, {require: function(){throw "Must not be called";}});
+            template({count:3, seed:0}, new Api(), aggregator).should.be.exactly(42);
+        });
         //it("should handle circular dependencies", function () {});
     });
 });

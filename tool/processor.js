@@ -7,17 +7,19 @@
  * Template compiler
  * @constructor
  */
+"use strict"
 var dom = require('xmldom'),
     xvdl = require('./xvdl'),
     extend = require('extend'),
-    codegen = require("./codegen");
+    codegen = require("./codegen"),
+    path = require('path');
 
 
 function Processor(userConfig) {
 
     var config = {
             // path to itself (as one would reference it from inside)
-            currentUrl: null,
+            currentLocation: null,
             xvdl: {
                 resolver: {
                     template: requireTemplate,
@@ -27,11 +29,12 @@ function Processor(userConfig) {
             /**
              * indicates to compiler that template references itself
              */
-            isSelf: function (templateUrl) {
-                return config.currentUrl === templateUrl;
+            isSelf: function (templateLocation) {
+                var base = path.dirname(config.currentLocation || "./");
+                return path.resolve(base, templateLocation) === path.resolve(config.currentLocation || "./");
             },
-            outputFile: function (templateUrl) {
-                return templateUrl.replace(/^(.*)\.xml$/, '$1.tpl.js');
+            outputFile: function (templateLocation) {
+                return templateLocation.replace(/^(.*)\.xml$/, '$1.tpl.js');
             },
             module: {
                 lazy: true, // lazy loading in order to allow circular dependencies
@@ -76,7 +79,7 @@ function Processor(userConfig) {
     function requireTemplate(url) {
         if (config.isSelf(url)) {
             // return variable if it is a self reference
-            return module.exportVar;
+            return config.module.exportVar;
         }
         else {
             compIndex++;
@@ -107,14 +110,6 @@ function Processor(userConfig) {
         } else {
             config.xvdl = xvdlCompiler.configure(config.xvdl);
         }
-
-        // setup template closure argument list
-        config.module.arguments = [
-            config.xvdl.scope.$context,
-            config.xvdl.symbol.api,
-            config.xvdl.symbol.aggregator,
-            config.xvdl.symbol.empty
-        ];
         return config;
     })(userConfig || {});
 
@@ -129,7 +124,7 @@ function Processor(userConfig) {
         var templateCode = xvdlCompiler.compile(doc);
 
         var exportClosure = codegen.closure({
-            args: codegen.list(config.module.arguments), // closure arguments
+            args: codegen.list(xvdlCompiler.templateArguments()), // closure arguments
             body: body.join("\n"), // closure body (lazy loading stuff)
             ret: templateCode // whole code sits in return statement
         });

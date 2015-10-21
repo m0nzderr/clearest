@@ -7,14 +7,13 @@
 
 //TODO: rewrite with BDD interface, stop using qunit shim
 var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
-commons = require("../../runtime/commons.js"),
+commons = require("../../commons.js"),
     agg = require("../../runtime/aggregator.js"),
     html = require("../../runtime/html.js");
 
 
-describe("#clearest-runtime", function () {
+describe("runtime library / html", function () {
 
-    describe("#html", function () {
 
         test("values", function () {
 
@@ -89,7 +88,5 @@ describe("#clearest-runtime", function () {
             }), 'test'), '<test><data>1</data><foo><bar>foo<data/>bar</bar></foo></test>', 'nested composits');
 
         });
-
-    });
 
 });

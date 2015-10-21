@@ -5,7 +5,7 @@
  */
 "use strict";
 /**
- * Aggregator
+ * Aggregator (ported from Clearest 1.0)
 
  a<foo>bar1</foo>c + d<foo>bar2</foo>f = a<foo>bar1</foo>cd<foo>bar2</foo>f
  {----- el1 -----}   {----- el2 -----} =
@@ -46,11 +46,11 @@
  */
 
 
-//TODO: use constant instead of hardcodeded "_"
+//TODO: refactor, optimize
 
 // imports
-var commons = require("./commons.js"),
-    $q = require("q"),
+var commons = require("./../commons"),
+    promise = commons.promise,
     is = commons.is,
     is_ = is._,
     isValue = is.value,
@@ -167,9 +167,9 @@ function agg() {
 
     if (j.length) // if there are deferred jobs, aggregate sequence after resolution
     {
-        var def = new $q.defer();
+        var def = new promise.defer();
 
-        $q.all(j)
+        promise.all(j)
             .finally(function () {
                 // aggregate later
                 var res = agg.call({ctl: ctl}, seq);
@@ -185,7 +185,7 @@ function agg() {
         return def.promise;
     }
     else {
-        if (!seq.length && !ctl.length) return; // return nothing todo
+        if (!seq.length && !ctl.length) return; // return, nothing to do
 
         // 1) all resolved singletones are bypassed
         var res;

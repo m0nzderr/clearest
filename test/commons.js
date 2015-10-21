@@ -6,10 +6,13 @@
 "use strict";
 
 //TODO: rewrite with BDD interface, stop using qunit shim
-var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
-    commons = require("../../runtime/commons.js"),
-    $q = require("q"),
+var qunit = require("./shim/qunit"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
+    commons = require("../commons"),
+    promise = commons.promise,
+    inherit = commons.inherit,
     is = commons.is,
+    _in = commons._in,
+    fin = commons.fin,
     each = commons.each;
 
 describe("#clearest-runtime", function () {
@@ -47,6 +50,18 @@ describe("#clearest-runtime", function () {
 
         });
 
+        test('fin and _in', function () {
+            var o ={};
+            _in(o).foo=42;
+            fin("k",o).bar=42;
+
+            equal(o[commons.constant.CLEAREST].foo,42,'object were created');
+            equal(o['k'].bar,42,'object were created');
+
+            equal(_in(o),o[commons.constant.CLEAREST],'object returned');
+            equal(fin("k",o),o['k'],'object returned');
+        });
+
         test('is.promise', function () {
 
             equal(is.promise(123), false, 'is.promise(123)=false');
@@ -58,8 +73,8 @@ describe("#clearest-runtime", function () {
             }), false, 'is.promise(function(){})=false');
             equal(is.promise(undefined), false, 'is.Promise(undefined)=false');
             equal(is.promise(null), false, 'is.promise(null)=false');
-            equal(is.promise($q.defer()), false, 'is.promise(deferred)=false');
-            equal(is.promise($q.defer().promise), true, 'is.promise(deferred.promise)=true');
+            equal(is.promise(promise.defer()), false, 'is.promise(deferred)=false');
+            equal(is.promise(promise.defer().promise), true, 'is.promise(deferred.promise)=true');
         });
 
         test('each', function () {
@@ -96,10 +111,11 @@ describe("#clearest-runtime", function () {
 
         });
 
-        test("promises ", function () {
+        test("promise contract", function () {
+            //TODO: add more contract tests for reject, throw, fail
 
             function job() {
-                var def = $q.defer();
+                var def = promise.defer();
                 setTimeout(function () {
                     def.resolve(42);
                 }, 10);
@@ -107,14 +123,54 @@ describe("#clearest-runtime", function () {
             }
 
             it("should work within test environment", function () {
-                return $q.all(job()).then(function (res) {
+                return promise.all(job()).then(function (res) {
                     equal(res, 42, "promises seem to work across testing suite");
                     //done();
                 });
             })
+        })
+    });
 
+    describe("inherit",function(){
+        function Foo(x){this.x=x;
+            this.b = function(y){
+                return this.c(y);
+            }
+        }
+
+        Foo.prototype.a = function(y) {return this.x+y;}
+
+        inherit(Bar,Foo);
+        function Bar(x){
+            Bar.super(this,x);
+        }
+
+        Bar.prototype.a = function(y) {
+            return this.x*y - Bar.super().a.call(this,y);
+        }
+
+        Bar.prototype.c = function(y) {
+            return this.x*y - Bar.super().a.call(this,y);
+        }
+
+
+        it("should be able to call super's constructor",function(){
+            var bar = new Bar(42);
+            bar.x.should.be.exactly(42);
         })
 
+        it("should override methods",function(){
+            var bar = new Bar(16);
+            bar.a(4).should.be.exactly(16*4 - (16+4));
+        })
+
+        it("should allow virtual methods",function(){
+            var bar = new Bar(33);
+            bar.b(11).should.be.exactly(33*11 - (33+11));
+        })
+
+
     });
+
 
 });

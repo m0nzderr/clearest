@@ -28,6 +28,9 @@ function is(v) {
     return v !== undefined && (v.length > 0);
 }
 
+function isValidIdentifier(id){
+    return !!id.match(ECMA5_IDENTIFIER_REGEXP);
+}
 
 function call(o) {
     return interpolate(is(o.context) ?
@@ -37,7 +40,7 @@ function call(o) {
 
 
 function list(elements) {
-    return elements.join(", ");
+    return elements.join(",");
 }
 
 function array(elements) {
@@ -69,7 +72,7 @@ function object(o, v) {
                 isFirst = false;
             }
             else {
-                s += ", ";
+                s += ",";
             }
 
             s += propname(k) + ':';
@@ -93,23 +96,25 @@ function iff(o) {
 function closure(o) {
     return interpolate(
         (is(o.call) ? "(" : "")
-        + "function ($args) {\n"
-        + (is(o.strict) ? "\"use strict\"\n" : "")
-        + (is(o.vars) ? "var $vars;\n" : "")
-        + (is(o.body) ? "$body\n" : "")
-        + (is(o.ret) ? "return $ret\n" : "")
+        + "function($args){"
+        + (is(o.strict) ? "\"use strict\" " : "")
+        + (is(o.vars) ? "var $vars;" : "")
+        + (is(o.body) ? (is(o.ret)?"$body;":"$body") : "")
+        + (is(o.ret) ? "return $ret" : "")
         + "}"
         + (is(o.call) ? ")($call)" : "")
         , o);
 }
 
 function string(text, preserveSpaces) {
-    return JSON.stringify(
-        preserveSpaces ?
-            text :
-            text.replace(/^\s+|\s+$/g, " ")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")/**/);
+    if (!preserveSpaces){
+        text = text.trim();
+        if (text.length == 0)
+            return "undefined"; //
+    }
+    return JSON.stringify(text
+        .replace("<", "&lt;")
+        .replace(">", "&gt;"));
 }
 
 
@@ -120,5 +125,6 @@ module.exports = {
     list: list,
     array: array,
     closure: closure,
-    string: string
+    string: string,
+    isValidIdentifier:isValidIdentifier
 };

@@ -6,8 +6,8 @@
 "use strict";
 
 var chai = require("chai"),
-    Renderer = require("../renderer.js"),
-    Processor = require("../processor.js"),
+    Renderer = require("../tool/renderer.js"),
+    Processor = require("../tool/processor.js"),
     fs = require("fs"),
     interpreter = require("eval");
 
@@ -38,7 +38,7 @@ describe('#interpreter', function () {
 
 function onDemandCompileAndLoad(fixture, templatePath){
     //console.log(templatePath,"compilation");
-    var processor = new Processor({xvdl: {code: {preserveSpaces: true}}});
+    var processor = new Processor({currentLocation: templatePath, xvdl: {code: {preserveSpaces: true}}});
     var compiledModule = processor.compile(decoder.write(fs.readFileSync(templatePath)));
     return interpreter(compiledModule, {require: function(path){
         //console.log(templatePath,"required: "+path);
@@ -56,6 +56,7 @@ function onDemandCompileAndLoad(fixture, templatePath){
 
 
 describe("#renderer", function () {
+
 
     var fixtures = [
         "./fixtures/1",

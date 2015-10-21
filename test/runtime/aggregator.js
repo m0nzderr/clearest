@@ -6,12 +6,12 @@
 //TODO: rewrite with BDD interface, stop using qunit shim
 var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok, asyncTest = qunit.asyncTest, start = qunit.start, expect = qunit.expect;
 
-var $q = require("q"), is = require("../../runtime/commons").is,
+var $q = require("q"), is = require("../../commons").is,
     agg = require("../../runtime/aggregator.js");
 
-describe("#clearest-runtime", function () {
+describe("runtime library / aggregator", function () {
 
-    describe("#aggregator", function () {
+
 
         test("compose contract implementation", function () {
 
@@ -122,5 +122,4 @@ describe("#clearest-runtime", function () {
 
         });
 
-    });
 });
