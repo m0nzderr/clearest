@@ -35,8 +35,8 @@ Roadmap/Progress:
  |   generation of bootstrapping code, stylesheets, and other multi-page static content)
  |
  * - Gulp-friendly interface that boils all stuff into browser-ready apps
- :
- . - Runtime library essentials for dynamic context: oo, observable
+ |
+ * - Runtime library essentials for dynamic context: oo, observable, api
  :
  . - Widget implementation (it does all the glue between M, V and C to asynchronously run
  :    your compiled modules in browser)

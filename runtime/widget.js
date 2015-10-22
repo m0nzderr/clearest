@@ -6,22 +6,7 @@
 
 var Api = require("./api"),
     inherit = require("./../commons/inherit");
-
 inherit(Widget, Api);
-
-/**
- *
- * @param params:{
- *      template: template function
- *      context: context object
- *      settings: implementation specific options
- *      parameters: widget parameters, avaibale from the scope
- * }
- * @constructor
- */
-function Widget(params){
-
-}
-
-
+//TODO: implement all the stuff
+function Widget(params){}
 module.exports= Widget;
