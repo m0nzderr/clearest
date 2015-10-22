@@ -6,18 +6,28 @@
 "use strict";
 
 //TODO: rewrite with BDD interface, stop using qunit shim
-var qunit = require("./shim/qunit"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
+var qunit = require("./shim/qunit"),
+    test = qunit.test,
+    deepEqual = qunit.deepEqual,
+    equal = qunit.equal,
+    ok = qunit.ok,
+    chai = require("chai"),
+    expect = chai.expect,
     commons = require("../commons"),
     promise = commons.promise,
     inherit = commons.inherit,
     is = commons.is,
     _in = commons._in,
     fin = commons.fin,
-    each = commons.each;
+    each = commons.each,
+    subscribe = commons.subscribe,
+    unsubscribe = commons.unsubscribe,
+    notify = commons.notify;
 
-describe("#clearest-runtime", function () {
 
-    describe("#commons", function () {
+describe("runtime library / commons", function () {
+
+    describe("basic functions", function () {
 
         test('is.array', function () {
             equal(is.array([]), true, 'is.Array([])=true');
@@ -131,7 +141,7 @@ describe("#clearest-runtime", function () {
         })
     });
 
-    describe("inherit",function(){
+    describe("inherit pattern",function(){
         function Foo(x){this.x=x;
             this.b = function(y){
                 return this.c(y);
@@ -168,9 +178,164 @@ describe("#clearest-runtime", function () {
             var bar = new Bar(33);
             bar.b(11).should.be.exactly(33*11 - (33+11));
         })
-
-
     });
 
+
+    describe("observable pattern",function(){
+
+
+        it('subscribe should follow the contract',function() {
+
+            function obs1(){};
+            function obs2(){};
+            var o={};
+
+            // first subscription
+            subscribe(o, 'foo', obs1).should.be.true();
+            subscribe(o, 'foo', obs2).should.be.true();
+
+            // second subscription
+            subscribe(o, 'foo', obs2).should.be.false();
+            subscribe(o, 'foo', obs1).should.be.false();
+
+            subscribe(o, 'bar', obs2).should.be.true();
+
+            subscribe(o, '*', obs2).should.be.true();
+
+            // those should be irrelevant after '*'
+            subscribe(o, 'bar', obs2).should.be.false();
+            subscribe(o, 'foo', obs2).should.be.false();
+            subscribe(o, 'qux', obs2).should.be.false();
+
+            // internal strcture of observable should look like this
+            expect(o[CLEAREST].sub).to.deep.equal({'foo':[obs1,obs2],
+                'bar':[obs2],
+                '*':[obs2]});
+
+            // internal strcture of observer should look like this
+            expect(obs1[CLEAREST].obs).to.deep.equal([{k:'foo',o:o,idx:0}]);
+            expect(obs2[CLEAREST].obs).to.deep.equal([{k:'foo',o:o,idx:1},{k:'bar',o:o,idx:0},{k:'*',o:o,idx:0}]);
+        });
+
+        it('notify should behave as expected',function(){
+
+            var actual1={o:[],k:[],d:[]},
+                actual2={o:[],k:[],d:[]},
+                expected1={o:[],k:[],d:[]},
+                expected2={o:[],k:[],d:[]};
+
+            var handler=function(log){ return function(o,k,d){log.o.push(o);log.k.push(k);log.d.push(d);}}
+
+            function clear(log){ log.o=[];log.k=[];log.d=[];}
+
+            function assertLogs(){
+                // check
+                expect(actual1).deep.equal(expected1);
+                expect(actual2).deep.equal(expected2);
+
+                // cleanup
+                clear(actual1);	clear(actual2);	clear(expected1);	clear(expected2);
+
+            }
+
+            var obs1=handler(actual1);
+            var obs2=handler(actual2);
+
+            var call1=handler(expected1);
+            var call2=handler(expected2);
+
+            var o={};
+
+            // subscribe once on foo
+            subscribe(o,'foo',obs1);
+            subscribe(o,'foo',obs2);
+
+            // subscribe twice on bar
+            subscribe(o,'bar',obs2);
+            subscribe(o,'bar',obs2);
+
+            // notify foo once
+            notify(o,'foo',1);
+
+            // expect two calls on foo:
+            call1(o,'foo',1);
+            call2(o,'foo',1);
+
+            assertLogs();
+
+            // notify bar once
+            notify(o,'bar',2);
+
+            // expect one call to obs2
+            call2(o,'bar',2);
+
+            assertLogs();
+
+            // nofiy foo and bar
+            notify(o,'*',3);
+
+            // expect:
+            call1(o,'foo',3);
+            call2(o,'foo',3);
+            call2(o,'bar',3);
+
+            assertLogs();
+
+            // subscribe onbserver 2 on '*'
+            subscribe(o,'*',obs2);
+
+            // notify foo
+            notify(o,'foo',1);
+
+            // expect
+            call1(o,'foo',1);
+            call2(o,'foo',1);
+
+            assertLogs();
+
+            notify(o,'bar',2);
+
+            call2(o,'bar',2);
+
+            assertLogs();
+
+            notify(o,'*',3);
+
+            call1(o,'foo',3);
+            call2(o,'*',3);
+
+            assertLogs();
+        });
+
+        it('unsubscribe should behave as expected',function(){
+
+            var obs1=function(){};
+            var obs2=function(){};
+            var o={};
+
+            subscribe(o,'foo',obs1);
+            subscribe(o,'foo',obs2);
+            subscribe(o,'bar',obs2);
+
+            subscribe(o,'*',obs2);
+
+            unsubscribe(obs1);
+
+            // observer removed from observable
+            expect(o[CLEAREST].sub).deep.equal({'foo':[null,obs2],
+                'bar':[obs2],
+                '*':[obs2]})
+
+            // observable removed from observer
+            expect(obs1[CLEAREST].obs).to.be.equal(undefined);
+
+            // after new subscription, memory should be reused
+            subscribe(o,'foo',obs1);
+            expect(o[CLEAREST].sub).deep.equal({'foo':[obs1,obs2],
+                'bar':[obs2],
+                '*':[obs2]})
+        })
+
+    });
 
 });
