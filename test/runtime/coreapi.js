@@ -35,7 +35,7 @@ describe("runtime library / core api", function () {
 
         it("should pass control point to template code", function () {
             var called = false, originalContext = {};
-            api.use(function (context) {
+            api.use(function (api, agg, context) {
                 called = true;
                 expect(context === originalContext).to.be.ok;
             }, originalContext);
@@ -44,7 +44,7 @@ describe("runtime library / core api", function () {
 
         it("... even if context is deferred", function () {
             var called = false, originalContext = {};
-            var result = api.use(function (context) {
+            var result = api.use(function (api, agg, context) {
                 called = true;
                 expect(context === originalContext).to.be.ok;
             }, promise(originalContext).delay(1));

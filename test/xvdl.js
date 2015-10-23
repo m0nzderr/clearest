@@ -12,33 +12,35 @@ var
     Compiler = xvdl.Compiler;
 
 describe('tool / xvdl instructions', function () {
+
+    var compiler = new Compiler({
+        symbol: {
+            aggregator: "S",
+            api: "P",
+            empty: "0"
+        }
+    });
+
     it("static", function () {
 
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                empty: '0'
-            }
-        });
-
         compiler.compile(dom.parseFromString('<foo/>'))
-            .should.be.exactly('S({foo:0})');
+            .should.be.exactly('{foo:0}');
 
         compiler.compile(dom.parseFromString('<foo:bar/>'))
-            .should.be.exactly('S({"foo:bar":0})');
+            .should.be.exactly('{"foo:bar":0}');
 
         compiler.compile(dom.parseFromString('<foo>bar<qux>dox</qux></foo>'))
-            .should.be.exactly('S({foo:S("bar",{qux:"dox"})})');
+            .should.be.exactly('{foo:S("bar",{qux:"dox"})}');
 
         // spaces are preserved in text-only elements
         compiler.compile(dom.parseFromString('<foo> bar1 <qux> dox </qux> bar2 </foo>'))
-            .should.be.exactly('S({foo:S("bar1",{qux:" dox "},"bar2")})');
+            .should.be.exactly('{foo:S("bar1",{qux:" dox "},"bar2")}');
 
         compiler.compile(dom.parseFromString('<foo bar="qux"/>'))
-            .should.be.exactly('S({foo:{"@bar":"qux"}})');
+            .should.be.exactly('{foo:{"@bar":"qux"}}');
 
         compiler.compile(dom.parseFromString('<foo bar="qux">dox</foo>'))
-            .should.be.exactly('S({foo:S({"@bar":"qux"},"dox")})');
+            .should.be.exactly('{foo:S({"@bar":"qux"},"dox")}');
 
 
         /* deprecated notation:
@@ -47,7 +49,7 @@ describe('tool / xvdl instructions', function () {
          */
 
         compiler.compile(dom.parseFromString('<foo bar=" qux " qux="dox"><bar/></foo>'))
-            .should.be.exactly('S({foo:S({"@bar":" qux ","@qux":"dox"},{bar:0})})');
+            .should.be.exactly('{foo:S({"@bar":" qux ","@qux":"dox"},{bar:0})}');
     });
 
     it("t:fragment", function () {
@@ -55,7 +57,7 @@ describe('tool / xvdl instructions', function () {
         var compiler = new Compiler({symbol: {empty: '0', aggregator: 'S'}});
 
         compiler.compile(dom.parseFromString('<t:fragment xmlns:t="http">bar</t:fragment>'))
-            .should.be.exactly('S("bar")');
+            .should.be.exactly('"bar"');
 
         compiler.configure({environment: {build: {target: "web"}}});
         compiler.compile(dom.parseFromString('<t:fragment env:build.target="cordova">bar</t:fragment>'))
@@ -63,25 +65,17 @@ describe('tool / xvdl instructions', function () {
 
         compiler.configure({environment: {build: {target: "cordova"}}});
         compiler.compile(dom.parseFromString('<t:fragment env:build.target="cordova">bar</t:fragment>'))
-            .should.be.exactly('S("bar")');
+            .should.be.exactly('"bar"');
 
     });
 
     it("t:if", function () {
 
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
-
         compiler.compile(dom.parseFromString('<t:if test="mycondition">bar</t:if>'))
-            .should.be.exactly('S((mycondition)?"bar":0)');
+            .should.be.exactly('(mycondition)?"bar":0');
 
         compiler.compile(dom.parseFromString('<t:if test="mycondition"><t:then>foo</t:then><t:else>bar</t:else></t:if>'))
-            .should.be.exactly('S((mycondition)?"foo":"bar")');
+            .should.be.exactly('(mycondition)?"foo":"bar"');
 
         compiler.compile(dom.parseFromString('<t:if exist="a">bar</t:if>'))
             .should.be.exactly('S(P.get(function($1){return $1?"bar":0},P.cnt($context,["a"])))');
@@ -91,14 +85,6 @@ describe('tool / xvdl instructions', function () {
     });
 
     it("t:control", function () {
-
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
 
         compiler.compile(dom.parseFromString('<t:control>bar</t:control>'))
             .should.be.exactly('S(function($node){bar})');
@@ -122,26 +108,18 @@ describe('tool / xvdl instructions', function () {
 
     it("t:use", function () {
 
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
-
+        // implicit context
         compiler.compile(dom.parseFromString('<t:use template="foo"/>'))
             .should.be.exactly('S(P.use(foo,$context))');
 
         compiler.compile(dom.parseFromString('<t:use template="foo"/>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,bar))');
 
+        // explicit context + test aggregation call logic
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,{bar:0}))');
-
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><t:fragment foo="123"/></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,S({bar:0},{"@foo":"123"})))');
-
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><baz/></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,S({bar:0},{baz:0})))');
 
@@ -153,17 +131,28 @@ describe('tool / xvdl instructions', function () {
 
     });
 
+    it("w:* (external)", function () {
+        //TODO: @w:* (widget attributes)
+        // implicit context
+        compiler.compile(dom.parseFromString('<w:foo template="bar"/>'))
+            .should.be.exactly('S({foo:S(function(){return P.wid(bar,$context)})})');
+
+        // explicit context
+        compiler.compile(dom.parseFromString('<w:foo template="bar"><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S(function(){return P.wid(bar,{bar:0})})})');
+    });
+
+    it("w:* (inline)", function () {
+        //TODO: @w:* (widget attributes)
+        // implicit context
+        compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return {bar:0}},$context)})})');
+    });
+
     it("t:context", function () {
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
 
         compiler.compile(dom.parseFromString('<t:context/>'))
-            .should.be.exactly('S($context)');
+            .should.be.exactly('$context');
 
         compiler.compile(dom.parseFromString('<t:context foo="bar"><t:context/></t:context>'))
             .should.be.exactly('S(P.get(function(foo){return foo},[bar]))');
@@ -175,13 +164,6 @@ describe('tool / xvdl instructions', function () {
     });
 
     it("t:get", function () {
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
 
         expect(function(){compiler.compile(dom.parseFromString('<t:get/>'))}).to.throw(Error);
 
@@ -192,21 +174,16 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S(P.get(function(foo,bar){return " "},[bar,mar]))');
     });
 
+
+
+
     it("s:*", function () {
         //TODO: @where
         //TODO: @filter
         //TODO: @bind
         //TODO: @orderby
 
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
-
-        compiler.compile(dom.parseFromString('<s:bar/>'))
+       compiler.compile(dom.parseFromString('<s:bar/>'))
             .should.be.exactly('S(P.sel($context,"bar"))');
 
         // @from
@@ -219,14 +196,6 @@ describe('tool / xvdl instructions', function () {
     });
 
     it("@e:*", function () {
-        var compiler = new Compiler({
-            symbol: {
-                aggregator: "S",
-                api: "P",
-                empty: "0"
-            }
-        });
-
         compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
             .should.be.exactly('S({foo:S(function($node){P.on(this,"click",boom)})})');
 

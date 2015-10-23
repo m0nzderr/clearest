@@ -71,10 +71,9 @@ Api.prototype.use = function (templateModule, o) {
     var api = this;
     return this.get(
         function (context) {
-            return templateModule(context, api, aggregator);
+            return templateModule(api, aggregator, context);
         }, [o]);
 };
-
 
 /**
  * function sel(o, k, iteration, filter)

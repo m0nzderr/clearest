@@ -28,9 +28,9 @@ function Renderer(userConfig) {
 
     this.render = function (context, templateModule, streamAppender) {
         var output = templateModule(
-            context,
             new Api(streamAppender),
-            aggregator);
+            aggregator,
+            context);
         return config.doctype + html(output);
     }
 

@@ -21,7 +21,7 @@ describe('#processor', function () {
             var processor = new Processor();
             var moduleCode = processor.compile('<t:context/>');
             var template = interpreter(moduleCode);
-            template(42, {}, aggregator).should.be.exactly(42);
+            template({}, aggregator, 42).should.be.exactly(42);
         });
 
 
@@ -29,7 +29,7 @@ describe('#processor', function () {
             var processor = new Processor();
             var moduleCode = processor.compile('<t:fragment><t:require dep1="./fixtures/2/dependency"/><t:script>return dep1()</t:script></t:fragment>');
             var template = interpreter(moduleCode, {require: require});
-            template(0, {}, aggregator).should.be.exactly(dep1());
+            template({}, aggregator, 0).should.be.exactly(dep1());
         });
 
         //TODO:
@@ -37,7 +37,7 @@ describe('#processor', function () {
             var processor = new Processor({currentLocation:'./foo.xml' });
             var moduleCode = processor.compile('<t:if test="$context.count>0"><t:then><t:use template="./foo.xml" context="{count:$context.count-1,seed:$context.seed+14}"/></t:then><t:else><t:script>return $context.seed</t:script></t:else></t:if>');
             var template = interpreter(moduleCode, {require: function(){throw "Must not be called";}});
-            template({count:3, seed:0}, new Api(), aggregator).should.be.exactly(42);
+            template(new Api(), aggregator, {count:3, seed:0}).should.be.exactly(42);
         });
         //it("should handle circular dependencies", function () {});
     });
