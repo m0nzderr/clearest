@@ -74,8 +74,8 @@ function each(a, f, j) {
  * @param o object
  * @returns field content or new object
  */
-function fin(f, o) {
-    return (o[f] !== undefined) ? o[f] : (o[f] = {});
+function fin(f, o, defaultValue) {
+    return (o[f] !== undefined) ? o[f] : (o[f] = (defaultValue === undefined? {}:defaultValue ));
 }
 
 /**

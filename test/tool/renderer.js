@@ -6,8 +6,8 @@
 "use strict";
 
 var chai = require("chai"),
-    Renderer = require("../tool/renderer.js"),
-    Processor = require("../tool/processor.js"),
+    Renderer = require("../../tool/renderer.js"),
+    Processor = require("../../tool/processor.js"),
     fs = require("fs"),
     interpreter = require("eval");
 

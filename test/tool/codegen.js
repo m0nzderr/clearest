@@ -6,7 +6,7 @@
 
 "use strict";
 
-var codegen = require("../tool/codegen.js");
+var codegen = require("../../tool/codegen.js");
 
 
 describe('#codegen', function () {

@@ -56,7 +56,15 @@ Api.prototype.obs = function (o, k, handler) {/* istanbul ignore next */ return 
  * @param handler
  */
 /* istanbul ignore next */
-Api.prototype.on = function (element, event, handler) {/* istanbul ignore next */ return abstract();}
+Api.prototype.on = function (event, handler) {/* istanbul ignore next */ return abstract();}
+
+/**
+ * Supposed to return a controller that creates a widget
+ * @param template
+ * @param context
+  */
+/* istanbul ignore next */
+Api.prototype.wid = function (template, context) {/* istanbul ignore next */ return abstract();}
 
 
 // --- core functions called by template code ---
@@ -71,7 +79,7 @@ Api.prototype.use = function (templateModule, o) {
     var api = this;
     return this.get(
         function (context) {
-            return templateModule(api, aggregator, context);
+            return templateModule(api, api.agg, context);
         }, [o]);
 };
 
@@ -213,5 +221,6 @@ Api.prototype.get = function (target, args /*, resolveIncomplete*/) {
 }
 
 
+Api.prototype.agg = aggregator;
 
 module.exports = Api;

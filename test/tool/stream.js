@@ -8,7 +8,7 @@
 //TODO: test appender
 
 var chai = require("chai"),
-    streamTool  = require("../tool/stream"),
+    streamTool  = require("../../tool/stream"),
     File = require("vinyl"),
     fs = require("fs"),
     path = require("path"),
@@ -25,7 +25,7 @@ describe("tool / compiling pipe",function(){
 
     it("should transform xml files into js",function(done){
 
-        var fixture = "./test/fixtures/2/index";
+        var fixture = "./test/tool/fixtures/2/index";
 
         var stream = streamify([
             new File({
@@ -55,7 +55,7 @@ describe("tool / compiling pipe",function(){
 
 describe("tool / rendering pipe",function(){
 
-    var fixture = "./test/fixtures/2/index";
+    var fixture = "./test/tool/fixtures/2/index";
 
     it("should compile and render .html on the fly",function(done){
 

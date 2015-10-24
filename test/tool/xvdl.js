@@ -8,7 +8,7 @@ var
     dom = new (require("xmldom").DOMParser)(),
     chai = require("chai"),
     expect = chai.expect,
-    xvdl = require("../tool/xvdl"),
+    xvdl = require("../../tool/xvdl"),
     Compiler = xvdl.Compiler;
 
 describe('tool / xvdl instructions', function () {
@@ -87,20 +87,20 @@ describe('tool / xvdl instructions', function () {
     it("t:control", function () {
 
         compiler.compile(dom.parseFromString('<t:control>bar</t:control>'))
-            .should.be.exactly('S(function($node){bar})');
+            .should.be.exactly('S(function(){bar})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",boom)})})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)})})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",boom)},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)},"bar")})');
 
 
         compiler.compile(dom.parseFromString('<foo e:click="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="{return boom(gas2)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
 
 
     });
@@ -124,7 +124,7 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S(P.use(foo,S({bar:0},{baz:0})))');
 
         compiler.compile(dom.parseFromString('<t:use template="foo"><t:control>code</t:control></t:use>'), {$context: "bar"})
-            .should.be.exactly('S(P.use(foo,S(function($node){code})))');
+            .should.be.exactly('S(P.use(foo,S(function(){code})))');
 
         compiler.compile(dom.parseFromString('<t:use template="foo" context="qux"></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,qux))');
@@ -135,18 +135,18 @@ describe('tool / xvdl instructions', function () {
         //TODO: @w:* (widget attributes)
         // implicit context
         compiler.compile(dom.parseFromString('<w:foo template="bar"/>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(bar,$context)})})');
+            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return P.use(bar,$context)})})})');
 
         // explicit context
         compiler.compile(dom.parseFromString('<w:foo template="bar"><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(bar,{bar:0})})})');
+            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return P.use(bar,{bar:0})})})})');
     });
 
     it("w:* (inline)", function () {
         //TODO: @w:* (widget attributes)
         // implicit context
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return {bar:0}},$context)})})');
+            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return {bar:0}})})})');
     });
 
     it("t:context", function () {
@@ -197,19 +197,19 @@ describe('tool / xvdl instructions', function () {
 
     it("@e:*", function () {
         compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",boom)})})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)})})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",boom)},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)},"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="controller.boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",controller.boom)},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",controller.boom)},"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="{return boom(gas2)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(function($node){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
+            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
 
     });
 

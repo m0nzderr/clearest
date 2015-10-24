@@ -6,10 +6,10 @@
 "use strict";
 
 var chai = require("chai"),
-    Processor = require("../tool/processor.js"),
-    aggregator = require("../runtime/aggregator.js"),
+    Processor = require("../../tool/processor.js"),
+    aggregator = require("../../runtime/aggregator.js"),
     interpreter = require("eval"),
-    Api = require("../runtime/api"),
+    Api = require("../../runtime/api"),
     dep1 = require("./fixtures/2/dependency");
 
 

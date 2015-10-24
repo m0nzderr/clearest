@@ -121,7 +121,7 @@ function XvdlCompiler(userConfig) {
             on: ".on",
             controller: ".ctl",
             use: ".use",
-            widget: ".wid"
+            widget: ".wid",
         },
         config = {
             resolver: {
@@ -162,7 +162,7 @@ function XvdlCompiler(userConfig) {
             closure: {
                 template: ['api','aggregator','$context'],
                 widget: ['api'],
-                control: {args: "$node"},
+                control: {args: ""},
                 event: {args: "$event"},
                 select: { indexSuffix: "$index"}
             },
@@ -627,21 +627,18 @@ function XvdlCompiler(userConfig) {
             widget:function(acc, node, scope){
             //TODO: implement widget attributes processing (w:@*)
 
-                var template, context;
-
-                context = node.getAttribute("context") || scope.$context ;
+                var templateCode;
+                var templateArguments = config.closure.widget.map(function(argument){
+                    return config.symbol[argument];
+                });
 
                 if (node.hasAttribute("template")) {
+                    // external widget: <w:* template='...'>...</w:*>
 
-                    // resolve template
-                    template = config.resolver.template(node.getAttribute("template"));
+                    var context = node.getAttribute("context") || scope.$context ;
+                    var template = config.resolver.template(node.getAttribute("template"));
 
-                    // external:
-                    // <w:* template='...'>...
-                    if (isEmpty(node)) {
-                        // implicit context: <w:* template='..'.../>
-                    }
-                    else {
+                    if (!isEmpty(node)) {
                         // explicit context
                         context = compileChildNodes([], node, scope, {ignoreAttributes: true});
 
@@ -649,30 +646,30 @@ function XvdlCompiler(userConfig) {
                             throw explicitContextError(node);
                         }
                     }
+
+                    templateCode = closure.apicall(api.use, [template, context])
+
                 }
                 else {
-                    // inline <w:*>....<w:*>
-
-                    var temlateArguments = config.closure.widget.map(function(argument){
-                        return config.symbol[argument];
-                    });
-
-                    template = codegen.closure({
-                        // function(api){return S(...)}
-                        args: codegen.list(temlateArguments),
-                        ret: compileChildNodes([], node, scope, {ignoreAttributes:true})
-                    });
+                    // inline widget: <w:*>....<w:*>
+                    templateCode = compileChildNodes([], node, scope, {ignoreAttributes:true});
                 }
 
-                if (!context)
-                    throw undefinedContextError(node);
+                // the one would be rendering a view for a widget: function(api){return ....}
+                var widgetClosure = codegen.closure({
+                    // function(api){return S(...)}
+                    args: codegen.list(templateArguments),
+                    ret: templateCode
+                });
 
+                //TODO: treat widget attribtes
+                // controller hook: function(){return widget(...)}
                 acc.push(
                     codegen.object(
                         node.localName,
                         aggregate([
                             codegen.closure({ // control closure
-                                ret:closure.apicall(api.widget,[template, context])
+                                ret:closure.apicall(api.widget,[widgetClosure])
                             })
                         ],true)
                     )
