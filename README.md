@@ -44,9 +44,9 @@ Roadmap/Progress:
  * - Runtime library essentials for dynamic context: oo, observable, api
  |
  * - Widget (it does all the glue between M, V and C to asynchronously run
- :    your compiled modules in browser)
- :
- . - Automatic widget bootstrapping from static context (never ever write bootstrapping
+ |    your compiled modules in browser)
+ |
+ * - Automatic widget bootstrapping from static context (never ever write bootstrapping
  :   code by hand!)
  :
  . - Widget: full spec (automacit updates, asynchronic rebuild chain, event proxies,
