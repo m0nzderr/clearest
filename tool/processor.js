@@ -12,7 +12,10 @@ var dom = require('xmldom'),
     xvdl = require('./xvdl'),
     extend = require('extend'),
     codegen = require("./codegen"),
-    path = require('path');
+    path = require('path'),
+    constants = require("./constants");
+
+var API = constants.API;
 
 
 function Processor(userConfig) {
@@ -20,6 +23,9 @@ function Processor(userConfig) {
     var config = {
             // path to itself (as one would reference it from inside)
             currentLocation: null,
+            // needed for only for static rendering, for SPA components that run in dynamic context could be turned off,
+            // resulting in slightly better performance and code size reduction
+            scopeCapture: true,
             xvdl: {
                 resolver: {
                     template: requireTemplate,
@@ -60,8 +66,14 @@ function Processor(userConfig) {
         var requireCall = codegen.call({
                 fn: config.module.require,
                 args: dependencyReference
-            }),
-            assignment = variableName + " = " + requireCall;
+            });
+
+        if (config.scopeCapture) {
+            // add capture to require call
+            requireCall = xvdlCompiler.apicall(API.depend,[config.module.exportVar, requireCall, dependencyReference]);
+        }
+
+        var assignment = variableName + " = " + requireCall;
 
         if (config.lazy) {
             // generates something like "foo = require("foo.xml.module.js")"
@@ -103,6 +115,8 @@ function Processor(userConfig) {
             return config;
 
         extend(true, config, userConfig);
+
+        config.xvdl.scopeCapture = config.scopeCapture;
 
         if (!xvdlCompiler) {
             xvdlCompiler = new (xvdl.Compiler)(config.xvdl);

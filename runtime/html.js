@@ -12,6 +12,7 @@ var commons = require("./../commons.js"),
     isComposit = commons.is.composit;
 
 var TEXT = commons.constant.TEXT,
+    COMMENT = commons.constant.COMMENT,
     ATTR = commons.constant.ATTR,
     CLEAREST = commons.constant.CLEAREST;
 
@@ -36,7 +37,11 @@ function html(o, tag) {
     }
 
     if (tag !== undefined && tag !== TEXT) {
-        head = '<' + tag;
+        if (tag === COMMENT) {
+            head = '<!-- ';
+        } else {
+            head = '<' + tag;
+        }
     }
 
     if (isValue(o)) {
@@ -95,12 +100,21 @@ function html(o, tag) {
 
     // close tags
 
-    if (head !== undefined)
-        if (body !== undefined) {
-            head += '>';
-            body += '</' + tag + '>';
+    if (head !== undefined) {
+        if (tag !== COMMENT) {
+            if (body !== undefined) {
+                head += '>';
+                body += '</' + tag + '>';
+            }
+            else head += '/>';
         }
-        else head += '/>';
+        else {
+            if (body !== undefined) {
+                body += ' -->';
+            }
+            else head += ' -->';
+        }
+    }
 
     // assembly output
 

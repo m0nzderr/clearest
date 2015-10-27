@@ -28,6 +28,11 @@ describe("runtime library / html", function () {
 
         });
 
+        test("comments", function () {
+            equal(html({'!': 'foo'}), '<!-- foo -->', 'comment node');
+            equal(html({'!': {foo:''}}), '<!-- <foo></foo> -->', 'comment element');
+        });
+
         test("plain objects", function () {
 
             equal(html({foo: 'bar'}), '<foo>bar</foo>', '1 value property');

@@ -13,6 +13,7 @@ var Processor = require('./processor');
 var Renderer = require('./renderer');
 var interpreter = require('eval');
 var extend = require('extend');
+var File = require('vinyl');
 var codegen = require('./codegen');
 var path = require('path');
 var fs =require('fs');
@@ -101,6 +102,7 @@ module.exports = {
                     name: config.pageName(file.relative)
                 }
             },
+            boot: "clearest/browser/boot",
             pageName: function (moduleUrl) {
                 return moduleUrl.replace(/\.tpl\.js$/, '');
             },
@@ -117,6 +119,9 @@ module.exports = {
             }
         }, userConfig);
 
+
+        config.renderer.boot = config.boot;
+
         var staticRenderer = new Renderer(config.renderer);
 
         /* istanbul ignore next */
@@ -131,7 +136,7 @@ module.exports = {
 
             var streams = {}, pipe = this;
 
-            function appender(name, content) {
+            function append(name, content) {
                 if (!streams[name]) {
 
                     pipe.push(
@@ -165,7 +170,7 @@ module.exports = {
                 file.path = config.outputHtml(file.path);
                 // TODO: provide means for caching
                 // TODO: maybe require(file.path) will be better?
-                var templateModule;
+               var templateModule;
                 if (config.useRequire && fs.existsSync(originalPath)) {
                     // if file belongs to filesystem, use more efficient way: just require it dynamically
                     templateModule = require(originalPath);
@@ -184,9 +189,13 @@ module.exports = {
 
             try {
                 var output = staticRenderer.render(
-                    config.context(file),
+                    /*
+                    decoder.write(file.contents),
+                    originalPath,*/
+                    originalPath,
                     templateModule,
-                    appender);
+                    config.context(file),
+                    append);
 
                 if (config.verbose)
                     config.log(file, (new Date()) - start);

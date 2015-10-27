@@ -10,13 +10,14 @@
 ### <t:context [@*]> ... </t:context>
 
 !### < t:control/>
-### < t:control> ... </t:control>
+### < t:control @*> ... </t:control>
 
 ### <t:get [@*]/>
 ### <t:get [@*]> ... </t:get>
 
 !### t:catch [@from]
 ### < t:fragment [@env:*] [/]>
+### < t:comment [@env:*] [/]>
 ### <t:if @test|@exist [@from]>[< t:then >][< t:else >]
 !### @t:*
 

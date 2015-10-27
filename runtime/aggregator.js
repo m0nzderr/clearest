@@ -60,7 +60,7 @@ var commons = require("./../commons"),
     isIncomplete = is.incomplete,
     isFun = is.fun,
     each = commons.each,
-    in_ = commons._in;
+    in_ = commons.inside;
 
 var TEXT = commons.constant.TEXT,
     ATTR = commons.constant.ATTR,

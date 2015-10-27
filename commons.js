@@ -14,6 +14,7 @@ var constant = {
     CLEAREST: '__clearest__',
     ATTR: '@',
     TEXT: '$',
+    COMMENT: '!',
     ANY: '*'
 };
 
@@ -87,7 +88,7 @@ function fin(f, o, defaultValue) {
  * @private
  */
 
-function _in(o) {
+function inside(o) {
     return (o.__clearest__ !== undefined) ? o.__clearest__ : (o.__clearest__ = {});
 }
 
@@ -164,8 +165,8 @@ function subscribe(o, k, observer) {
         isValue(o))
         return;
 
-    var h_ = _in(observer),
-        o_ = _in(o),   // get clearest objects inside handler and o
+    var h_ = inside(observer),
+        o_ = inside(o),   // get clearest objects inside handler and o
         obs = h_.obs = h_.obs || [], // list observables
         sub = o_.sub = o_.sub || {}; // subscribers by key
 
@@ -337,7 +338,7 @@ function send(o, values, data) {
 module.exports = {
     is: is,
     fin: fin,
-    _in: _in,
+    inside: inside,
     each: each,
     constant: constant,
     promise: promise,

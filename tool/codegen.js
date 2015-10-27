@@ -16,7 +16,7 @@ var ECMA5_IDENTIFIER_REGEXP = /^(?!(?:do|if|in|for|let|new|try|var|case|else|enu
 function interpolate(string, o, defaultValue) {
     if (defaultValue === undefined)
         defaultValue = "";
-    return string.replace(/\$([\w]*)/g,
+    return string.replace(/\$([^$]*)\$/g,
         function (a, b) {
             var r = o[b];
             return r === undefined ? defaultValue : r;
@@ -34,8 +34,8 @@ function isValidIdentifier(id){
 
 function call(o) {
     return interpolate(is(o.context) ?
-        "($fn).call($context,$args)" :
-        "$fn($args)", o);
+        "($fn$).call($context$,$args$)" :
+        "$fn$($args$)", o);
 }
 
 
@@ -84,25 +84,25 @@ function object(o, v) {
         return s;
     }
     else {
-        return interpolate((is(o) && is(v) ? "{$k:$v}" : "{}"), {k: propname(o), v: v});
+        return interpolate((is(o) && is(v) ? "{$k$:$v$}" : "{}"), {k: propname(o), v: v});
     }
 
 }
 
 function iff(o) {
-    return interpolate("$cond?$then:$else", o, "undefined");
+    return interpolate("$cond$?$then$:$else$", o, "undefined");
 }
 
 function closure(o) {
     return interpolate(
         (is(o.call) ? "(" : "")
-        + "function($args){"
+        + "function($args$){"
         + (is(o.strict) ? "\"use strict\" " : "")
-        + (is(o.vars) ? "var $vars;" : "")
-        + (is(o.body) ? (is(o.ret)?"$body;":"$body") : "")
-        + (is(o.ret) ? "return $ret" : "")
+        + (is(o.vars) ? "var $vars$;" : "")
+        + (is(o.body) ? "$body$": "")
+        + (is(o.ret) ? "return $ret$" : "")
         + "}"
-        + (is(o.call) ? ")($call)" : "")
+        + (is(o.call) ? ")($call$)" : "")
         , o);
 }
 

@@ -9,17 +9,81 @@ var commons = require("./../commons"),
     is = commons.is,
     isValue = is.value,
     isArray = is.array,
+    isFunction = is.fun,
+    inside = commons.inside,
+    isClearest= is._,
     isIncomplete = is.incomplete,
     isPromise = is.promise,
     each = commons.each,
-    promise = commons.promise,
+    promise = commons.promise;
+
+
+var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
+    ID_SEPARATOR = '-',
     CLEAREST = commons.constant.CLEAREST;
 
 /**
  * Basic Runtime API
  * This API implements core behavior of XVDL instructions
  */
-function Api() {}
+function Api() {
+
+    var components = this.components = [];
+    var counter = {}, widgetId;
+
+    // generates unique id for a component
+    function componentId(o, k) {
+        var id = o[ID_ATTRIBUTE];
+
+        if (!id) {
+            // use widget id first
+            if (!k) {
+                id = widgetId;
+            }else {
+                // generete id on the fly
+                if (counter[k] === undefined)
+                    counter[k] = 0;
+                id = (widgetId? (widgetId + ID_SEPARATOR):'') + k + (++counter[k]);
+            }
+            o[ID_ATTRIBUTE] = id;
+        }
+        return id;
+    }
+    // some common implementation parts
+
+    // scans o for control code popullating components, biding to events, etc.
+    function _scan(o, prefix) {
+        if (o === undefined
+            || o === null
+            || isValue(o)
+            || isFunction(o)
+        ) return; // skip
+
+        // todo: subscribe th changes in o
+
+        if (isClearest(o)) {
+            var ctl = inside(o).ctl;
+            if (ctl) {
+                components.push({
+                    id: componentId(o, prefix),
+                    init: ctl
+                })
+            }
+        }
+
+        for (var k in o) {
+            if (k !== CLEAREST && k) {
+                each(o[k], function (o) {
+                    _scan(o, k);
+                })
+            }
+        }
+    }
+
+    this._scan=_scan;
+    this._setId=function(id){ widgetId = id;}
+    this._getId=function(id){ return widgetId;}
+}
 
 // --- functions to be implemented for dynamic behavior ---
 /**
@@ -47,7 +111,7 @@ Api.prototype._promiseComplete = function (o) {
  * @param handler
  */
 /* istanbul ignore next */
-Api.prototype.obs = function (o, k, handler) {/* istanbul ignore next */ return abstract();}
+Api.prototype.obs = function (o, k, handler) {/* istanbul ignore next */ throw "abstract method";}
 
 /**
  * Supposed to return a controller that handles view events
@@ -56,16 +120,38 @@ Api.prototype.obs = function (o, k, handler) {/* istanbul ignore next */ return 
  * @param handler
  */
 /* istanbul ignore next */
-Api.prototype.on = function (event, handler) {/* istanbul ignore next */ return abstract();}
+Api.prototype.on = function (event, handler) {/* istanbul ignore next */ throw "abstract method";}
 
 /**
- * Supposed to return a controller that creates a widget
- * @param template
- * @param context
-  */
+ * Instantiates a widget
+ * @param {function} template
+ */
 /* istanbul ignore next */
-Api.prototype.wid = function (template, context) {/* istanbul ignore next */ return abstract();}
+Api.prototype.wid = function (templateFunction, context) {/* istanbul ignore next */ throw "abstract method";}
 
+/**
+ * By default implementation, returns a control function with bound scope (curried)
+ * @param {function} ctl
+ * @param {array} scope
+ */
+/* istanbul ignore next */
+Api.prototype.ctl = function(ctl, scope){
+    return function(){
+        return ctl.apply(this, scope);
+    }
+};
+
+/**
+ * Used to wrap depencency resolution for tracking/caching.
+ * Default implementation does nothing.
+ * @param {*} dependent object
+ * @param {*} dependency object
+ * @param {string} source
+ */
+/* istanbul ignore next */
+Api.prototype.dep = function (dependent, dependency, source) {
+    return dependency;
+}
 
 // --- core functions called by template code ---
 /**

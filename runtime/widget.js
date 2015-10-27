@@ -21,16 +21,11 @@ var Api = require("./api"),
     isFunction = commons.is.fun,
     isValue= commons.is.value,
     isClearest = commons.is._,
-    _in =commons._in;
+    _in =commons.inside;
 
-
-var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
-    ID_SEPARATOR = '-',
-    CLEAREST = commons.constant.CLEAREST;
 
 //Inherit core API implementation
 commons.inherit(Widget, Api);
-
 /**
  * @param {Builder} builder
  * @param template
@@ -38,33 +33,13 @@ commons.inherit(Widget, Api);
  * @constructor
  */
 function Widget(builder, template, context) {
+
+    Widget.super(this);
+
     var widget = this,
-        view, widgetId;
+        view, components = this.components;
 
     // ---------------- private ----------------------------------------
-    var components = [];
-    var counter = {};
-
-    // generates unique id for a component
-    function componentId(o, k) {
-        var id = o[ID_ATTRIBUTE];
-
-        if (!id) {
-            if (!k) {
-                // use widget id
-                id = widgetId;
-            }
-            else {
-                // generete id on the fly
-                if (counter[k] === undefined)
-                    counter[k] = 0;
-                id = widgetId + ID_SEPARATOR + k + (++counter[k]);
-            }
-            o[ID_ATTRIBUTE] = id;
-        }
-        return id;
-    }
-
     function _buildComponents(o) {
         var queue = [];
 
@@ -113,34 +88,7 @@ function Widget(builder, template, context) {
         components.length = 0;
     }
 
-    // scans o for control code popullating components, biding to events, etc.
-    function _scan(o, prefix) {
-        if (o === undefined
-            || o === null
-            || isValue(o)
-            || isFunction(o)
-        ) return; // skip
 
-        // todo: subscribe th changes in o
-
-        if (isClearest(o)) {
-            var ctl = _in(o).ctl;
-            if (ctl) {
-                components.push({
-                    id: componentId(o, prefix),
-                    init: ctl
-                })
-            }
-        }
-
-        for (var k in o) {
-            if (k !== CLEAREST && k) {
-                each(o[k], function (o) {
-                    _scan(o, k);
-                })
-            }
-        }
-    }
 
     // updates widget view and its components
     function _update(presentation) {
@@ -151,7 +99,7 @@ function Widget(builder, template, context) {
 
         //TODO: optimize, by adding callback to html() renderer
         // extract components from generated view, hook-up to change events, etc.
-        _scan(presentation, false);
+        widget._scan(presentation, false);
 
         builder.render(view, presentation);
 
@@ -174,7 +122,7 @@ function Widget(builder, template, context) {
     this.build = function (targetView) {
         //TODO: check progress state
         view = targetView;
-        widgetId = builder.getId(view);
+        widget._setId( builder.getId(view));
         // generate presentation and update view
         var presentation =template(this, this.agg, context);
         return promise( presentation ).then(_update,_abort);
@@ -191,14 +139,23 @@ function Widget(builder, template, context) {
     };
 
     // ------------ api implementation -----------------------------------
-    this.wid = function (template) {
-        // context is passed at compile time
-        return new Widget(builder, template);
+    this.wid = function (template, context) {
+        // control function
+        return function(){
+            // evaluate context within new widget
+            if (isFunction(context)) {
+                return new Widget(builder, function(P,S){ return P.get(template,[P,S,context(P,S)])});
+            }
+            else {
+                return new Widget(builder, template,context);
+            }
+        }
     };
-
-    //TODO: implement .on
-    //TODO: implement .obs
-    //TODO: implement .process
 }
+
+//TODO: implement .on
+//TODO: implement .obs
+//TODO: implement .ctl
+//TODO: implement .process
 
 module.exports = Widget;

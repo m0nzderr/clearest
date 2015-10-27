@@ -52,7 +52,7 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('{foo:S({"@bar":" qux ","@qux":"dox"},{bar:0})}');
     });
 
-    it("t:fragment", function () {
+    it("t:fragment and t:comment", function () {
 
         var compiler = new Compiler({symbol: {empty: '0', aggregator: 'S'}});
 
@@ -66,6 +66,12 @@ describe('tool / xvdl instructions', function () {
         compiler.configure({environment: {build: {target: "cordova"}}});
         compiler.compile(dom.parseFromString('<t:fragment env:build.target="cordova">bar</t:fragment>'))
             .should.be.exactly('"bar"');
+
+        compiler.configure({environment: {build: {target: "cordova"}}});
+        compiler.compile(dom.parseFromString('<t:comment env:build.target="cordova">bar</t:comment>'))
+            .should.be.exactly('{"!":"bar"}');
+
+
 
     });
 
@@ -102,6 +108,9 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<foo e:click="{return boom(gas2)}">bar</foo>'))
             .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
 
+        // scope separation
+        compiler.compile(dom.parseFromString('<t:control myvar="bar">return myvar</t:control>'))
+            .should.be.exactly('S(P.ctl(function(myvar){return myvar},[bar]))');
 
     });
 
@@ -134,19 +143,24 @@ describe('tool / xvdl instructions', function () {
     it("w:* (external)", function () {
         //TODO: @w:* (widget attributes)
         // implicit context
+        //FIXME: implement scope separation
         compiler.compile(dom.parseFromString('<w:foo template="bar"/>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return P.use(bar,$context)})})})');
+            .should.be.exactly('S({foo:S(P.wid(bar,$context))})');
 
         // explicit context
         compiler.compile(dom.parseFromString('<w:foo template="bar"><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return P.use(bar,{bar:0})})})})');
+            .should.be.exactly('S({foo:S(P.wid(bar,function(P,S){return {bar:0}}))})');
     });
 
     it("w:* (inline)", function () {
         //TODO: @w:* (widget attributes)
         // implicit context
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S(function(){return P.wid(function(P){return {bar:0}})})})');
+            .should.be.exactly('S({foo:S(P.wid(function(P,S,$context){return {bar:0}},$context))})');
+
+        // implicit context should also switch
+        compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'),{$context:"foo"})
+            .should.be.exactly('S({foo:S(P.wid(function(P,S,foo){return {bar:0}},foo))})');
     });
 
     it("t:context", function () {
@@ -173,8 +187,6 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<t:get foo="bar" bar="mar"> </t:get>'))
             .should.be.exactly('S(P.get(function(foo,bar){return " "},[bar,mar]))');
     });
-
-
 
 
     it("s:*", function () {

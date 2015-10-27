@@ -17,12 +17,13 @@ var qunit = require("./shim/qunit"),
     promise = commons.promise,
     inherit = commons.inherit,
     is = commons.is,
-    _in = commons._in,
+    _in = commons.inside,
     fin = commons.fin,
     each = commons.each,
     subscribe = commons.subscribe,
     unsubscribe = commons.unsubscribe,
-    notify = commons.notify;
+    notify = commons.notify,
+    CLEAREST = commons.constant.CLEAREST;
 
 
 describe("runtime library / commons", function () {

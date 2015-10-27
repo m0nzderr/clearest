@@ -29,7 +29,7 @@ describe('#processor', function () {
             var processor = new Processor();
             var moduleCode = processor.compile('<t:fragment><t:require dep1="./fixtures/2/dependency"/><t:script>return dep1()</t:script></t:fragment>');
             var template = interpreter(moduleCode, {require: require});
-            template({}, aggregator, 0).should.be.exactly(dep1());
+            template(new Api(), aggregator, 0).should.be.exactly(dep1());
         });
 
         //TODO:

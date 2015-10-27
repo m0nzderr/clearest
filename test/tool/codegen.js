@@ -21,7 +21,7 @@ describe('#codegen', function () {
             args: "foo",
             call: "bar",
             vars: "a,b,c",
-            body: "c=c+b",
+            body: "c=c+b;",
             ret: "a+b+c"
         }).should.be.exactly("(function(foo){var a,b,c;c=c+b;return a+b+c})(bar)");
     });
