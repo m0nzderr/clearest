@@ -163,11 +163,10 @@ function Renderer(userConfig) {
         if (source.match(/^\./)) {
             var rq = inside(dependent).require;
             var root = rq.root || (path.dirname(path.resolve(rq.path.replace(sepNormalizerRe,path.sep))) );
-            var base = + path.sep ? path.dirname(rq.abs) : root ;
+            var base = rq.abs ? path.dirname(rq.abs) : root ;
             var abs = path.resolve( base , source.replace(sepNormalizerRe,path.sep));
             var rel = "./"+path.relative(root, abs).replace(sepFixerRe,"/");
-
-            console.log("resolved: ", source, "to", rel, "as", abs, " @ ",base);
+            //console.log("resolved: ", source, "to", rel, "as", abs, " @ ",base);
             //relative
             inside(dependency).require = {
                 root: root,
