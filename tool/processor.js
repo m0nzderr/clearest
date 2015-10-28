@@ -39,9 +39,7 @@ function Processor(userConfig) {
                 var base = path.dirname(config.currentLocation || "./");
                 return path.resolve(base, templateLocation) === path.resolve(config.currentLocation || "./");
             },
-            outputFile: function (templateLocation) {
-                return templateLocation.replace(/^(.*)\.xml$/, '$1.tpl.js');
-            },
+            rename: [/^(.*)\.xml$/,'$1.tpl.js'],
             module: {
                 lazy: true, // lazy loading in order to allow circular dependencies
                 preface: "/** This is automatically generated code. Any changes may be lost **/\n",
@@ -60,6 +58,11 @@ function Processor(userConfig) {
         compIndex = 0;
     }
 
+    function outputFilename(templateLocation) {
+        return templateLocation.replace(config.rename[0], config.rename[1]);
+    }
+
+    this.outputFilename = outputFilename;
 
     function declareDependency(variableName, dependencyReference) {
 
@@ -95,7 +98,7 @@ function Processor(userConfig) {
         }
         else {
             compIndex++;
-            return requireModule(config.module.component + compIndex, config.outputFile(url));
+            return requireModule(config.module.component + compIndex, outputFilename(url));
         }
     }
 

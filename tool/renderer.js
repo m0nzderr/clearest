@@ -78,7 +78,8 @@ function Renderer(userConfig) {
     // configuration
     var config = {
         doctype: '<!DOCTYPE html>\n',
-        boot: 'clearest/browser/boot'
+        boot: 'clearest/browser/boot',
+        bootstrap:".bundle.js" // suffix for the bootrstrap bundle code output
     };
     (this.configure = function (userConfig) {
         if (userConfig === undefined)
@@ -147,9 +148,8 @@ function Renderer(userConfig) {
                     args: codegen.string(config.boot)
                 })
             });
-
             // store bootrstap code
-            append("bundle.js", boot);
+            append(config.bootstrap, boot);
         }
         //TODO: deal with promises
         return config.doctype + html(presentation);
