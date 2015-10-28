@@ -8,22 +8,27 @@
  * Gulp-fiendly streaming interface
  */
 "use strict";
+// node
 var through = require('through2');
-var commons = require('../commons');
-var promise = commons.promise;
-var Processor = require('./processor');
-var Renderer = require('./renderer');
+var path = require('path');
+var fs = require('fs');
+var stream = require('stream');
+var StringDecoder = require('string_decoder').StringDecoder;
+// libs
 var interpreter = require('eval');
 var extend = require('extend');
 var File = require('vinyl');
-var codegen = require('./codegen');
 var streamify = require('stream-array');
-var stream = require('stream');
-var path = require('path');
-var fs = require('fs');
-var StringDecoder = require('string_decoder').StringDecoder;
+var gutil = require('gulp-util');
+
+// project
+var commons = require('../commons');
+var Processor = require('./processor');
+var Renderer = require('./renderer');
+var codegen = require('./codegen');
 
 //TODO: pick encoding from sources instead of hard-coded utf8
+var promise = commons.promise;
 var decoder = new StringDecoder("utf8");
 
 function pipe(processBuffer) {
@@ -37,12 +42,11 @@ function pipe(processBuffer) {
             throw new Error('streaming is not supported');
         }
         if (file.isBuffer()) {
-            promise(processBuffer.call(this, file)).then(
+            promise.resolve(processBuffer.call(this, file)).then(
                 function (file) {
                     cb(null, file);
                 },
                 function (err) {
-                    console.log("reject:" + err);
                     cb(err, null);
                 });
         }
@@ -58,12 +62,14 @@ module.exports = {
             processor: {
                 // default compiler settings
             },
-            verbose: false,
+            verbose: true,
             log: function (file, msec) {
-                console.log("compiling: " + file.relative + "(" + msec + "ms)");
+                gutil.log(gutil.colors.green("Compiling"), gutil.colors.cyan(file.relative), " in ", gutil.colors.magenta(msec), "ms");
             },
             error: function (file, error) {
-                console.log("error compiling " + file.relative + ":", error);
+                //gutil.log(gutil.colors.red('Error (' + error.plugin + '): ' + error.message));
+                throw new gutil.PluginError("clearest.compiler", error);
+                //console.log("error compiling " + file.relative + ":", error);
                 //FIXME: only print stack if error is runtime, for exceptions (like parsing error) show only error message
                 //if (error.stack)
                 //    console.log(stack);
@@ -105,7 +111,7 @@ module.exports = {
         /* istanbul ignore next */
         var config = extend(true, {
             renderer: {},
-            verbose: false,
+            verbose: true,
             useRequire: true,
             useInterpreter: true,
             boot: "clearest/browser/boot",
@@ -119,12 +125,10 @@ module.exports = {
                 }
             },
             log: function (file, msec) {
-                console.log("rendering: " + file.relative + "(" + msec + "ms)");
+                gutil.log(gutil.colors.green("Rendering"), gutil.colors.cyan(file.relative), " in ", gutil.colors.magenta(msec), "ms");
             },
             error: function (file, error) {
-                console.log("error rendering " + file.relative + ":", error);
-                if (error.stack)
-                    console.log(error.stack);
+                throw new gutil.PluginError("clearest.compiler", error, {showStack: true});
             }
         }, userConfig);
 
@@ -192,7 +196,7 @@ module.exports = {
                 }
             }
 
-            function wrapFile(data){
+            function wrapFile(data) {
                 if (data.path && data.relative) {
                     // looks like vinyl file, we can use it
                     return data;
@@ -209,27 +213,34 @@ module.exports = {
 
             function filterStream(file, filter) {
                 var def = promise.defer();
-                console.log("stram in:",file.path);
                 streamify([file]).pipe(filter).on('data', function (file) {
-                    console.log("stram out:",file.path);
                     def.resolve(file);
                 }).on('error', function (reason) {
                     def.reject(reason)
                 });
                 return def.promise
-                          .then(wrapFile.bind(file));
+                    .then(wrapFile.bind(file));
             }
 
             function filterFunction(file, filter) {
                 if (filter.length === 1) { // function(file) {... return file or promise;}
-                    return promise(filter(file)).then(wrapFile.bind(file));
+                    return promise.resolve(filter(file)).then(wrapFile.bind(file));
                 }
                 else if (filter.length === 2) {// function(file,cb) { .... cb(err,file)
-                    return promise.nfcall(filter, file).then(wrapFile.bind(file));
+                    //.nfcall(filter, file)
+                    return (new Promise(function(resolve,reject){
+                                filter(file,function(err,file){
+                                    if (err) {
+                                        reject(err);
+                                    }
+                                    else
+                                        resolve(file);
+                                })
+                            })).then(wrapFile.bind(file));
                 }
             }
 
-            function getFilter(file, filter){
+            function getFilter(file, filter) {
                 if (!filter)
                     return;
 
@@ -273,7 +284,7 @@ module.exports = {
                 // flush appendices/filters
                 appendix.forEach(function (file) {
                     var filter = getFilter(file, config.filter);
-                    var job = filter ? applyFilter(file, filter ): false;
+                    var job = filter ? applyFilter(file, filter) : false;
                     if (job) {
                         jobs.push(job.then(push));
                     }
@@ -288,7 +299,7 @@ module.exports = {
                 else {
                     // wait for jobs to complete
                     var def = promise.defer();
-                    promise.all(jobs).finally(function () {
+                    promise.all(jobs).done(function () {
                         def.resolve(file);
                     });
                     return def.promise;
@@ -326,10 +337,8 @@ module.exports = {
 
             if (config.verbose)
                 config.log(file, (new Date()) - start);
-            // put rendered output
-            // file.contents = new Buffer(output, 'utf8');
+            // add rendered output
             append(config.output, new Buffer(output, 'utf8'));
-
             return flush(null);
         });
     }

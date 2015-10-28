@@ -8,6 +8,7 @@
 /**
  * Promises implementation
  */
+//var promise = require("bluebird");
 var promise = require("q");
 
 var constant = {
@@ -35,7 +36,8 @@ var is_ = function (o) {
             return t === 'string' || t === 'number' || t === 'boolean';
         },
         promise: function (o) {
-            return o !== undefined && o !== null && is.fun(o.then) && is.fun(o.done);
+            // weak-sense promise (thenable)
+            return o !== undefined && o !== null && typeof o.then === 'function'; //&& is.fun(o.done);
         },
         composit: function (o) {
             return is_(o) && o.__clearest__.seq !== undefined;
@@ -333,7 +335,6 @@ function send(o, values, data) {
         notify(o, k, data === undefined ? v : data);
     }
 }
-
 
 module.exports = {
     is: is,

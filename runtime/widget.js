@@ -19,9 +19,9 @@ var Api = require("./api"),
     fin = commons.fin,
     isPromise = commons.is.promise,
     isFunction = commons.is.fun,
-    isValue= commons.is.value,
+    isValue = commons.is.value,
     isClearest = commons.is._,
-    _in =commons.inside;
+    _in = commons.inside;
 
 
 //Inherit core API implementation
@@ -40,7 +40,7 @@ function Widget(builder, template, context) {
         view, components = this.components;
 
     // ---------------- private ----------------------------------------
-    function _buildComponents(o) {
+    function _buildComponents() {
         var queue = [];
 
         components.forEach(function (comp, index) {
@@ -48,7 +48,7 @@ function Widget(builder, template, context) {
             var componentView = builder.getView(comp.id, view);
             var destroy = [];
             // initialize controllers
-            each(comp.init,function(init) {
+            each(comp.init, function (init) {
                 //TODO: specify which arguments shoule be passed to controller
                 var ctl = init.call(componentView, widget);
                 if (ctl && ctl.build) {
@@ -62,7 +62,7 @@ function Widget(builder, template, context) {
                     }
                 }
             });
-            components[index]=destroy;
+            components[index] = destroy;
         });
 
         if (queue.length > 0) {
@@ -71,17 +71,19 @@ function Widget(builder, template, context) {
             promise.all(queue)
                 //TODO: check if failure chain must be considered
                 .finally(function () {
+                    toc('init');
                     def.resolve(widget);
                 });
             return def.promise;
-        }
+        } else
+            toc('init');
 
         return widget;
     }
 
     function _destroyComponents() {
         // destroy components
-        each(components,function (controller) {
+        each(components, function (controller) {
             controller.destroy();
         });
         // clearn up list
@@ -89,10 +91,29 @@ function Widget(builder, template, context) {
     }
 
 
+    // boot implementation
+    function _start(_bootComponents) {
+        tic('init');
+        if (_bootComponents !== undefined) {
+            // boot
+            _bootComponents.forEach(function (o) {
+                for (var k in o) {
+                    components.push({
+                        id: k,
+                        init: o[k]
+                    })
+                }
+            });
+        }
+        return _buildComponents();
+    }
+
+    this.start =_start;
 
     // updates widget view and its components
     function _update(presentation) {
         //TODO: check progress state
+
 
         // remove existing components
         _destroyComponents();
@@ -103,14 +124,26 @@ function Widget(builder, template, context) {
 
         builder.render(view, presentation);
 
+        toc('render');
+
         // asynchronously build new components
-        return _buildComponents();
+        return _start();
     }
 
-    function _abort(error){
+    function _abort(error) {
         console.log("widget build aborted due to unexpected error");
         console.log(error, error.stack);
         console.log(promise.getUnhandledReasons());
+    }
+
+    var t={};
+    function tic(k) {
+        t[k]= (new Date());
+    }
+
+    function toc(k) {
+        t[k] = (new Date()) - t[k];
+        //console.log("#" + (widget._getId() || '*') + ':'+k+" in " + t[k] + " msec.");
     }
 
     //--------------- component interface implementation -------------------
@@ -119,14 +152,28 @@ function Widget(builder, template, context) {
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
+
+
+
     this.build = function (targetView) {
         //TODO: check progress state
+
+        tic('render');
         view = targetView;
-        widget._setId( builder.getId(view));
+        widget._setId(builder.getId(view));
         // generate presentation and update view
-        var presentation =template(this, this.agg, context);
-        return promise( presentation ).then(_update,_abort);
+        var presentation = template(this, this.agg, context);
+
+        // use promises only when needed, that runs faster
+        if (isPromise(presentation))
+            return promise.resolve(presentation)
+                .then(_update, _abort)
+        else {
+            return _update(presentation);
+        }
+
     };
+
 
     /**
      * Destroys a view
@@ -141,13 +188,15 @@ function Widget(builder, template, context) {
     // ------------ api implementation -----------------------------------
     this.wid = function (template, context) {
         // control function
-        return function(){
+        return function () {
             // evaluate context within new widget
             if (isFunction(context)) {
-                return new Widget(builder, function(P,S){ return P.get(template,[P,S,context(P,S)])});
+                return new Widget(builder, function (P, S) {
+                    return P.get(template, [P, S, context(P, S)])
+                });
             }
             else {
-                return new Widget(builder, template,context);
+                return new Widget(builder, template, context);
             }
         }
     };

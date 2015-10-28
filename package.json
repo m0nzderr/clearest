@@ -1,6 +1,6 @@
 {
-  "name": "clearest",
-  "version": "0.0.3",
+  "rename": "clearest",
+  "version": "0.0.4",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {

@@ -47,7 +47,7 @@ describe("runtime library / widget",function(){
     describe("renderer", function(){
         it("should render some elements",function(){
             var widget = make("<foo>Hello World</foo>");
-            return widget.build(browser.getView("myId")).then(function(){
+            return promise.resolve(widget.build(browser.getView("myId"))).then(function(){
                    browser.getContent("myId").should.be.exactly("<foo>Hello World</foo>");
             });
         });
@@ -56,7 +56,7 @@ describe("runtime library / widget",function(){
     describe("component model", function(){
         it("should execute controller code",function(){
             var widget = make("<foo><t:control>this.tested=true;</t:control><bar><t:control>this.tested=true;</t:control></bar>Hello World</foo>");
-            return widget.build(browser.getView("app"))
+            return promise.resolve(widget.build(browser.getView("app")))
                 .then(function(){
                     expect( browser.getView("app-foo1").tested).to.be.ok;
                     expect( browser.getView("app-bar1").tested).to.be.ok;
@@ -66,12 +66,12 @@ describe("runtime library / widget",function(){
         it("should build and destroy components",function(){
             var widget = make("<foo><t:control>return {build:function(el){this.el=el; el.built=true;},destroy:function(){this.el.destroyed=true;}}</t:control>" +
                 "<bar><t:control>return {build:function(el){this.el=el; el.built=true;},destroy:function(){this.el.destroyed=true;}}</t:control></bar>Hello World</foo>");
-            return widget.build(browser.getView("app"))
+            return promise.resolve(widget.build(browser.getView("app")))
                 .then(function(widget){
                     expect( browser.getView("app-foo1").built).to.be.ok;
                     expect( browser.getView("app-bar1").built).to.be.ok;
                     return widget;
-                }).post('destroy').then(function(){
+                }).then(function(widget){  return widget.destroy()}).then(function(){
                     expect( browser.getView("app-foo1").destroyed).to.be.ok;
                     expect( browser.getView("app-bar1").destroyed).to.be.ok;
                 });
@@ -79,7 +79,7 @@ describe("runtime library / widget",function(){
 
         it("should instantiate and build other widgets",function(){
             var widget = make("<w:foo><w:bar><t:control>this.widget=arguments[0];</t:control>Hello World</w:bar></w:foo>");
-            return widget.build(browser.getView("app"))
+            return promise.resolve(widget.build(browser.getView("app")))
                 .then(function(widget){
                     expect( browser.getView("app-foo1-bar1").widget).to.be.ok;
                     return widget;

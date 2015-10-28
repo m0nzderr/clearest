@@ -20,14 +20,13 @@ commons.inherit(DomBuilder, Builder)
 
 /* istanbul ignore next */
 function DomBuilder(document) {
-
     this.render = function (view, presentation) {
         // this is it
         view.innerHTML = html(presentation);
     };
-
-    this.getView = getElementById;
-
+    this.getView = function (id) {
+        return document.getElementById(id);
+    }
     this.getId = function (view) {
         return view.getAttribute("id");
     }

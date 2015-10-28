@@ -25,7 +25,7 @@ describe("runtime library / core api", function () {
         it("but also resolving promises", function () {
             return api.get(function (x, y, z) {
                 return x + 2 * y - z;
-            }, [1, promise(2).delay(30), 3]).then(function (result) {
+            }, [1, promise.resolve(2).delay(30), 3]).then(function (result) {
                 expect(result).to.be.equals(2);
             });
         });
@@ -47,9 +47,9 @@ describe("runtime library / core api", function () {
             var result = api.use(function (api, agg, context) {
                 called = true;
                 expect(context === originalContext).to.be.ok;
-            }, promise(originalContext).delay(1));
+            }, promise.resolve(originalContext).delay(1));
             expect(commons.is.promise(result)).to.be.ok;
-            return commons.promise(result).then(function () {
+            return commons.promise.resolve(result).then(function () {
                 expect(called).to.be.ok;
             })
         });

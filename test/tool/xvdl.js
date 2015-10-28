@@ -181,8 +181,8 @@ describe('tool / xvdl instructions', function () {
 
         expect(function(){compiler.compile(dom.parseFromString('<t:get/>'))}).to.throw(Error);
 
-        compiler.compile(dom.parseFromString('<t:get foo="bar"><t:get foo="foo"/></t:get>'))
-            .should.be.exactly('S(P.get(function(foo){return foo},[bar]))');
+        compiler.compile(dom.parseFromString('<t:get foo="bar"><foo>  <t:get foo="foo"/>  </foo></t:get>'))
+            .should.be.exactly('S(P.get(function(foo){return {foo:foo}},[bar]))');
 
         compiler.compile(dom.parseFromString('<t:get foo="bar" bar="mar"> </t:get>'))
             .should.be.exactly('S(P.get(function(foo,bar){return " "},[bar,mar]))');

@@ -228,7 +228,6 @@ function XvdlCompiler(userConfig) {
                  *
                  * @param node
                  * @param scope
-                 * @returns {string}
                  */
                 fragment: function (acc, node, scope) {
                     var match = true;
@@ -249,7 +248,7 @@ function XvdlCompiler(userConfig) {
                         var flags = {keepMultiples: true};
                         compileChildNodes(acc, node, scope, flags);
 
-                        return flags.hasController;
+                        return flags.needAggregatorCall;
                     }
                 },
                 /**
@@ -261,11 +260,11 @@ function XvdlCompiler(userConfig) {
                  */
                 comment: function( acc, node, scope){
                     var sub = [];
-                    var flag = elementInstructions.template.fragment(sub, node, scope);
+                    var nacFlag = elementInstructions.template.fragment(sub, node, scope);
                     if (sub.length){
-                        acc.push(codegen.object(COMMENT, aggregate(sub, flag)));
+                        acc.push(codegen.object(COMMENT, aggregate(sub, {needAggregatorCall: nacFlag})));
                     }
-                    return flag;
+                    return nacFlag;
                 },
 
                 /**
@@ -358,7 +357,7 @@ function XvdlCompiler(userConfig) {
                         acc.push(conditionExpression);
 
                         // depends on inner content
-                        return flags.hasController;
+                        return flags.needAggregatorCall;
                     } else {
                         // complex condition
 
@@ -708,12 +707,11 @@ function XvdlCompiler(userConfig) {
                         node.localName,
                         aggregate([
                             apicall(API.widget, widgetArguments)
-                        ], true)
+                        ], {needAggregatorCall:true})
                     )
                 );
 
                 // has controller
-                //FIXME: revise return flag
                 return true;
             }
 
@@ -789,23 +787,23 @@ function XvdlCompiler(userConfig) {
 
     function accumulateNodes(acc, nodeSet, scope) {
         //acc = acc || [];
-        var hasController = false;
+        var needAggregatorCall = false;
 
         foreach(nodeSet, function (node) {
-            hasController |= compileElement(acc, node, scope);
+            needAggregatorCall |= compileElement(acc, node, scope);
         });
 
-        return hasController;
+        return needAggregatorCall;
     }
 
     function accumulateAttributes(acc, nodeSet, scope) {
-        var o = {}, hasController = false;
+        var o = {}, needAggregatorCall = false;
         foreach(nodeSet, function (node) {
 
             var attributeInstruction = getInstruction(node);
 
             if (attributeInstruction) {
-                hasController |= attributeInstruction(acc, node, scope);
+                needAggregatorCall |= attributeInstruction(acc, node, scope);
             } else {
                 // basic attribute
                 if (node.nodeName !== "xmlns" && node.nodeName.indexOf("xmlns:") == 0)
@@ -820,11 +818,10 @@ function XvdlCompiler(userConfig) {
         if (Object.keys(o).length != 0)
             acc.push(codegen.object(o));
 
-        return hasController;
+        return needAggregatorCall;
     }
 
-    function aggregate(accumulator, hasController) {
-
+    function aggregate(accumulator, flags) {
         accumulator = accumulator.filter(function (o) {
             // drop empty nodes
             return o != "undefined";
@@ -834,7 +831,10 @@ function XvdlCompiler(userConfig) {
             return config.symbol.empty;
         }
         else {
-            return hasController ? codegen.call({
+            var aggregatorCall = (flags && flags.needAggregatorCall) ||
+                (accumulator.length > 1 && !(flags && flags.keepMultiples));
+
+            return aggregatorCall ? codegen.call({
                 fn: config.symbol.aggregator,
                 args: accumulator.length == 1 ? accumulator[0] : codegen.list(accumulator)
             }) :
@@ -843,15 +843,15 @@ function XvdlCompiler(userConfig) {
     }
 
     function compileChildNodes(acc, node, scope, flags) {
-        var hasController = false;
+        var needAggregatorCall = false;
         if (!(flags && flags.ignoreAttributes)) {
-            hasController |= accumulateAttributes(acc, node.attributes, scope);
+            needAggregatorCall |= accumulateAttributes(acc, node.attributes, scope);
         }
-        hasController |= accumulateNodes(acc, node.childNodes, scope);
-        if (flags && hasController)
-            flags.hasController = true;
+        needAggregatorCall |= accumulateNodes(acc, node.childNodes, scope);
+        if (flags && needAggregatorCall)
+            flags.needAggregatorCall = true;
         //var direct = !hasInstructions && !hasChildrenOfType(node, node.ELEMENT_NODE);
-        return aggregate(acc, (flags && flags.hasController) || (acc.length > 1 && !(flags && flags.keepMultiples)));
+        return aggregate(acc, flags);
     }
 
     function compileElement(acc, node, scope) {
@@ -866,7 +866,7 @@ function XvdlCompiler(userConfig) {
                     compileChildNodes([], node, scope, flags)
                 )
             );
-            return flags.hasController;
+            return flags.needAggregatorCall;
         }
         else if (isText(node)) {
             acc.push(
@@ -909,8 +909,8 @@ function XvdlCompiler(userConfig) {
             throw compilerError("Document must have root element", (xmlDocument.documentElement || xmlDocument));
         }
 
-        var hasController = compileElement(acc, xmlDocument.documentElement, initialScope);
-        return aggregate(acc, hasController || (acc.length > 1));
+        var needAggregatorCall = compileElement(acc, xmlDocument.documentElement, initialScope);
+        return aggregate(acc, {needAggregatorCall:needAggregatorCall || (acc.length > 1)});
     }
 
 }

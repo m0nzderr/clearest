@@ -141,7 +141,7 @@ function Renderer(userConfig) {
                 vars: codegen.list(serializer.vars),
                 ret: apicall(
                     API.start,
-                    initializers
+                    [codegen.array(initializers)]
                 ),
                 call: codegen.call({
                     fn: "require",

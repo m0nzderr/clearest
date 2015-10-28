@@ -82,7 +82,7 @@ describe("tool / static renderer", function () {
                     .trim()
                     .replace(/\s+/g, " ");
 
-                var outputHtml = renderer.render(fixture + "/index.xml", loadedModule, {name: "index"})
+                var outputHtml = renderer.render(fixture + "/index.xml", loadedModule, {rename: "index"})
                     .trim()
                     .replace(/\s+/g, " ");
 
@@ -135,19 +135,19 @@ describe("tool / static renderer", function () {
 
         var modules = {
             boot: {
-                start: function () {
+                start: function (components) {
                     // boot implementation
                     var controllers = [];
                     bootCalled = true;
-                    for (var i = 0, l = arguments.length; i < l; i++) {
-                        var component = arguments[i];
+                    components.forEach(function(component){
                         for (var id in component) {
                             var init = component[id];
                             each(init, function (init) {
                                 controllers.push(init.call(id));
                             });
                         }
-                    }
+                    });
+
                     return controllers;
                 },
                 ctl: Api.prototype.ctl,
