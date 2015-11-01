@@ -1,5 +1,5 @@
 {
-  "rename": "clearest",
+  "name": "clearest",
   "version": "0.0.5",
   "description": "Clearest Framework",
   "main": "index.js",
