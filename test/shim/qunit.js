@@ -4,13 +4,13 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 
-var chai = require("chai"), $q = require("q");
+var chai = require("chai"), promise = require("rsvp");
 var context = {expect: 0, deferred: {}};
 
 module.exports = {
     test: it,
     asyncTest: function (meaning, fn) {
-        context.deferred = $q.defer();
+        context.deferred = promise.defer();
         it(meaning, function () {
             fn();
             return context.deferred.promise;
