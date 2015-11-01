@@ -4,9 +4,17 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 //TODO: rewrite with BDD interface, stop using qunit shim
-var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok, asyncTest = qunit.asyncTest, start = qunit.start, expect = qunit.expect;
+var qunit = require("../shim/qunit.js"),
+    test = qunit.test,
+    deepEqual = qunit.deepEqual,
+    equal = qunit.equal,
+    ok = qunit.ok,
+    asyncTest = qunit.asyncTest,
+    start = qunit.start,
+    expect = qunit.expect;
 
-var $q = require("q"), is = require("../../commons").is,
+var commons = require("../../commons");
+var promise = commons.promise, is = commons.is,
     agg = require("../../runtime/aggregator.js");
 
 describe("runtime library / aggregator", function () {
@@ -69,7 +77,7 @@ describe("runtime library / aggregator", function () {
         asyncTest("aggregation of asynchronous objects (~100ms delayed promises)", function () {
 
             function cook(data) {
-                var def = $q.defer();
+                var def = promise.defer();
                 setTimeout(function () {
                     def.resolve(data)
                 }, Math.round(Math.random() * 100));
@@ -117,7 +125,7 @@ describe("runtime library / aggregator", function () {
 
             expect(jobs.length);
 
-            $q.all(jobs).then(start);
+            promise.all(jobs).then(start);
 
 
         });
