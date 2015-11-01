@@ -71,12 +71,12 @@ function Widget(builder, template, context) {
             promise.all(queue)
                 //TODO: check if failure chain must be considered
                 .finally(function () {
-                    toc('init');
+                    //toc('init');
                     def.resolve(widget);
                 });
             return def.promise;
-        } else
-            toc('init');
+        } //else
+            //toc('init');
 
         return widget;
     }
@@ -93,7 +93,7 @@ function Widget(builder, template, context) {
 
     // boot implementation
     function _start(_bootComponents) {
-        tic('init');
+        //tic('init');
         if (_bootComponents !== undefined) {
             // boot
             _bootComponents.forEach(function (o) {
@@ -124,26 +124,29 @@ function Widget(builder, template, context) {
 
         builder.render(view, presentation);
 
-        toc('render');
+        //toc('render');
 
         // asynchronously build new components
         return _start();
     }
 
     function _abort(error) {
-        console.log("widget build aborted due to unexpected error");
-        console.log(error, error.stack);
-        console.log(promise.getUnhandledReasons());
+        //console.log("widget build aborted due to unexpected error");
+        //console.log(error, error.stack);
+        //console.log(promise.getUnhandledReasons());
     }
 
-    var t={};
+    /*var t={};
     function tic(k) {
         t[k]= (new Date());
     }
 
     function toc(k) {
         t[k] = (new Date()) - t[k];
-        //console.log("#" + (widget._getId() || '*') + ':'+k+" in " + t[k] + " msec.");
+    }*/
+
+    this.stats=function(){
+        return t;
     }
 
     //--------------- component interface implementation -------------------
@@ -152,13 +155,8 @@ function Widget(builder, template, context) {
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
-
-
-
     this.build = function (targetView) {
         //TODO: check progress state
-
-        tic('render');
         view = targetView;
         widget._setId(builder.getId(view));
         // generate presentation and update view

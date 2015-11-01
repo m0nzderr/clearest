@@ -26,6 +26,7 @@ var commons = require('../commons');
 var Processor = require('./processor');
 var Renderer = require('./renderer');
 var codegen = require('./codegen');
+var fixer = require("./fixer");
 
 //TODO: pick encoding from sources instead of hard-coded utf8
 var promise = commons.promise;
@@ -42,62 +43,114 @@ function pipe(processBuffer) {
             throw new Error('streaming is not supported');
         }
         if (file.isBuffer()) {
-            promise.resolve(processBuffer.call(this, file)).then(
-                function (file) {
-                    cb(null, file);
-                },
-                function (err) {
-                    cb(err, null);
-                });
+            try {
+                promise.resolve(processBuffer.call(this, file)).then(
+                    function (file) {
+                        cb(null, file);
+                    },
+                    function (err) {
+                        cb(err, null);
+                    });
+            }
+            catch (err) {
+                // in case of synchronous exception
+                cb(err, null);
+            }
         }
     });
+}
+
+/* istanbul ignore next */
+function defaultLog(doingStuff) {
+    return function (file, msec) {
+        gutil.log(gutil.colors.green(doingStuff), gutil.colors.cyan(file.relative), " in ", gutil.colors.magenta(msec), "ms");
+    }
+}
+
+/* istanbul ignore next */
+function defaultTrace(doingStuff) {
+    return function (file, args) {
+        gutil.log.apply(this, [gutil.colors.yellow(doingStuff), gutil.colors.yellow(file.relative)].concat(commons.slice(arguments, 1)));
+    }
+}
+
+/* istanbul ignore next */
+function defaultError(who) {
+    return function (file, error) {
+        throw new gutil.PluginError(who, error);
+    }
 }
 
 module.exports = {
 
     compiler: function (userConfig) {
-
-        /* istanbul ignore next */
         var config = extend(true, {
-            processor: {
-                // default compiler settings
-            },
+            processor: {}, // processor options
             verbose: true,
-            log: function (file, msec) {
-                gutil.log(gutil.colors.green("Compiling"), gutil.colors.cyan(file.relative), " in ", gutil.colors.magenta(msec), "ms");
-            },
-            error: function (file, error) {
-                //gutil.log(gutil.colors.red('Error (' + error.plugin + '): ' + error.message));
-                throw new gutil.PluginError("clearest.compiler", error);
-                //console.log("error compiling " + file.relative + ":", error);
-                //FIXME: only print stack if error is runtime, for exceptions (like parsing error) show only error message
-                //if (error.stack)
-                //    console.log(stack);
-            }
+            debug: false,
+            /**
+             * Switches scopeCapture mode on when detects sources used for static renering by its filename.
+             */
+            staticAutodetect: true,
+            staticHint: /\.html\.xml$/,
+            /**
+             * If source and target directories are different, must be provided
+             * in order to correctly map dependencies for compiled code.
+             */
+            targetDir: null,
+            log: defaultLog("Compiling"),
+            trace: defaultTrace("[TRACE]"),
+            error: defaultError("Clearet.Compiler")
         }, userConfig);
+
+        // pass 'rename' option
+        if (config.rename)
+            config.processor.rename = config.rename;
 
         var processor = new Processor(config.processor);
 
         // retrive complete configuration:
         config.processor = processor.configure();
 
+
         return pipe(function (file) {
             var originalPath = file.path,
                 start = new Date();
 
-            processor.configure({currentLocation: originalPath}); // provide currentLocation
-            file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
+            var opts = {currentLocation: originalPath};
 
-            try {
-                file.contents = new Buffer(processor.compile(decoder.write(file.contents)), 'utf8');  // compile and store contents
-                if (config.verbose)
-                    config.log(file, (new Date()) - start);
-            } catch (error) {
-                //FIXME: how not to write to file at all?
-                file.contents = new Buffer("/** compilation of " + originalPath + " failed **/\n throw " + codegen.string(error.message), 'utf8');
-                config.error(file, error);
+            if (config.staticAutodetect) {
+                opts.scopeCapture = !!(originalPath.match(config.staticHint));
             }
 
+            // supposed to map relative dependencies from source dir to targetDir
+            function mapToTarget(location) {
+                if (!location.match(/^\./)) // not a relative path
+                    return location;
+
+                var absoluteLocation = path.resolve(path.dirname(originalPath), fixer.fromPosix(location));
+                var targetRelative = fixer.toPosix(path.relative(config.targetDir, absoluteLocation));
+                if (config.debug) {
+                    config.trace(file, 'relative dependency', location, 'mapped to', targetRelative)
+                }
+                return fixer.toPosix(targetRelative);
+            }
+
+            if (config.targetDir)
+                opts.dependencyMapper = mapToTarget;
+
+            processor.configure(opts); // provide currentLocation
+            file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
+
+            //try {
+            file.contents = new Buffer(processor.compile(decoder.write(file.contents)), 'utf8');  // compile and store contents
+            if (config.verbose)
+                config.log(file, (new Date()) - start);
+            /*} catch (error) {
+             //FIXME: how not to write to file at all?
+             file.contents = new Buffer("/** compilation of " + originalPath + " failed **"+"/\n throw " + codegen.string(error.message), 'utf8');
+             config.error(file, error);
+             }*/
             return file;
         });
     },
@@ -106,45 +159,96 @@ module.exports = {
      * @param userConfig
      */
     renderer: function (userConfig) {
-
-
-        /* istanbul ignore next */
         var config = extend(true, {
-            renderer: {},
             verbose: true,
+            /**
+             * renerer options (see. renderer.js)
+             */
+            renderer: {},
+            /**
+             * if compiled file exists on disk, will try to load it with require().
+             * Turn it off by setting false, if it's a safety concern.
+             */
             useRequire: true,
-            useInterpreter: true,
+            /**
+             * If useRequire == false or unsuccessful (no file on disk found),
+             * it will use interpreter do execute loaded code from stream
+             */
+            useInterpreter: true, // will try to use interpreter instead
+
+            /**
+             * Require path to the bootstrapper implementation.
+             * You could override it with your own code.
+             */
             boot: "clearest/browser/boot",
+
+            /**
+             * Filename suffix for the generated bootstrap code output
+             */
             bootstrap: ".bundle.js",
+            /**
+             * Filename suffix for the generated content output (html)
+             */
             output: ".html",
-            filter: {}, // output filters
+            /**
+             * Transform hooks for generated contents.
+             *
+             * It could be a function or a transform stream, or an object/array of those.
+             * Example:
+             *
+             * transform:{
+             *      ".bundle.js":[
+             *          function(file,cb){
+             *                  browserify(file, {basedir: path.dirname(file.path)}).bundle(cb)
+             *          },
+                        uglify()
+             *          ]
+             *      ".html": prettify()
+             * }
+             *
+             * Functions are provideded with the corresponding buffered vinyl files (first argument),
+             * and may return Vinyl Files, Buffers or promises of those. If the second argument is present,
+             * a node-style callback(error,done) behavior is expected.
+             *
+             * Also, gulp-style transforms are supported.
+             */
+            transform: {}, // output filters
+            /**
+             * Determines the naming pattern for the output files.
+             * It contains of two elemnents: [ regexp, replacePattern ]
+             * Output filesnames are generated as input.replace(regexp,replacePattern)+suffixExtension.
+             * The default setting strips ".tpl.js" part of the input filename before adding a suffix.
+             */
             rename: [/^(.*)\.tpl\.js/, '$1'],
+
+            /**
+             * Generator function for a context object passed to the template
+             * @param file vinyl file being processed
+             */
             context: function (file) {
                 return {
                     uri: basename(file.relative)
                 }
             },
-            log: function (file, msec) {
-                gutil.log(gutil.colors.green("Rendering"), gutil.colors.cyan(file.relative), " in ", gutil.colors.magenta(msec), "ms");
-            },
-            error: function (file, error) {
-                throw new gutil.PluginError("clearest.compiler", error, {showStack: true});
-            }
+            /**
+             * Logging function. Called if verbose = true.
+             * log(file, timeMsec)
+             */
+            log: defaultLog("Rendering"),
+            /**
+             * Error function. By default throws a gulp.PluginError.
+             * log(file, error)
+             */
+            error: defaultError("Clearet.Renderer") //TODO: check if show stack is necessary
         }, userConfig);
 
         function basename(moduleUrl) {
             return moduleUrl.replace(config.rename[0], config.rename[1]);
         }
 
-        /*function outputHtml(moduleUrl) {
-         return moduleUrl.replace(config.rename[0], config.rename[1]);
-         }*/
-
         config.renderer.boot = config.boot;
         config.renderer.bootstrap = config.bootstrap;
 
-
-        var staticRenderer = new Renderer(config.renderer);
 
         /* istanbul ignore next */
         var ftrue = function () {
@@ -155,6 +259,9 @@ module.exports = {
 
 
         return pipe(function (file) {
+
+
+            var staticRenderer = new Renderer(config.renderer);
 
             var streams = {}, pipe = this, appendix = [];
 
@@ -192,11 +299,12 @@ module.exports = {
                 }
                 else {
                     // append content
-                    streams[name].contents = Buffer.concat(streams[name].contents, new Buffer(content, 'utf8'));
+                    streams[name].contents = Buffer.concat([streams[name].contents, new Buffer(content, 'utf8')]);
                 }
             }
 
             function wrapFile(data) {
+                if (!data) return;
                 if (data.path && data.relative) {
                     // looks like vinyl file, we can use it
                     return data;
@@ -207,84 +315,85 @@ module.exports = {
             }
 
             function push(file) {
-                pipe.push(file);
+                if (file)
+                    pipe.push(file);
             }
 
 
-            function filterStream(file, filter) {
+            function transformStream(file, transform) {
                 var def = promise.defer();
-                streamify([file]).pipe(filter).on('data', function (file) {
+                streamify([file]).pipe(transform).on('data', function (file) {
                     def.resolve(file);
                 }).on('error', function (reason) {
                     def.reject(reason)
                 });
-                return def.promise
-                    .then(wrapFile.bind(file));
+                return def.promise.then(wrapFile.bind(file));
             }
 
-            function filterFunction(file, filter) {
-                if (filter.length === 1) { // function(file) {... return file or promise;}
-                    return promise.resolve(filter(file)).then(wrapFile.bind(file));
+            function transformFunction(file, transform) {
+                if (transform.length < 2) { // function(file) {... return file or promise;}
+                    var res = transform(file);
+                    if (res instanceof stream.Stream) {
+                        return transformStream(file, res);
+                    }
+                    return promise.resolve(res)
+                        .then(wrapFile.bind(file));
                 }
-                else if (filter.length === 2) {// function(file,cb) { .... cb(err,file)
-                    //.nfcall(filter, file)
-                    return (new Promise(function(resolve,reject){
-                                filter(file,function(err,file){
-                                    if (err) {
-                                        reject(err);
-                                    }
-                                    else
-                                        resolve(file);
-                                })
-                            })).then(wrapFile.bind(file));
+                else if (transform.length === 2) {// function(file,cb) { .... cb(err,file)
+                    var def = promise.defer();
+                    transform(file, function (err, file) {
+                            if (err) {
+                                def.reject(err);
+                            }
+                            else {
+                                def.resolve(file);
+                            }
+                        });
+                    return def.promise.then(wrapFile.bind(file));
                 }
             }
 
-            function getFilter(file, filter) {
-                if (!filter)
+            function getTransform(file, transform) {
+                if (!transform)
                     return;
 
-                if (isFunction(filter) || filter instanceof stream.Stream)
-                    return filter;
+                if (isArray(transform) || isFunction(transform) || transform instanceof stream.Stream)
+                    return transform;
 
                 var appendix = file.appendix;
-                return filter[appendix];
+                return transform[appendix];
             }
 
-            function applyFilter(file, filter) {
-
-                if (isArray(filter)) {
+            function applyTransform(file, transform) {
+                if (isArray(transform)) {
                     var chain = false;
-                    filter.forEach(function (item) {
+                    transform.forEach(function (item) {
                         if (!chain) {
-                            chain = applyFilter(file, item);
+                            chain = applyTransform(file, item);
                         }
                         else {
                             chain = chain.then(function (file) {
-                                return applyFilter(file, item)
+                                return applyTransform(file, item)
                             });
                         }
                     });
                     return chain;
                 }
 
-                if (isFunction(filter))
-                    return filterFunction(file, filter);
+                if (isFunction(transform))
+                    return transformFunction(file, transform);
 
-                if (filter instanceof stream.Stream)
-                    return filterStream(file, filter);
-
+                if (transform instanceof stream.Stream)
+                    return transformStream(file, transform);
             }
 
             // writes/filters down appendices to stream
             function flush(file) {
-
                 var jobs = [];
-
-                // flush appendices/filters
+                // apply transforms
                 appendix.forEach(function (file) {
-                    var filter = getFilter(file, config.filter);
-                    var job = filter ? applyFilter(file, filter) : false;
+                    var transform = getTransform(file, config.transform);
+                    var job = transform ? applyTransform(file, transform) : false;
                     if (job) {
                         jobs.push(job.then(push));
                     }
@@ -293,24 +402,29 @@ module.exports = {
                     }
                 });
 
-                if (jobs.length == 0)
-                // no jobs to wait
+                if (jobs.length == 0) {
+                    //console.log('no jobs to wait');
+                    // no jobs to wait
                     return file;
+                }
                 else {
                     // wait for jobs to complete
                     var def = promise.defer();
-                    promise.all(jobs).done(function () {
+                    promise.all(jobs).then(function () {
                         def.resolve(file);
+                    },function(reason){
+                        throw reason;
                     });
+                    /*,function (reason){
+                     console.log('rejection:',reason, reason.stack);
+                     def.reject(reason);
+                     }*/
                     return def.promise;
                 }
             }
 
             var start = new Date();
 
-            //file.path = outputHtml(file.path);
-            // TODO: provide means for caching
-            // TODO: maybe require(file.path) will be better?
             var templateModule;
             if (config.useRequire && fs.existsSync(file.path)) {
                 // if file belongs to filesystem, use more efficient way: just require it dynamically
@@ -319,10 +433,10 @@ module.exports = {
                 // try loading module from buffer contents and running an interpreter
                 templateModule = interpreter(decoder.write(file.contents), file.path, {
                     require: function (module) {
-                        //FIXME: deal with dependencies not in filesystem
-                        //FIXME: the correct way is using path.resolve(), but it fails for standard modules, like require("path")
-                        //return require(path.resolve(file.base, module));
-                        //This one works, but its approach with replace "." is buggy!
+                        //FIXME: this is buggy
+                        if (module.match(/^\.\./)) {
+                            return require(module.replace(/^\.\./, file.base + "/.."))
+                        }
                         return require(module.replace(/^\./, file.base));
                     }
                 });

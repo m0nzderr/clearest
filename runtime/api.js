@@ -306,7 +306,17 @@ Api.prototype.get = function (target, args /*, resolveIncomplete*/) {
     }
 }
 
-
 Api.prototype.agg = aggregator;
+
+/**
+ * Dependency injection/resolution mechanism (not a "require")
+ * @param dependency
+ */
+Api.prototype.inj = function(dependency){
+    if (dependency === undefined)
+        return this;
+    throw 'dependency not found: '+dependency;
+}
+
 
 module.exports = Api;

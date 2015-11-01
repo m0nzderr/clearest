@@ -6,20 +6,18 @@ Despite of being created recently, the project already had a couple of years of 
 
 Its previous versions were closed-source and based on a combination of XSLT with other custom-built tools. Today it is being re-implemented to stay within NodeJS ecosystem. 
 
-The WIP is going towards its first open-source release of v2.0.0. Hopefully, one may find in it resembling or an alternative to other MVC front-end frameworks like AngularJS and RecatJS.
+The WIP is going towards its first open-source release of v2.0.0. Hopefully, one may find in it resembling (in some aspects) to other MVC front-end frameworks like AngularJS and RecatJS.
 
 Features:
 * Designed for development of modular MVC/MVVM apps with minimal coding effort;
-* Provides high-level, abstract, XML-based language for component development;
+* Provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
 * 99% of code is browser-independent ()
-* Almost everything is done with a dozen of XML tags around your code. You can mix your JavaScript inside XML, still staying within standard XML syntax. You
-  also can keep all of yor JavaScript code (controllers, services) in external modules, sa NodeJS will manage dependencies for you;
-* Compilable into JavaScript modules (no parsing at runtime) and the stay reusable after that;
+* Compilable into JavaScript modules: no sources distributed, no parsing at runtime;
 * No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browsetify;
-* No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go (you may do DI, IoC, or nothing at all
-  in your own code, just the way as you would do it without Clearest);
-* Small-footprint runtime library of essentials (the largest dependency is Q promises). Other useful features, like hash navigation/routing and REST resources
-  are only used as you require() them;
+* No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go. You can stay with NodeJS and require(),
+ implement your DI, IoC, or nothing at all);
+* Small-footprint runtime library of essentials (the largest dependency is a promises library). Other useful features, like hash navigation/routing and REST resources
+  are optional, they are shipped only if you require() them;
 * Ready to merge into your gulp workflow off the shelf (no plugins needed);
 
 More code and docs are coming.
@@ -49,7 +47,7 @@ Roadmap/Progress:
  * - Automatic widget bootstrapping from static context (never ever write bootstrapping
  :   code by hand!)
  :
- . - Widget: full spec (automacit updates, asynchronic rebuild chain, event proxies,
+ . - Widget: full spec (automacit updates, asynchronic update chain, event proxies,
  :   error handling)
  :
  . - Documentation and minimal samples (XVDL language, usage of runtime library,

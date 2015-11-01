@@ -21,9 +21,8 @@ describe('#processor', function () {
             var processor = new Processor();
             var moduleCode = processor.compile('<t:context/>');
             var template = interpreter(moduleCode);
-            template({}, aggregator, 42).should.be.exactly(42);
+            template(new Api(), aggregator, 42).should.be.exactly(42);
         });
-
 
         it("should resolve dependencies", function () {
             var processor = new Processor();

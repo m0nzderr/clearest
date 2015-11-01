@@ -9,7 +9,8 @@
 var codegen = require("./codegen"),
     extend = require("extend"),
     commons = require("../commons"),
-    constants = require("./constants");
+    constants = require("./constants"),
+    errors = require("./errors");
 
 var API = constants.API,
     SYMBOL = constants.SYMBOL,
@@ -78,25 +79,20 @@ function textContent(node) {
 
 //------------------- Compiler Errors -------------------------------------
 
-/*commons.inherit(CompilerError,Error);
- function CompilerError(message){
- CompilerError.super(this, message);
- }
- CompilerError.prototype.toString=function(){return this.message;}*/
-var CompilerError = {};
-CompilerError.UNDEFINED_CONTEXT = "No context object defined in scope";
+var CompilerError = errors.CompilerError;
+    CompilerError.UNDEFINED_CONTEXT = "No context object defined in scope";
 
 function compilerError(msg, node) {
-    //TODO: get line number and stuff...
+    //TODO: get line numbers and other helpful info
     if (node) {
         if (node.nodeType === node.ELEMENT_NODE) {
-            return new Error("<" + node.nodeName + "> : " + msg);
+            return new CompilerError("<" + node.nodeName + "> : " + msg);
         } else if (node.nodeType === node.ATTRIBUTE_NODE) {
-            return new Error("@" + node.nodeName + " : " + msg);
+            return new CompilerError("@" + node.nodeName + " : " + msg);
         }
     }
     else
-        return new Error(msg);
+        return new CompilerError(msg);
 }
 
 function undefinedContextError(node) {
@@ -106,7 +102,6 @@ function undefinedContextError(node) {
 function explicitContextError(node) {
     throw compilerError("instruction body already has an explicit context", node);
 }
-
 
 function invalidIdentifier(id, node) {
     throw compilerError("'" + id + "' is not a valid identifier", node);
@@ -124,6 +119,9 @@ function XvdlCompiler(userConfig) {
                     return url;
                 },
                 dependency: function (name, module) {
+                    return name;
+                },
+                inject: function (name, module) {
                     return name;
                 }
             },
@@ -553,10 +551,31 @@ function XvdlCompiler(userConfig) {
                  */
                 require: function (acc, node, scope) {
                     if (!isEmpty(node))
-                        throw compilerError("h:require instruction has no body not allowed", node);
+                        throw compilerError("t:require instruction with a body is not allowed", node);
 
                     foreach(node.attributes, function (node) {
                         var variableName = config.resolver.dependency(node.nodeName, node.nodeValue);
+
+                        //TODO: implement scope management
+                        //scope.$root[variableName]=true;
+                    });
+                },
+
+                /**
+                 *
+                 * t:inject - similar to require, behaves regarding to DI implementaion by API
+                 * a may be context dependent
+                 *
+                 * @param acc
+                 * @param node
+                 * @param scope
+                 */
+                inject: function (acc, node, scope) {
+                    if (!isEmpty(node))
+                        throw compilerError("t:inject instruction with a body is not allowed", node);
+
+                    foreach(node.attributes, function (node) {
+                        var variableName = config.resolver.inject(node.nodeName, node.nodeValue);
 
                         //TODO: implement scope management
                         //scope.$root[variableName]=true;

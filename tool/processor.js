@@ -13,7 +13,8 @@ var dom = require('xmldom'),
     extend = require('extend'),
     codegen = require("./codegen"),
     path = require('path'),
-    constants = require("./constants");
+    constants = require("./constants"),
+    errors = require("./errors");
 
 var API = constants.API;
 
@@ -23,13 +24,15 @@ function Processor(userConfig) {
     var config = {
             // path to itself (as one would reference it from inside)
             currentLocation: null,
+            dependencyMapper: null,
             // needed for only for static rendering, for SPA components that run in dynamic context could be turned off,
             // resulting in slightly better performance and code size reduction
             scopeCapture: true,
             xvdl: {
                 resolver: {
                     template: requireTemplate,
-                    dependency: requireModule
+                    dependency: requireModule,
+                    inject: injectDependency
                 }
             },
             /**
@@ -42,21 +45,24 @@ function Processor(userConfig) {
             rename: [/^(.*)\.xml$/,'$1.tpl.js'],
             module: {
                 lazy: true, // lazy loading in order to allow circular dependencies
-                preface: "/** This is automatically generated code. Any changes may be lost **/\n",
+                preface: "/** This is automatically generated code. Any changes will be lost **/\n",
                 component: "$comp$",
                 require: "require",
-                exportVar: "$template$"
+                exportVar: "$template$",
             }
         },
         vars,
         body,
+        injections,
         compIndex;
 
     function reset() {
         vars = [];
+        injections= [];
         body = [];
         compIndex = 0;
     }
+
 
     function outputFilename(templateLocation) {
         return templateLocation.replace(config.rename[0], config.rename[1]);
@@ -91,6 +97,12 @@ function Processor(userConfig) {
 
     }
 
+    function injectDependency(variableName,dependencyReference){
+        injections.push(variableName + " = "+codegen.call({fn:constants.SYMBOL.api + constants.API.inject, args: dependencyReference}));
+    }
+
+
+    // called when template loads another template (component)
     function requireTemplate(url) {
         if (config.isSelf(url)) {
             // return variable if it is a self reference
@@ -98,20 +110,28 @@ function Processor(userConfig) {
         }
         else {
             compIndex++;
-            return requireModule(config.module.component + compIndex, outputFilename(url));
+            return declareDependency(config.module.component + compIndex, codegen.string(outputFilename(url)));
         }
     }
 
+    // called when template require()'s a dependency module
     function requireModule(variableName, url) {
-        return declareDependency(variableName, codegen.string(url));
+        return declareDependency(variableName,
+            codegen.string(
+                config.dependencyMapper?
+                    config.dependencyMapper(url): // map depencendy path relative to denstination path
+                    url
+            )
+        );
     }
 
     var xvdlCompiler,
-        domParser = new (dom.DOMParser)({
+        domParser = new (dom.DOMParser)(
+            {
             errorHandler: function (error) {
-                throw new Error("parse error:" + error);
-            }
-        });
+                throw new errors.ParseError(error);
+            }}
+        );
 
     (this.configure = function (userConfig) {
         if (userConfig === undefined)
@@ -142,6 +162,7 @@ function Processor(userConfig) {
 
         var exportClosure = codegen.closure({
             args: codegen.list(xvdlCompiler.templateArguments()), // closure arguments
+            vars: injections.length? injections.join("\n") : false,
             body: body.join("\n"), // closure body (lazy loading stuff)
             ret: templateCode // whole code sits in return statement
         });

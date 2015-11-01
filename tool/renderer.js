@@ -17,8 +17,9 @@ var commons = require("../commons"),
     extend = require("extend"),
     inside = commons.inside,
     constants = require("./constants"),
-    XvdlCompiler = require("./xvdl").Compiler,
-    DomParser = require("xmldom").DOMParser;
+    Serializer = require("./serializer"),
+    fixer = require("./fixer");
+
 
 var API = constants.API,
     SYMBOL = constants.SYMBOL;
@@ -31,47 +32,6 @@ function apicall(api, args) {
     });
 }
 
-function Serializer(/* parser, xvdl*/) {
-
-    var self = this, vars = [], deps = {}, depCount = 0;
-    var xvdl = new XvdlCompiler(),
-        parser = new DomParser();
-
-    this.serialize = serialize;
-
-    this.vars = vars;
-
-    function serialize(o) {
-
-        if (isArray(o))
-            return o.map(serialize);
-
-        if (o === undefined)
-            return "undefined";
-        if (o === null)
-            return "null";
-        if (typeof o === 'string')
-            return codegen.string(o, true);
-        if (isClearest(o)) {
-            if (inside(o).serialize) {
-                return inside(o).serialize(self);
-            }
-        }
-        if (isValue(o) || isFunction(o))
-            return o.toString();
-
-        return xvdl.compile(parser.parseFromString(html(o)));
-    }
-
-    this.require = function (path) {
-        if (deps[path])
-            return deps[path];
-        var varName = deps[path] = "$dep$" + (++depCount);
-        vars.push(varName + " = " + codegen.call({fn: "require", args: codegen.string(path)}));
-        return varName;
-    }
-
-};
 
 commons.inherit(Renderer, Api)
 function Renderer(userConfig) {
@@ -79,7 +39,7 @@ function Renderer(userConfig) {
     var config = {
         doctype: '<!DOCTYPE html>\n',
         boot: 'clearest/browser/boot',
-        bootstrap:".bundle.js" // suffix for the bootrstrap bundle code output
+        bootstrap: ".bundle.js" // suffix for the bootrstrap bundle code output
     };
     (this.configure = function (userConfig) {
         if (userConfig === undefined)
@@ -155,17 +115,17 @@ function Renderer(userConfig) {
         return config.doctype + html(presentation);
     }
 
-    var sepFixerRe = new RegExp('\\'+path.sep,'g'),
-        sepNormalizerRe = /\//g;
+    /*var sepFixerRe = new RegExp('\\' + path.sep, 'g'),
+        sepNormalizerRe = /\//g;*/
 
     // store dependency information
     this.dep = function (dependent, dependency, source) {
         if (source.match(/^\./)) {
             var rq = inside(dependent).require;
-            var root = rq.root || (path.dirname(path.resolve(rq.path.replace(sepNormalizerRe,path.sep))) );
-            var base = rq.abs ? path.dirname(rq.abs) : root ;
-            var abs = path.resolve( base , source.replace(sepNormalizerRe,path.sep));
-            var rel = "./"+path.relative(root, abs).replace(sepFixerRe,"/");
+            var root = rq.root || (path.dirname(path.resolve(fixer.fromPosix(rq.path))) ); //.replace(sepNormalizerRe, path.sep)
+            var base = rq.abs ? path.dirname(rq.abs) : root;
+            var abs = path.resolve(base, fixer.fromPosix(source)); // .replace(sepNormalizerRe, path.sep)
+            var rel = "./" + fixer.toPosix(path.relative(root, abs));//.replace(sepFixerRe, "/");
             //console.log("resolved: ", source, "to", rel, "as", abs, " @ ",base);
             //relative
             inside(dependency).require = {
@@ -204,6 +164,7 @@ Renderer.prototype.wid = function (template, context) {
     if (context) {
         scope.push(context);
     }
+    /* istanbul ignore next */
     var stub = function () {
     };
     inside(stub).serialize = function (ser) {

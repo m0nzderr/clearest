@@ -8,8 +8,11 @@
 /**
  * Promises implementation
  */
+//alternatives are:
 //var promise = require("bluebird");
-var promise = require("q");
+//var promise = require("q");
+var promise = require("rsvp");
+
 
 var constant = {
     CLEAREST: '__clearest__',
@@ -28,7 +31,7 @@ var is_ = function (o) {
             return a instanceof Array;
         },
         fun: function (o) {
-            //FIXME: ensure compatibility with old browsers
+            //FIXME: ensure compatibility with older browsers
             return typeof(o) == 'function'
         },
         value: function (o) {
@@ -55,7 +58,7 @@ var is_ = function (o) {
 /**
  * each(a, f, [ j ])
  *
- * Recursive array iterator
+ * Recursive (deep) array iterator
  *
  * @param a array
  * @param f iterator function(element, [ position ])
@@ -78,7 +81,7 @@ function each(a, f, j) {
  * @returns field content or new object
  */
 function fin(f, o, defaultValue) {
-    return (o[f] !== undefined) ? o[f] : (o[f] = (defaultValue === undefined? {}:defaultValue ));
+    return (o[f] !== undefined) ? o[f] : (o[f] = (defaultValue === undefined ? {} : defaultValue ));
 }
 
 /**
@@ -194,24 +197,24 @@ function subscribe(o, k, observer) {
         }
         if (!exist) {
             // check for subk
-            if (!subk) {
-                // new key
-                sub[k] = [observer];
-                index = 0;
-            }
-            else {
-                index = subk.indexOf(observer);
-                if (index < 0) {
-                    // try to reuse memory
-                    index = subk.indexOf(NULL_VALUE);
-                    if (index < 0)
-                        index = subk.push(observer) - 1;  // new element
-                    else
-                        subk[index] = observer;  // reused index
-                }
+            /*if (!subk) {
+             // new key
+             sub[k] = [observer];
+             index = 0;
+             }
+             else {*/
+            index = subk.indexOf(observer);
+            if (index < 0) {
+                // try to reuse memory
+                index = subk.indexOf(NULL_VALUE);
+                if (index < 0)
+                    index = subk.push(observer) - 1;  // new element
                 else
-                    exist = true;    // subscription already exists
+                    subk[index] = observer;  // reused index
             }
+            else
+                exist = true;    // subscription already exists
+            //}
         }
     }
 
@@ -259,7 +262,7 @@ function unsubscribe(observer) {
 function notify(o, k, data) {
     var count = 0;
     if (o === undefined ||
-        o === null || !o.__clearest__ === undefined)
+        o === null || o.__clearest__ === undefined)
         return false; //cannot have subscribers
 
     var sub = o.__clearest__.sub;
@@ -336,6 +339,19 @@ function send(o, values, data) {
     }
 }
 
+
+function delay(time) {
+    return function () {
+        var def = promise.defer();
+        var args = arguments, ctx = this;
+        setTimeout(function () {
+            def.resolve.apply(ctx, args)
+        }, time);
+        return def.promise;
+    }
+}
+
+
 module.exports = {
     is: is,
     fin: fin,
@@ -348,7 +364,9 @@ module.exports = {
     subscribe: subscribe,
     unsubscribe: unsubscribe,
     notify: notify,
-    send: send
+    send: send,
+    slice: slice,
+    delay: delay
 };
 
 

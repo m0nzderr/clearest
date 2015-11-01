@@ -31,16 +31,13 @@ function BrowserShim(){
     }
 }
 
-
-
 describe("runtime library / widget",function(){
-
 
     var browser = new BrowserShim();
     var processor = new Processor();
 
     function make(templateString){
-        return new Widget(browser, interpreter(processor.compile(templateString)));
+        return new Widget(browser, interpreter(processor.compile(templateString),{require:require}));
     }
 
 
@@ -61,11 +58,11 @@ describe("runtime library / widget",function(){
                     expect( browser.getView("app-foo1").tested).to.be.ok;
                     expect( browser.getView("app-bar1").tested).to.be.ok;
             });
-        })
+        });
 
         it("should build and destroy components",function(){
             var widget = make("<foo><t:control>return {build:function(el){this.el=el; el.built=true;},destroy:function(){this.el.destroyed=true;}}</t:control>" +
-                "<bar><t:control>return {build:function(el){this.el=el; el.built=true;},destroy:function(){this.el.destroyed=true;}}</t:control></bar>Hello World</foo>");
+                "<bar><t:control>return {build:function(el){this.el=el; el.built=true;}}</t:control></bar>Hello World</foo>");
             return promise.resolve(widget.build(browser.getView("app")))
                 .then(function(widget){
                     expect( browser.getView("app-foo1").built).to.be.ok;
@@ -73,9 +70,21 @@ describe("runtime library / widget",function(){
                     return widget;
                 }).then(function(widget){  return widget.destroy()}).then(function(){
                     expect( browser.getView("app-foo1").destroyed).to.be.ok;
-                    expect( browser.getView("app-bar1").destroyed).to.be.ok;
+                   // expect( browser.getView("app-bar1").destroyed).to.be.ok;
                 });
-        })
+        });
+
+        it("should build and destroy asynchronous components",function(){
+            var widget = make("<foo2><t:require commons='../../commons'/><t:control>return {build:function(el){return commons.promise.resolve(this).then(function(self){self.el=el; el.built=true;})},destroy:function(){this.el.destroyed=true;}}</t:control>" +
+                "Hello World</foo2>");
+            return promise.resolve(widget.build(browser.getView("app")))
+                .then(function(widget){
+                    expect( browser.getView("app-foo21").built).to.be.ok;
+                    return widget;
+                }).then(function(widget){  return widget.destroy()}).then(function(){
+                    expect( browser.getView("app-foo21").destroyed).to.be.ok;
+                });
+        });
 
         it("should instantiate and build other widgets",function(){
             var widget = make("<w:foo><w:bar><t:control>this.widget=arguments[0];</t:control>Hello World</w:bar></w:foo>");
@@ -85,10 +94,6 @@ describe("runtime library / widget",function(){
                     return widget;
                 });
         })
-
-
     })
-
-
 });
 

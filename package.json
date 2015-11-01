@@ -1,6 +1,6 @@
 {
   "rename": "clearest",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {
@@ -17,7 +17,7 @@
     "eval": "^0.1.1",
     "extend": "^3.0.0",
     "fs": "0.0.2",
-    "q": "^1.4.1",
+    "rsvp": "^3.1.0",
     "through2": "^2.0.0",
     "xmldom": "^0.1.19"
   },

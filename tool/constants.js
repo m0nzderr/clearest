@@ -12,6 +12,7 @@ module.exports = {
         empty: "{}"
     },
     API: {
+        inject:".inj",
         count: ".cnt",
         select: ".sel",
         get: ".get",

@@ -17,12 +17,14 @@ var qunit = require("./shim/qunit"),
     promise = commons.promise,
     inherit = commons.inherit,
     is = commons.is,
-    _in = commons.inside,
+    inside = commons.inside,
     fin = commons.fin,
     each = commons.each,
     subscribe = commons.subscribe,
     unsubscribe = commons.unsubscribe,
     notify = commons.notify,
+    error = commons.error,
+    send = commons.send,
     CLEAREST = commons.constant.CLEAREST;
 
 
@@ -61,16 +63,30 @@ describe("runtime library / commons", function () {
 
         });
 
+        test('is.error and error', function () {
+            var o = {};
+            ok(!is.error(o));
+            ok(is.error(error(o)));
+        });
+
+        test('is.fun', function () {
+            ok(is.fun(function () {
+            }));
+            ok(!is.fun({}));
+            ok(!is.fun(new (function () {
+            })));
+        });
+
         test('fin and _in', function () {
-            var o ={};
-            _in(o).foo=42;
-            fin("k",o).bar=42;
+            var o = {};
+            inside(o).foo = 42;
+            fin("k", o).bar = 42;
 
-            equal(o[commons.constant.CLEAREST].foo,42,'object were created');
-            equal(o['k'].bar,42,'object were created');
+            equal(o[commons.constant.CLEAREST].foo, 42, 'object were created');
+            equal(o['k'].bar, 42, 'object were created');
 
-            equal(_in(o),o[commons.constant.CLEAREST],'object returned');
-            equal(fin("k",o),o['k'],'object returned');
+            equal(inside(o), o[commons.constant.CLEAREST], 'object returned');
+            equal(fin("k", o), o['k'], 'object returned');
         });
 
         test('is.promise', function () {
@@ -122,74 +138,98 @@ describe("runtime library / commons", function () {
 
         });
 
-        test("promise contract", function () {
+        test("promise basic mocontract", function () {
             //TODO: add more contract tests for reject, throw, fail
 
-            function job() {
-                var def = promise.defer();
-                setTimeout(function () {
-                    def.resolve(42);
-                }, 10);
-                return def.promise;
-            }
+            it("should implement all, then, defer", function () {
+                function job1() {
+                    var def = promise.defer();
+                    setTimeout(function () {
+                        def.resolve(42);
+                    }, 10);
+                    return def.promise;
+                }
 
-            it("should work within test environment", function () {
-                return promise.all(job()).then(function (res) {
-                    equal(res, 42, "promises seem to work across testing suite");
+                return promise.all(job1()).then(function (res) {
+                    equal(res, 42, "promises seem to work ");
                     //done();
                 });
             })
+
         })
     });
 
-    describe("inherit pattern",function(){
-        function Foo(x){this.x=x;
-            this.b = function(y){
+    describe("inherit pattern", function () {
+        function Foo(x) {
+            this.x = x;
+            this.b = function (y) {
                 return this.c(y);
             }
         }
 
-        Foo.prototype.a = function(y) {return this.x+y;}
-
-        inherit(Bar,Foo);
-        function Bar(x){
-            Bar.super(this,x);
+        Foo.prototype.a = function (y) {
+            return this.x + y;
         }
 
-        Bar.prototype.a = function(y) {
-            return this.x*y - Bar.super().a.call(this,y);
+        inherit(Bar, Foo);
+        function Bar(x) {
+            Bar.super(this, x);
         }
 
-        Bar.prototype.c = function(y) {
-            return this.x*y - Bar.super().a.call(this,y);
+        Bar.prototype.a = function (y) {
+            return this.x * y - Bar.super().a.call(this, y);
+        }
+
+        Bar.prototype.c = function (y) {
+            return this.x * y - Bar.super().a.call(this, y);
         }
 
 
-        it("should be able to call super's constructor",function(){
+        it("should be able to call super's constructor", function () {
             var bar = new Bar(42);
             bar.x.should.be.exactly(42);
         })
 
-        it("should override methods",function(){
+        it("should override methods", function () {
             var bar = new Bar(16);
-            bar.a(4).should.be.exactly(16*4 - (16+4));
+            bar.a(4).should.be.exactly(16 * 4 - (16 + 4));
         })
 
-        it("should allow virtual methods",function(){
+        it("should allow virtual methods", function () {
             var bar = new Bar(33);
-            bar.b(11).should.be.exactly(33*11 - (33+11));
+            bar.b(11).should.be.exactly(33 * 11 - (33 + 11));
         })
     });
 
 
-    describe("observable pattern",function(){
+    describe("observable pattern", function () {
 
+        it('should not break on unsupported objects', function () {
+            // nothing happens:
+            expect(subscribe(undefined, 'foo', function () {
+            })).to.be.equal(undefined);
+            expect(subscribe(null, 'foo', function () {
+            })).to.be.equal(undefined);
+            expect(subscribe(42, 'foo', function () {
+            })).to.be.equal(undefined);
 
-        it('subscribe should follow the contract',function() {
+            unsubscribe(null);
+            unsubscribe(inside({}));
 
-            function obs1(){};
-            function obs2(){};
-            var o={};
+            notify(42);
+            notify(null);
+            notify(undefined);
+
+        });
+
+        it('subscribe should follow the contract', function () {
+
+            function obs1() {
+            };
+            function obs2() {
+            };
+            var o = {};
+
 
             // first subscription
             subscribe(o, 'foo', obs1).should.be.true();
@@ -209,134 +249,185 @@ describe("runtime library / commons", function () {
             subscribe(o, 'qux', obs2).should.be.false();
 
             // internal strcture of observable should look like this
-            expect(o[CLEAREST].sub).to.deep.equal({'foo':[obs1,obs2],
-                'bar':[obs2],
-                '*':[obs2]});
+            expect(o[CLEAREST].sub).to.deep.equal({
+                'foo': [obs1, obs2],
+                'bar': [obs2],
+                '*': [obs2]
+            });
 
             // internal strcture of observer should look like this
-            expect(obs1[CLEAREST].obs).to.deep.equal([{k:'foo',o:o,idx:0}]);
-            expect(obs2[CLEAREST].obs).to.deep.equal([{k:'foo',o:o,idx:1},{k:'bar',o:o,idx:0},{k:'*',o:o,idx:0}]);
+            expect(obs1[CLEAREST].obs).to.deep.equal([{k: 'foo', o: o, idx: 0}]);
+            expect(obs2[CLEAREST].obs).to.deep.equal([{k: 'foo', o: o, idx: 1}, {k: 'bar', o: o, idx: 0}, {
+                k: '*',
+                o: o,
+                idx: 0
+            }]);
         });
 
-        it('notify should behave as expected',function(){
+        it('notify should behave as expected', function () {
 
-            var actual1={o:[],k:[],d:[]},
-                actual2={o:[],k:[],d:[]},
-                expected1={o:[],k:[],d:[]},
-                expected2={o:[],k:[],d:[]};
+            var actual1 = {o: [], k: [], d: []},
+                actual2 = {o: [], k: [], d: []},
+                expected1 = {o: [], k: [], d: []},
+                expected2 = {o: [], k: [], d: []};
 
-            var handler=function(log){ return function(o,k,d){log.o.push(o);log.k.push(k);log.d.push(d);}}
+            var handler = function (log) {
+                return function (o, k, d) {
+                    log.o.push(o);
+                    log.k.push(k);
+                    log.d.push(d);
+                }
+            }
 
-            function clear(log){ log.o=[];log.k=[];log.d=[];}
+            function clear(log) {
+                log.o = [];
+                log.k = [];
+                log.d = [];
+            }
 
-            function assertLogs(){
+            function assertLogs() {
                 // check
                 expect(actual1).deep.equal(expected1);
                 expect(actual2).deep.equal(expected2);
 
                 // cleanup
-                clear(actual1);	clear(actual2);	clear(expected1);	clear(expected2);
+                clear(actual1);
+                clear(actual2);
+                clear(expected1);
+                clear(expected2);
 
             }
 
-            var obs1=handler(actual1);
-            var obs2=handler(actual2);
+            var obs1 = handler(actual1);
+            var obs2 = handler(actual2);
 
-            var call1=handler(expected1);
-            var call2=handler(expected2);
+            var call1 = handler(expected1);
+            var call2 = handler(expected2);
 
-            var o={};
+            var o = {};
 
             // subscribe once on foo
-            subscribe(o,'foo',obs1);
-            subscribe(o,'foo',obs2);
+            subscribe(o, 'foo', obs1);
+            subscribe(o, 'foo', obs2);
 
             // subscribe twice on bar
-            subscribe(o,'bar',obs2);
-            subscribe(o,'bar',obs2);
+            subscribe(o, 'bar', obs2);
+            subscribe(o, 'bar', obs2);
 
             // notify foo once
-            notify(o,'foo',1);
+            notify(o, 'foo', 1);
 
             // expect two calls on foo:
-            call1(o,'foo',1);
-            call2(o,'foo',1);
+            call1(o, 'foo', 1);
+            call2(o, 'foo', 1);
 
             assertLogs();
 
             // notify bar once
-            notify(o,'bar',2);
+            notify(o, 'bar', 2);
 
             // expect one call to obs2
-            call2(o,'bar',2);
+            call2(o, 'bar', 2);
 
             assertLogs();
 
             // nofiy foo and bar
-            notify(o,'*',3);
+            notify(o, '*', 3);
 
             // expect:
-            call1(o,'foo',3);
-            call2(o,'foo',3);
-            call2(o,'bar',3);
+            call1(o, 'foo', 3);
+            call2(o, 'foo', 3);
+            call2(o, 'bar', 3);
 
             assertLogs();
 
             // subscribe onbserver 2 on '*'
-            subscribe(o,'*',obs2);
+            subscribe(o, '*', obs2);
 
             // notify foo
-            notify(o,'foo',1);
+            notify(o, 'foo', 1);
 
             // expect
-            call1(o,'foo',1);
-            call2(o,'foo',1);
+            call1(o, 'foo', 1);
+            call2(o, 'foo', 1);
 
             assertLogs();
 
-            notify(o,'bar',2);
+            notify(o, 'bar', 2);
 
-            call2(o,'bar',2);
+            call2(o, 'bar', 2);
 
             assertLogs();
 
-            notify(o,'*',3);
+            notify(o, '*', 3);
 
-            call1(o,'foo',3);
-            call2(o,'*',3);
+            call1(o, 'foo', 3);
+            call2(o, '*', 3);
 
             assertLogs();
         });
 
-        it('unsubscribe should behave as expected',function(){
+        it('unsubscribe should behave as expected', function () {
 
-            var obs1=function(){};
-            var obs2=function(){};
-            var o={};
+            var obs1 = function () {
+            };
+            var obs2 = function () {
+            };
+            var o = {};
 
-            subscribe(o,'foo',obs1);
-            subscribe(o,'foo',obs2);
-            subscribe(o,'bar',obs2);
+            subscribe(o, 'foo', obs1);
+            subscribe(o, 'foo', obs2);
+            subscribe(o, 'bar', obs2);
 
-            subscribe(o,'*',obs2);
+            subscribe(o, '*', obs2);
 
             unsubscribe(obs1);
 
             // observer removed from observable
-            expect(o[CLEAREST].sub).deep.equal({'foo':[null,obs2],
-                'bar':[obs2],
-                '*':[obs2]})
+            expect(o[CLEAREST].sub).deep.equal({
+                'foo': [null, obs2],
+                'bar': [obs2],
+                '*': [obs2]
+            })
 
             // observable removed from observer
             expect(obs1[CLEAREST].obs).to.be.equal(undefined);
 
             // after new subscription, memory should be reused
-            subscribe(o,'foo',obs1);
-            expect(o[CLEAREST].sub).deep.equal({'foo':[obs1,obs2],
-                'bar':[obs2],
-                '*':[obs2]})
-        })
+            subscribe(o, 'foo', obs1);
+            expect(o[CLEAREST].sub).deep.equal({
+                'foo': [obs1, obs2],
+                'bar': [obs2],
+                '*': [obs2]
+            })
+        });
 
+
+    });
+
+
+    describe("commons / send", function () {
+        it('should notify and store', function () {
+            var o = {}, log = {};
+            subscribe(o, '*', function (o, k, data) {
+                log[k] = data;
+            });
+            // will
+            send(o, {foo: "bar"});
+            expect(log).deep.equal({foo: "bar"});
+            expect(o.foo).to.be.equal("bar");
+        });
+
+        it('should notify with specific data', function () {
+            var o = {}, log = {};
+            subscribe(o, '*', function (o, k, data) {
+                log[k] = data;
+            });
+            // will
+            send(o, {foo: "bar"}, false);
+            expect(log).deep.equal({foo: false});
+            expect(o.foo).to.be.equal("bar");
+        });
     });
 
 });
