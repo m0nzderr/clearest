@@ -6,14 +6,14 @@ Despite of being created recently, the project already had a couple of years of 
 
 Its previous versions were closed-source and based on a combination of XSLT with other custom-built tools. Today it is being re-implemented to stay within NodeJS ecosystem. 
 
-The WIP is going towards its first open-source release of v2.0.0. Hopefully, one may find in it resembling (in some aspects) to other MVC front-end frameworks like AngularJS and RecatJS.
+The WIP is going towards its first open-source release of v2.0.0. Hopefully, one may find in it resembling (in some aspects) to other MVC front-end frameworks like AngularJS and ReactJS.
 
 Features:
 * Designed for development of modular MVC/MVVM apps with minimal coding effort;
 * Provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
 * 99% of code is browser-independent ()
 * Compilable into JavaScript modules: no sources distributed, no parsing at runtime;
-* No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browsetify;
+* No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browserify;
 * No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go. You can stay with NodeJS and require(),
  implement your DI, IoC, or nothing at all);
 * Small-footprint runtime library of essentials (the largest dependency is a promises library). Other useful features, like hash navigation/routing and REST resources
@@ -47,7 +47,7 @@ Roadmap/Progress:
  * - Automatic widget bootstrapping from static context (never ever write bootstrapping
  :   code by hand!)
  :
- . - Widget: full spec (automacit updates, asynchronic update chain, event proxies,
+ . - Widget: full spec (automatic updates, async update chain, event proxies,
  :   error handling)
  :
  . - Documentation and minimal samples (XVDL language, usage of runtime library,
