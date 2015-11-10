@@ -1,6 +1,6 @@
 {
   "name": "clearest",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {
@@ -44,6 +44,6 @@
     "cover-browser": "./node_modules/.bin/mocha-phantomjs --hooks mocha-phantomjs-istanbul ./test/browser/runner.html",
     "cover-node": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly --config=.cover.node.json",
     "cover": "npm run cover-node && npm run test-browser-build && npm run cover-browser && istanbul report",
-    "coveralls": "npm run cover-node && && npm run test-browser-build && npm run cover-browser && istanbul-coveralls"
+    "coveralls": "npm run cover-node && npm run test-browser-build && npm run cover-browser && istanbul-coveralls"
   }
 }
