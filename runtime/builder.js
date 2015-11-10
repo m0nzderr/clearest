@@ -6,13 +6,14 @@
 
 /**
  * Builder intrface
- * Abstraction layer between widget implementation and a view renderer, e.g. browser
+ * Abstraction layer between widget and a view renderer, e.g. browser DOM
  * @constructor
  */
 /* istanbul ignore next */
 function Builder(){}
 /**
- * Returns a view object for a component with given id
+ * Returns a view object for a component with given id.
+ * A view object must have id property
  * @param id
  * @param parentView is optional argument, may be used to improve performance
  */
@@ -28,12 +29,6 @@ Builder.prototype.getView=function(id, parentView){throw "not implemented";}
 Builder.prototype.render=function(view, presentation){throw "not implemented";}
 
 
-/**
- * Returns an id of a given view element
- * @param view
- * @param presentation
- */
-/* istanbul ignore next */
-Builder.prototype.getId=function(view){throw "not implemented";}
+
 
 module.exports = Builder;

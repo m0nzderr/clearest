@@ -143,11 +143,11 @@ function Widget(builder, template, context) {
 
     function toc(k) {
         t[k] = (new Date()) - t[k];
-    }*/
+    }
 
     this.stats=function(){
         return t;
-    }
+    }*/
 
     //--------------- component interface implementation -------------------
     /**

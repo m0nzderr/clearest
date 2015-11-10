@@ -6,4 +6,5 @@
 var commons = require("../commons");
 var Widget = require("../runtime/widget");
 var DomBuilder =require("./builder");
+/* instanbul ingnore next */
 module.exports = new Widget(new DomBuilder(document));
