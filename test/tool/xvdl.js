@@ -26,6 +26,11 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<foo/>'))
             .should.be.exactly('{foo:0}');
 
+        //TODO: fix dom parser
+        //compiler.compile(dom.parseFromString('<x:.../>'))
+        //    .should.be.exactly('{"x:...":0}');
+
+
         compiler.compile(dom.parseFromString('<foo:bar/>'))
             .should.be.exactly('{"foo:bar":0}');
 
