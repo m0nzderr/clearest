@@ -59,90 +59,16 @@ When objects are processed with XVDL instructions or rendered in browser, the fo
 Some examples of object to XML mapping convention:
 
 
-<table>
-<tr>
-<th>
-JavaScript 
-</th>
-<th>
-XML
-</th>
-</tr>
-<tr>
-<td>
-```
-{}
-```
-</td>
-<td>
-```xml
-<!-- nothing --->
-```
-</td>
-</tr>
+JavaScript | XML
+----------|---------
+`{}`      | `<!-- nothing --->`
+`"foo"`      | `foo`
+`{$:foo}`     | `foo`
+`{foo:"bar"}` | `<foo>bar</foo>`
+`{foo:{'@bar':42}}`|`<foo bar="42"/>`
+`{foo:1, bar:2}`|`<foo>1</foo><bar>1</bar>`
+`{foo:[1,2,3,'four',{five:{}},{'@six':6}]}`|`<foo>1</foo><foo>2</foo><foo>3</foo><foo>four</foo><foo><five/></foo><foo six="6"/>`
 
-<tr>
-<td>
-```
-{foo:"bar"}
-```
-or
-```
-{foo:{$:"bar"}}
-```
-</td>
-<td>
-```xml
-<foo>bar</foo>
-```
-</td>
-</tr>
-
-<tr>
-<td>
-```
-{foo:{'@bar':42}}
-```
-</td>
-<td>
-```xml
-<foo bar="42"/>
-```
-</td>
-</tr>
-
-<tr>
-<td>
-```
-{foo:1, bar:2}
-```
-</td>
-<td>
-```xml
-<foo>1</foo>
-<bar>1</bar>
-```
-</td>
-</tr>
-
-<tr>
-<td>
-```
-{foo:[1,2,3,'four',{five:{}},{'@six':6}]}
-```
-</td>
-<td>
-```xml
-<foo>1</foo>
-<foo>2</foo>
-<foo>3</foo>
-<foo>four</foo>
-<foo><five/></foo>
-<foo six="6"/>
-```
-</td>
-</tr>
-</table>
 
 The example is not complete, however it might be sufficient to cover most usage cases. The inverse conversion is somewhat more complicated (it constructs more complex objects, preserving order of XML elements) but it only occurs internally and should never be a concern (unless you are going to hack inside clearest). 
 
