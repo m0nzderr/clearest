@@ -46,7 +46,7 @@ A formal [XVDL Specification](xvdl.md) introduces some basic language concepts a
 > Note that Clearest tool allows redefinition of namespace uris, and also allows the omission of namespace declarations. When xmlns declarations are omitted, default prefixes (t, s, a, etc.) will be used to identify instructions.
 
 ##Object representation convention
-In XVDL all kind of objects are interpreted as XML, and any XML fragment is modelled as an object. Clearest implements its own convention, somewhat similar to Badgersifh. 
+In XVDL all kind of objects are interpreted as XML, and any XML fragment is modeled as an object. Clearest implements its own convention, somewhat similar to Badgersifh. 
 
 When objects are processed with XVDL instructions or rendered in browser, the following rules apply:
 
@@ -58,7 +58,6 @@ When objects are processed with XVDL instructions or rendered in browser, the fo
 
 Some examples of object to XML mapping convention:
 
-
 JavaScript | XML
 ----------|---------
 `{}`      | `<!-- nothing --->`
@@ -66,14 +65,15 @@ JavaScript | XML
 `{$:foo}`     | `foo`
 `{foo:"bar"}` | `<foo>bar</foo>`
 `{foo:{'@bar':42}}`|`<foo bar="42"/>`
-`{foo:1, bar:2}`|`<foo>1</foo><bar>1</bar>`
+`{foo:1, bar:2}`|`<foo>1</foo><bar>1</bar>` (exact order is *not* guaranteed)
+`[{foo:1}, {bar:2}]`|`<foo>1</foo><bar>1</bar>` (exact order is guaranteed)
 `{foo:[1,2,3,'four',{five:{}},{'@six':6}]}`|`<foo>1</foo><foo>2</foo><foo>3</foo><foo>four</foo><foo><five/></foo><foo six="6"/>`
 
+The example is not complete, however it might be sufficient to cover most usage cases. The inverse mapping is somewhat more complicated (it handles the order of nodes so that any XML content stays exactly the same after conversion back and forth) but it only occurs internally and should never be a concern. 
 
-The example is not complete, however it might be sufficient to cover most usage cases. The inverse conversion is somewhat more complicated (it constructs more complex objects, preserving order of XML elements) but it only occurs internally and should never be a concern (unless you are going to hack inside clearest). 
+> Internally, Clearest adds ```__CLEAREST__``` property to store additional metadata within objects. Objects generated as the result of XVDL transformations will have metadata for preserving exact order of elements as they would appear in XML. For instance `<foo>hello <bar/> world</foo>` after compilation results in object that may look like this: `{foo:{bar:{}}, $:['hello ',' world'], __CLEAREST: ...}` but if converted to XML, it will have exactly the same representation as original. 
 
-Note:
-> Internally, Clearest uses ```__CLEAREST__``` property to store additional information within objects, including the order of elements as they appear in XML. When objects are handled properly, the content of this property will never be exposed in unwanted fashion. 
+When objects are handled properly, the content of `__CLEAREST__` property will never be exposed in unwanted fashion and in most cases developers should not worry about it. 
 
   
 ## Basic templates and transformations
