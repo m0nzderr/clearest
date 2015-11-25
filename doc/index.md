@@ -69,57 +69,78 @@ XML
 </th>
 </tr>
 <tr>
-<td>```
+<td>
+```
 {}
-```</td>
-<td>```xml
+```
+</td>
+<td>
+```xml
 <!-- nothing --->
-```</td>
+```
+</td>
 </tr>
 
 <tr>
-<td>```
+<td>
+```
 {foo:"bar"}
+```
 or
+```
 {foo:{$:"bar"}}
-```</td>
-<td>```xml
+```
+</td>
+<td>
+```xml
 <foo>bar</foo>
-```</td>
+```
+</td>
 </tr>
 
-
 <tr>
-<td>```
+<td>
+```
 {foo:{'@bar':42}}
-```</td>
-<td>```xml
+```
+</td>
+<td>
+```xml
 <foo bar="42"/>
-```</td>
+```
+</td>
 </tr>
 
 <tr>
-<td>```
+<td>
+```
 {foo:1, bar:2}
-```</td>
-<td>```xml
+```
+</td>
+<td>
+```xml
 <foo>1</foo>
 <bar>1</bar>
-```</td>
+```
+</td>
 </tr>
 
 <tr>
-<td>```
+<td>
+```
 {foo:[1,2,3,'four',{five:{}},{'@six':6}]}
-```</td>
-<td>```xml
+```
+</td>
+<td>
+```xml
 <foo>1</foo>
 <foo>2</foo>
 <foo>3</foo>
 <foo>four</foo>
 <foo><five/></foo>
 <foo six="6"/>
-```</td>
+```
+</td>
 </tr>
 </table>
 
@@ -153,13 +174,13 @@ Same results can be achieved in different ways using ```t:get``` instruction:
 
 ```xml
 <t:get text="'wor'">
-<h1>Hello <t:get word="text + 'ld'"/></h1>
+ <h1>Hello <t:get word="text + 'ld'"/></h1>
 </t:get>
 ```
 
 ```xml
 <t:get text1="'wor'" text2="'ld'">
-<h1>Hello <t:get word="text1 + text2"/></h1>
+ <h1>Hello <t:get word="text1 + text2"/></h1>
 </t:get>
 ```
 
@@ -168,17 +189,16 @@ The instruction ```t:get``` evaluates all expressions withing its attributes, pu
 The variables in scope have the same behavior as in nested closures (BTW, this code becomes nested closures after compilation:
 ```xml
 <t:get a="42" b="13">
-<t:get res = "a+b"> is not
-<t:get a="12">
-<t:get res = "a+b">
-<t/get>
+ <t:get res = "a+b"> is not
+  <t:get a="12">
+  <t:get res = "a+b">
+ <t/get>
 </t:get>
 ```
 The expected output is "55 is not 25".
 
 > Note, that variables and scopes, same as in JavaScript, has nothing to do with data binding or observables. 
 
-### Putting and retrieving data from scope
 
 
 
