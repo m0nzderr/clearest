@@ -8,11 +8,11 @@
  * @constructor
  */
 "use strict"
-var commons = require("../commons"),
+var commons = require("../core/commons"),
     codegen = require("./codegen"),
     promise = commons.promise,
-    html = require("./../runtime/html.js"),
-    Api = require("./../runtime/api.js"),
+    html = require("./../core/html.js"),
+    Core = require("./../core/api.js"),
     path = require("path"),
     extend = require("extend"),
     inside = commons.inside,
@@ -33,7 +33,7 @@ function apicall(api, args) {
 }
 
 
-commons.inherit(Renderer, Api)
+commons.inherit(Renderer, Core)
 function Renderer(userConfig) {
     // configuration
     var config = {

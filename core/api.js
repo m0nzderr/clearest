@@ -4,7 +4,7 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 
-var commons = require("./../commons"),
+var commons = require("./commons"),
     aggregator = require("./aggregator")
     is = commons.is,
     isValue = is.value,
@@ -26,7 +26,7 @@ var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
  * Basic Runtime API
  * This API implements core behavior of XVDL instructions
  */
-function Api() {
+function Core() {
 
     var components = this.components = [];
     var counter = {}, widgetId;
@@ -93,7 +93,7 @@ function Api() {
  * @private
  */
 /* istanbul ignore next */
-Api.prototype._listen = function (o, k) {
+Core.prototype._listen = function (o, k) {
 }
 /**
  * Returns completion promise for object o
@@ -101,33 +101,8 @@ Api.prototype._listen = function (o, k) {
  * @private
  */
 /* istanbul ignore next */
-Api.prototype._promiseComplete = function (o) {
+Core.prototype._promiseComplete = function (o) {
 }
-
-/**
- * Supposed to return a controller that observes o[k]
- * @param o
- * @param k
- * @param handler
- */
-/* istanbul ignore next */
-Api.prototype.obs = function (o, k, handler) {/* istanbul ignore next */ throw "abstract method";}
-
-/**
- * Supposed to return a controller that handles view events
- * @param o
- * @param k
- * @param handler
- */
-/* istanbul ignore next */
-Api.prototype.on = function (event, handler) {/* istanbul ignore next */ throw "abstract method";}
-
-/**
- * Instantiates a widget
- * @param {function} template
- */
-/* istanbul ignore next */
-Api.prototype.wid = function (templateFunction, context) {/* istanbul ignore next */ throw "abstract method";}
 
 /**
  * By default implementation, returns a control function with bound scope (curried)
@@ -135,7 +110,7 @@ Api.prototype.wid = function (templateFunction, context) {/* istanbul ignore nex
  * @param {array} scope
  */
 /* istanbul ignore next */
-Api.prototype.ctl = function(ctl, scope){
+Core.prototype.ctl = function(ctl, scope){
     return function(){
         return ctl.apply(this, scope);
     }
@@ -149,7 +124,7 @@ Api.prototype.ctl = function(ctl, scope){
  * @param {string} source
  */
 /* istanbul ignore next */
-Api.prototype.dep = function (dependent, dependency, source) {
+Core.prototype.dep = function (dependent, dependency, source) {
     return dependency;
 }
 
@@ -161,7 +136,7 @@ Api.prototype.dep = function (dependent, dependency, source) {
  * @param templateModule compiled template (function exported from module)
  * @param o context object to run with
  */
-Api.prototype.use = function (templateModule, o) {
+Core.prototype.use = function (templateModule, o) {
     var api = this;
     return this.get(
         function (context) {
@@ -181,7 +156,7 @@ Api.prototype.use = function (templateModule, o) {
  * @returns {*}
  */
 //TODO: implement filtering
-Api.prototype.sel = function (o, k, iteration, filter) {
+Core.prototype.sel = function (o, k, iteration, filter) {
     if (o === undefined ||
         o === null ||
         isValue(o)
@@ -226,7 +201,7 @@ Api.prototype.sel = function (o, k, iteration, filter) {
  * @param k property/key (string) or array of strings
  * @returns int count or array of counts
  */
-Api.prototype.cnt = function (o, k) {
+Core.prototype.cnt = function (o, k) {
     if (!isArray(k)) {
         if (o === undefined ||
             o === null ||
@@ -263,7 +238,7 @@ Api.prototype.cnt = function (o, k) {
 }
 
 //TODO: vetify if resolveIncomplete is needed, probably not
-Api.prototype.get = function (target, args /*, resolveIncomplete*/) {
+Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
 
     var jobs = [], api = this;
 
@@ -306,17 +281,17 @@ Api.prototype.get = function (target, args /*, resolveIncomplete*/) {
     }
 }
 
-Api.prototype.agg = aggregator;
+Core.prototype.agg = aggregator;
 
 /**
  * Dependency injection/resolution mechanism (not a "require")
  * @param dependency
  */
-Api.prototype.inj = function(dependency){
+Core.prototype.inj = function(dependency){
     if (dependency === undefined)
         return this;
     throw 'dependency not found: '+dependency;
 }
 
 
-module.exports = Api;
+module.exports = Core;

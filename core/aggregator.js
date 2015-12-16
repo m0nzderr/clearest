@@ -3,6 +3,7 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 "use strict";
 /**
  * Aggregator (ported from Clearest 1.0)
@@ -49,7 +50,7 @@
 //TODO: refactor, optimize
 
 // imports
-var commons = require("./../commons"),
+var commons = require("./commons"),
     promise = commons.promise,
     is = commons.is,
     is_ = is._,

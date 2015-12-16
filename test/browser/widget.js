@@ -3,12 +3,13 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-var commons = require("../../commons"),
-    html = require("../../runtime/html"),
+
+var commons = require("../../core/commons"),
+    html = require("../../core/html"),
     interpreter = require("eval"),
     Processor = require("../../tool/processor.js"),
-    Builder = require("../../runtime/builder"),
-    Widget =  require("../../runtime/widget");
+    Builder = require("../../interface/builder"),
+    Widget =  require("../../browser/widget");
 
 var chai = require("chai"),
     expect = chai.expect;
@@ -19,10 +20,7 @@ function BrowserShim(){
     this.render=function(view,presentation){
         this.dom[view.id].content=html(presentation);
     };
-    this.getId = function(view){
-        return view.id;
-    };
-    this.getView = function(id){
+    this.find = function(id){
         return this.dom[id] || (this.dom[id]={id:id});
     };
 
@@ -44,7 +42,7 @@ describe("runtime library / widget",function(){
     describe("renderer", function(){
         it("should render some elements",function(){
             var widget = make("<foo>Hello World</foo>");
-            return promise.resolve(widget.build(browser.getView("myId"))).then(function(){
+            return promise.resolve(widget.build(browser.find("myId"))).then(function(){
                    browser.getContent("myId").should.be.exactly("<foo>Hello World</foo>");
             });
         });
@@ -53,44 +51,44 @@ describe("runtime library / widget",function(){
     describe("component model", function(){
         it("should execute controller code",function(){
             var widget = make("<foo><t:control>this.tested=true;</t:control><bar><t:control>this.tested=true;</t:control></bar>Hello World</foo>");
-            return promise.resolve(widget.build(browser.getView("app")))
+            return promise.resolve(widget.build(browser.find("app")))
                 .then(function(){
-                    expect( browser.getView("app-foo1").tested).to.be.ok;
-                    expect( browser.getView("app-bar1").tested).to.be.ok;
+                    expect( browser.find("app-foo1").tested).to.be.ok;
+                    expect( browser.find("app-bar1").tested).to.be.ok;
             });
         });
 
         it("should build and destroy components",function(){
             var widget = make("<foo><t:control>return {build:function(el){this.el=el; el.built=true;},destroy:function(){this.el.destroyed=true;}}</t:control>" +
                 "<bar><t:control>return {build:function(el){this.el=el; el.built=true;}}</t:control></bar>Hello World</foo>");
-            return promise.resolve(widget.build(browser.getView("app")))
+            return promise.resolve(widget.build(browser.find("app")))
                 .then(function(widget){
-                    expect( browser.getView("app-foo1").built).to.be.ok;
-                    expect( browser.getView("app-bar1").built).to.be.ok;
+                    expect( browser.find("app-foo1").built).to.be.ok;
+                    expect( browser.find("app-bar1").built).to.be.ok;
                     return widget;
                 }).then(function(widget){  return widget.destroy()}).then(function(){
-                    expect( browser.getView("app-foo1").destroyed).to.be.ok;
-                   // expect( browser.getView("app-bar1").destroyed).to.be.ok;
+                    expect( browser.find("app-foo1").destroyed).to.be.ok;
+                   // expect( browser.find("app-bar1").destroyed).to.be.ok;
                 });
         });
 
         it("should build and destroy asynchronous components",function(){
-            var widget = make("<foo2><t:require commons='../../commons'/><t:control>return {build:function(el){return commons.promise.resolve(this).then(function(self){self.el=el; el.built=true;})},destroy:function(){this.el.destroyed=true;}}</t:control>" +
+            var widget = make("<foo2><t:require commons='../../runtime'/><t:control>return {build:function(el){return commons.promise.resolve(this).then(function(self){self.el=el; el.built=true;})},destroy:function(){this.el.destroyed=true;}}</t:control>" +
                 "Hello World</foo2>");
-            return promise.resolve(widget.build(browser.getView("app")))
+            return promise.resolve(widget.build(browser.find("app")))
                 .then(function(widget){
-                    expect( browser.getView("app-foo21").built).to.be.ok;
+                    expect( browser.find("app-foo21").built).to.be.ok;
                     return widget;
                 }).then(function(widget){  return widget.destroy()}).then(function(){
-                    expect( browser.getView("app-foo21").destroyed).to.be.ok;
+                    expect( browser.find("app-foo21").destroyed).to.be.ok;
                 });
         });
 
         it("should instantiate and build other widgets",function(){
             var widget = make("<w:foo><w:bar><t:control>this.widget=arguments[0];</t:control>Hello World</w:bar></w:foo>");
-            return promise.resolve(widget.build(browser.getView("app")))
+            return promise.resolve(widget.build(browser.find("app")))
                 .then(function(widget){
-                    expect( browser.getView("app-foo1-bar1").widget).to.be.ok;
+                    expect( browser.find("app-foo1-bar1").widget).to.be.ok;
                     return widget;
                 });
         })

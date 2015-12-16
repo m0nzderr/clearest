@@ -22,7 +22,7 @@ var streamify = require('stream-array');
 var gutil = require('gulp-util');
 
 // project
-var commons = require('../commons');
+var commons = require('../core/commons');
 var Processor = require('./processor');
 var Renderer = require('./renderer');
 var codegen = require('./codegen');

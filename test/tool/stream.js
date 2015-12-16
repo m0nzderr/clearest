@@ -7,7 +7,7 @@
 var chai = require("chai"),
     expect = chai.expect,
     streamTool = require("../../tool/stream"),
-    commons = require("../../commons"),
+    commons = require("../../core/commons"),
     File = require("vinyl"),
     fs = require("fs"),
     path = require("path"),

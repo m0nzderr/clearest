@@ -5,7 +5,7 @@
  */
 
 var codegen = require("./codegen"),
-    commons = require("../commons");
+    commons = require("../core/commons");
 
 var CLEAREST = commons.constant.CLEAREST;
 

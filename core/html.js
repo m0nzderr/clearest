@@ -3,8 +3,9 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 // imports
-var commons = require("./../commons.js"),
+var commons = require("./commons.js"),
     isArray = commons.is.array,
     isFunction = commons.is.fun,
     isValue = commons.is.value,

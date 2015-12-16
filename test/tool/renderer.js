@@ -8,7 +8,7 @@
 var chai = require("chai"),
     expect = chai.expect,
     Renderer = require("../../tool/renderer.js"),
-    Api = require("../../runtime/api.js"),
+    Api = require("../../core/api.js"),
     Processor = require("../../tool/processor.js"),
     fs = require("fs"),
     interpreter = require("eval");

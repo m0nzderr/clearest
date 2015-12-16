@@ -3,13 +3,14 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 "use strict"
 
 //TODO: rewrite with BDD interface, stop using qunit shim
 var qunit = require("../shim/qunit.js"), test = qunit.test, deepEqual = qunit.deepEqual, equal = qunit.equal, ok = qunit.ok,
-commons = require("../../commons.js"),
-    agg = require("../../runtime/aggregator.js"),
-    html = require("../../runtime/html.js");
+commons = require("../../core/commons.js"),
+    agg = require("../../core/aggregator.js"),
+    html = require("../../core/html.js");
 
 
 describe("runtime library / html", function () {

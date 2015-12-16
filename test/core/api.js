@@ -3,18 +3,19 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 "use strict"
-var Api = require("../../runtime/api"),
+var Core = require("../../core/api"),
     chai = require("chai"),
     expect = chai.expect,
-    commons = require("../../commons"),
+    commons = require("../../core/commons"),
     promise = commons.promise,
     delay = commons.delay;
     expect = chai.expect;
 
 describe("runtime library / core api", function () {
 
-    var api = new Api();
+    var api = new Core();
 
     describe("api.get()", function () {
 

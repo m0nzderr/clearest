@@ -3,6 +3,7 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 //TODO: rewrite with BDD interface, stop using qunit shim
 var qunit = require("../shim/qunit.js"),
     test = qunit.test,
@@ -13,9 +14,9 @@ var qunit = require("../shim/qunit.js"),
     start = qunit.start,
     expect = qunit.expect;
 
-var commons = require("../../commons");
+var commons = require("../../core/commons");
 var promise = commons.promise, is = commons.is,
-    agg = require("../../runtime/aggregator.js");
+    agg = require("../../core/aggregator.js");
 
 describe("runtime library / aggregator", function () {
 

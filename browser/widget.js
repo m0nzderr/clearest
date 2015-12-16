@@ -3,6 +3,7 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+
 /**
  * Clearest Widget (dynamic implementation of api)
  *
@@ -13,8 +14,7 @@
  * TODO: decide if bidirectional context proxy is needed (.bind)
  */
 
-var Api = require("./api"),
-    commons = require("./../commons"),
+var commons = require("../core/commons"),
     promise = commons.promise,
     fin = commons.fin,
     isPromise = commons.is.promise,
@@ -23,9 +23,11 @@ var Api = require("./api"),
     isClearest = commons.is._,
     _in = commons.inside;
 
+var Core = require("./../core/api");
+
 
 //Inherit core API implementation
-commons.inherit(Widget, Api);
+commons.inherit(Widget, Core);
 /**
  * @param {Builder} builder
  * @param template
@@ -45,7 +47,7 @@ function Widget(builder, template, context) {
 
         components.forEach(function (comp, index) {
             // obtain view element for component
-            var componentView = builder.getView(comp.id, view);
+            var componentView = builder.find(comp.id, view);
             var destroy = [];
             // initialize controllers
             each(comp.init, function (init) {
@@ -158,7 +160,7 @@ function Widget(builder, template, context) {
     this.build = function (targetView) {
         //TODO: check progress state
         view = targetView;
-        widget._setId(builder.getId(view));
+        widget._setId(view.id);
         // generate presentation and update view
         var presentation = template(this, this.agg, context);
 
@@ -169,7 +171,6 @@ function Widget(builder, template, context) {
         else {
             return _update(presentation);
         }
-
     };
 
 

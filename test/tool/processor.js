@@ -7,9 +7,9 @@
 
 var chai = require("chai"),
     Processor = require("../../tool/processor.js"),
-    aggregator = require("../../runtime/aggregator.js"),
+    aggregator = require("../../core/aggregator.js"),
     interpreter = require("eval"),
-    Api = require("../../runtime/api"),
+    Api = require("../../core/api"),
     dep1 = require("./fixtures/2/dependency");
 
 

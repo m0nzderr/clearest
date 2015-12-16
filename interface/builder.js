@@ -13,12 +13,12 @@
 function Builder(){}
 /**
  * Returns a view object for a component with given id.
- * A view object must have id property
+ * A view object must have an id property
  * @param id
  * @param parentView is optional argument, may be used to improve performance
  */
 /* istanbul ignore next */
-Builder.prototype.getView=function(id, parentView){throw "not implemented";}
+Builder.prototype.find=function(id, parentView){throw "not implemented";}
 
 /**
  * Renderes a presentation object within a view
@@ -26,9 +26,11 @@ Builder.prototype.getView=function(id, parentView){throw "not implemented";}
  * @param presentation
  */
 /* istanbul ignore next */
-Builder.prototype.render=function(view, presentation){throw "not implemented";}
+Builder.prototype.render=function(element, presentation){throw "not implemented";}
 
-
-
+/**
+ * Returns a wrapper on view element
+ */
+Builder.prototype.wrap = function(element){throw "not implemented";}
 
 module.exports = Builder;

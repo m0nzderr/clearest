@@ -121,7 +121,10 @@ The variables in scope have the same behavior as in nested closures (BTW, this c
  <t/get>
 </t:get>
 ```
-The expected output is "55 is not 25".
+The expected output is
+```
+55 is not 25
+```
 
 > Note, that variables and scopes, same as in JavaScript, has nothing to do with data binding or observables. 
 

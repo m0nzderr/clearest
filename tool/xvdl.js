@@ -8,7 +8,7 @@
  */
 var codegen = require("./codegen"),
     extend = require("extend"),
-    commons = require("../commons"),
+    commons = require("../core/commons"),
     constants = require("./constants"),
     errors = require("./errors");
 
