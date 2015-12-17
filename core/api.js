@@ -13,6 +13,7 @@ var commons = require("./commons"),
     inside = commons.inside,
     isClearest= is._,
     isIncomplete = is.incomplete,
+    complete = commons.complete,
     isPromise = is.promise,
     each = commons.each,
     promise = commons.promise;
@@ -20,7 +21,9 @@ var commons = require("./commons"),
 
 var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
     ID_SEPARATOR = '-',
-    CLEAREST = commons.constant.CLEAREST;
+    CLEAREST = commons.constant.CLEAREST,
+    KEY_ANY = commons.constant.ANY;
+
 
 /**
  * Basic Runtime API
@@ -28,10 +31,11 @@ var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
  */
 function Core() {
 
+    var self = this;
     var components = this.components = [];
     var counter = {}, widgetId;
 
-    // generates unique id for a component
+     // generates unique id for a component
     function componentId(o, k) {
         var id = o[ID_ATTRIBUTE];
 
@@ -51,7 +55,7 @@ function Core() {
     }
     // some common implementation parts
 
-    // scans o for control code popullating components, biding to events, etc.
+    // scans o for control code populating components, biding to events, etc.
     function _scan(o, prefix) {
         if (o === undefined
             || o === null
@@ -60,6 +64,7 @@ function Core() {
         ) return; // skip
 
         // todo: subscribe th changes in o
+        self._listen(o, KEY_ANY, true);
 
         if (isClearest(o)) {
             var ctl = inside(o).ctl;
@@ -93,16 +98,9 @@ function Core() {
  * @private
  */
 /* istanbul ignore next */
-Core.prototype._listen = function (o, k) {
+Core.prototype._listen = function (o, k, updateOnly) {
 }
-/**
- * Returns completion promise for object o
- * @param o
- * @private
- */
-/* istanbul ignore next */
-Core.prototype._promiseComplete = function (o) {
-}
+
 
 /**
  * By default implementation, returns a control function with bound scope (curried)
@@ -163,12 +161,13 @@ Core.prototype.sel = function (o, k, iteration, filter) {
     ) return;
 
     this._listen(o, k);
+
     var item = o[k];
     if (item === undefined) {
         var api = this;
         return isIncomplete(o) ?
             // return completion promise
-            this._promiseComplete(o).then(function (o) {
+            complete(o).then(function (o) {
                 return api.sel(o, j, iteration, filter);
             }) :
             undefined; // no element

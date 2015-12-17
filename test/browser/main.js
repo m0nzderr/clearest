@@ -8,4 +8,5 @@
  * Created by M0nZDeRR on 09/11/2015.
  */
 /* istanbul ignore next */
-require("./dom.js");
+require("./unit/app.js");
+require("./it/widget.js");

@@ -12,8 +12,8 @@
 module.exports = function (el) {
     return {
         get: function(){return el;},
-        on: el.addEventListener.bind(el),
-        off: el.removeEventListener.bind(el),
+        on: function(event, handler, options) { el.addEventListener(event, handler, (options || {}).capture ); },
+        off: function(event, handler, options) { el.removeEventListener(event, handler, (options || {}).capture ); },
         trigger: function(event, options){
             //TODO: deal with custom events
             if (typeof document !== 'undefined'){

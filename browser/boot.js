@@ -14,9 +14,9 @@
  * Commons library, widget/api and dom abstraction layer implementations.
  * Usually, I would'nt touch those:
  */
-var commons = require("../core/commons");
-var Widget = require("widget");
-var Builder =require("./dom");
+//var commons = require("../core/commons");
+var Widget = require("./widget");
+var Builder =require("./app");
 
 /**
  * Element wrapper implementation

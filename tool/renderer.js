@@ -50,6 +50,8 @@ function Renderer(userConfig) {
 
     // call constructor
     Renderer.super(this);
+
+
     var components = this.components;
 
 

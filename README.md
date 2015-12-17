@@ -11,7 +11,7 @@ The WIP is going towards its first open-source release of v2.0.0. Hopefully, one
 Features:
 * Designed for development of modular MVC/MVVM apps with minimal coding effort;
 * Provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
-* 99% of code is browser-independent ()
+* 99% of code is browser-independent (no DOM needed to to run its core behind the scenes)
 * Compilable into JavaScript modules: no sources distributed, no parsing at runtime;
 * No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browserify;
 * No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go. You can stay with NodeJS and require(),
@@ -45,12 +45,16 @@ Roadmap/Progress:
  |    your compiled modules in browser)
  |
  * - Automatic widget bootstrapping from static context (never ever write bootstrapping
- :   code by hand!)
+ |   code by hand!)
+ |
+ * - Widget spec: event processing echain,
+ |
+ * - Widget spec: observer 
  :
- . - Widget: full spec (automatic updates, async update chain, event proxies,
- :   error handling)
+ * - Widget spec: error handling, incomplete object resolution
  :
- . - Documentation and minimal samples (XVDL language, usage of runtime library,
+ :
+ * - Documentation and minimal samples (XVDL language, usage of runtime library,
  :    gulp-browserify recipes)
  :
 ( ) - 2.0.0 release

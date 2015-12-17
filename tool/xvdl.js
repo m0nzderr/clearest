@@ -205,9 +205,9 @@ function XvdlCompiler(userConfig) {
              * @param scope
              */
             event: function (acc, node, scope) {
-                acc.push(closure.control(
-                    apicall(API.on, ["this", codegen.string(node.localName), closure.eventHandler(node.nodeValue)])
-                ));
+                acc.push(
+                    apicall(API.on, [codegen.string(node.localName), closure.eventHandler(node.nodeValue)])
+                );
                 // has controller
                 return true;
             }
@@ -550,8 +550,6 @@ function XvdlCompiler(userConfig) {
                  * @param scope
                  */
                 require: function (acc, node, scope) {
-                    if (!isEmpty(node))
-                        throw compilerError("t:require instruction with a body is not allowed", node);
 
                     foreach(node.attributes, function (node) {
                         var variableName = config.resolver.dependency(node.nodeName, node.nodeValue);
@@ -559,6 +557,13 @@ function XvdlCompiler(userConfig) {
                         //TODO: implement scope management
                         //scope.$root[variableName]=true;
                     });
+
+                    if (!isEmpty(node)){
+                        // allow body
+                        var flags = {keepMultiples: true};
+                        compileChildNodes(acc, node, scope, flags);
+                        return flags.needAggregatorCall;
+                    }
                 },
 
                 /**

@@ -5,12 +5,12 @@
  */
 
 /**
- * Builder intrface
+ * Application intrface
  * Abstraction layer between widget and a view renderer, e.g. browser DOM
  * @constructor
  */
 /* istanbul ignore next */
-function Builder(){}
+function Application(){}
 /**
  * Returns a view object for a component with given id.
  * A view object must have an id property
@@ -18,7 +18,7 @@ function Builder(){}
  * @param parentView is optional argument, may be used to improve performance
  */
 /* istanbul ignore next */
-Builder.prototype.find=function(id, parentView){throw "not implemented";}
+Application.prototype.find=function(id, parentView){throw "not implemented";}
 
 /**
  * Renderes a presentation object within a view
@@ -26,11 +26,16 @@ Builder.prototype.find=function(id, parentView){throw "not implemented";}
  * @param presentation
  */
 /* istanbul ignore next */
-Builder.prototype.render=function(element, presentation){throw "not implemented";}
+Application.prototype.render=function(element, presentation){throw "not implemented";}
 
 /**
- * Returns a wrapper on view element
+ * Returns a wrapper function
  */
-Builder.prototype.wrap = function(element){throw "not implemented";}
+Application.prototype.wrapper = function(element){throw "not implemented";}
 
-module.exports = Builder;
+/**
+ * Process event chain
+ */
+Application.prototype.process = function(){throw "not implemented";}
+
+module.exports = Application;

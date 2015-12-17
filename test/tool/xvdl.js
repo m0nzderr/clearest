@@ -100,20 +100,7 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<t:control>bar</t:control>'))
             .should.be.exactly('S(function(){bar})');
 
-        compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)})})');
-
-        compiler.compile(dom.parseFromString('<foo e:click="boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)},"bar")})');
-
-
-        compiler.compile(dom.parseFromString('<foo e:click="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
-
-        compiler.compile(dom.parseFromString('<foo e:click="{return boom(gas2)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
-
-        // scope separation
+       // scope separation
         compiler.compile(dom.parseFromString('<t:control myvar="bar">return myvar</t:control>'))
             .should.be.exactly('S(P.ctl(function(myvar){return myvar},[bar]))');
 
@@ -214,19 +201,19 @@ describe('tool / xvdl instructions', function () {
 
     it("@e:*", function () {
         compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)})})');
+            .should.be.exactly('S({foo:S(P.on("click",boom))})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",boom)},"bar")})');
+            .should.be.exactly('S({foo:S(P.on("click",boom),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="controller.boom">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",controller.boom)},"bar")})');
+            .should.be.exactly('S({foo:S(P.on("click",controller.boom),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas)})},"bar")})');
+            .should.be.exactly('S({foo:S(P.on("click",function($event){return boom(gas)}),"bar")})');
 
-        compiler.compile(dom.parseFromString('<foo e:click="{return boom(gas2)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(function(){P.on(this,"click",function($event){return boom(gas2)})},"bar")})');
+        compiler.compile(dom.parseFromString('<foo e:click="{return boom(powder)}">bar</foo>'))
+            .should.be.exactly('S({foo:S(P.on("click",function($event){return boom(powder)}),"bar")})');
 
     });
 

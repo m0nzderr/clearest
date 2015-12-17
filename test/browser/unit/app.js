@@ -4,8 +4,8 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 
-var DomBuilder = require("../../browser/dom.js");
-var wrapper = require("../../browser/basic.js");
+var App = require("../../../browser/app.js");
+var wrapper = require("../../../browser/basic.js");
 
 
 /**
@@ -14,7 +14,7 @@ var wrapper = require("../../browser/basic.js");
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
     describe("browser dom layer implementation", function () {
 
-        var builder = new DomBuilder(document, wrapper );
+        var builder = new App(document, wrapper );
 
         it("should resolve elements by id", function () {
             expect(builder.find("container").id).to.equal("container");
@@ -30,18 +30,30 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
         it("should handle basic events", function () {
 
             var presentation = {button:{"@id":"testButton", $:"test"}};
+            var $ = builder.wrapper;
             var container = builder.find("container");
             builder.render(container ,presentation);
 
             var button = builder.find("testButton"), passWord =  "passed";
-            builder.wrap(button).on("click",function(){ this.innerHTML = passWord })
-            builder.wrap(button).trigger("click");
+            var handler = function(event){ this.innerHTML = passWord; };
+            $(button).on("click",handler);
+            $(button).trigger("click");
 
             expect(button.innerHTML).to.equal(passWord);
 
+            button.innerHTML = "off";
+
+            $(button).off("click",handler);
+
+            // handler should not execute
+            $(button).trigger("click");
+            expect(button.innerHTML).to.equal( "off");
+
+        });
 
 
-        })
+        //TODO: should handle custom events
+        //TODO: ...
 
     });
 }

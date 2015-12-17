@@ -166,6 +166,14 @@ function error(e) {
     return is.error(e) ? e : {__clearest__: {error: e}};
 }
 
+/**
+ * Returns completion promise for given object
+ * @param o incmplete object
+ * @returns {*}
+ */
+function complete(o){
+    return o.__clearest__.complete(o)
+}
 
 module.exports = {
     is: is,
@@ -173,6 +181,7 @@ module.exports = {
     inside: inside,
     each: each,
     constant: constant,
+    complete: complete,
     promise: promise,
     error: error,
     inherit: inherit,
