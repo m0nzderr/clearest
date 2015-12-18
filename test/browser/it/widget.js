@@ -64,5 +64,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 expect(run.container.innerHTML).to.be.equal("Hello World");
             });
         });
+
+
     });
 }

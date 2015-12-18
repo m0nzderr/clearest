@@ -17,6 +17,7 @@ module.exports = {
         select: ".sel",
         get: ".get",
         on: ".on",
+        observe: ".obs",
         control: ".ctl",
         use: ".use",
         widget: ".wid",

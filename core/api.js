@@ -216,7 +216,7 @@ Core.prototype.cnt = function (o, k) {
             var api = this;
             return isIncomplete(o) ?
                 // return a promise
-                this._promiseComplete(o).then(function (o) {
+                complete(o).then(function (o) {
                     return api.cnt(o, k);
                 })
                 :

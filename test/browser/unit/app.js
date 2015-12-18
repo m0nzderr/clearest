@@ -52,6 +52,37 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
         });
 
 
+        it("should manage attributes", function () {
+
+            var presentation = {"@internal":"42"};
+            var container = builder.find("container");
+
+            container.removeAttribute("internal");
+            container.setAttribute("external",42);
+
+            builder.render(container ,presentation);
+
+            expect(container.hasAttribute("internal")).to.be.ok;
+            expect(container.getAttribute("internal")).to.be.equal("42");
+
+            expect(container.hasAttribute("external")).to.be.ok;
+            expect(container.getAttribute("external")).to.be.equal("42");
+
+            presentation = {"@internal2":"42"};
+
+            builder.render(container ,presentation);
+
+            // remove old and add new
+            expect(!container.hasAttribute("internal")).to.be.ok;
+            expect(container.hasAttribute("internal2")).to.be.ok;
+            expect(container.getAttribute("internal2")).to.be.equal("42");
+
+            // keep external intact
+            expect(container.hasAttribute("external")).to.be.ok;
+            expect(container.getAttribute("external")).to.be.equal("42");
+        });
+
+
         //TODO: should handle custom events
         //TODO: ...
 

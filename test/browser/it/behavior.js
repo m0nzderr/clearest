@@ -10,7 +10,7 @@ var helper = require("./helper"), compile = helper.compile;
 
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("IT: interpolation", function () {
+    describe("IT: behavior", function () {
         var run, app;
         before(function () {
             run = helper.before();
@@ -40,12 +40,22 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 expect(app.find("test-input1").value).to.be.equal("42");
                 expect(app.find("test-input2").value).to.be.equal("the answer is 42");
                 runtime.send(run.container.test, {answer: 43});
-                return runtime.promise.resolve(app.process()).then(function(){
+                return runtime.promise.resolve(app.process()).then(function () {
                     expect(app.find("test-input1").value).to.be.equal("43");
                     expect(app.find("test-input2").value).to.be.equal("the answer is 43");
                 })
             });
         });
+
+        it("direct observe (@o:*.*)", function () {
+            var code = compile('<t:context test="{answer:42}"><t:control>this.test=test;</t:control><w:input id="test-input1" o:test.answer="{this.value = $event}"/></t:context>');
+            return run(code).then(function () {
+                expect(app.find("test-input1").value).to.be.equal("42");
+                runtime.send(run.container.test, {answer: 43});
+                expect(app.find("test-input1").value).to.be.equal("43");
+            });
+        });
+
 
     });
 }

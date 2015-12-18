@@ -10,4 +10,4 @@
 /* istanbul ignore next */
 require("./unit/app.js");
 require("./it/widget.js");
-require("./it/interpolation.js");
+require("./it/behavior.js");

@@ -29,18 +29,17 @@ or
 
 
 * static attributes belong to container and rendered independently on widget;
-* dynamic attributes belong to inner template and rendered by widget
+* dynamic attributes belong to inner template (or context) and inside widget
 * widget attributes are:
   * w:template - specifies template location (closed form)
   * w:context - specified context object (close form)
   * w:controller - specifies controller class that will receive template code, context object and be controlled with build(), destroy() and process()
   * w:set - specified object injection definition (could be accessed from inside) with
 
+### Attribute templates
+Attributes values support mixed template syntax:
 
-### Dynamic attributes
-Template attributes support two kind of interpolation:
-
-```t:foo="${js-expression} and {{[context-object].field}}"```
+```foo="${js-expression} and {{[context-object].field}}"```
 
 The ```${js-expression}``` does exactly the same as ES6 string interpolation.
 
@@ -48,22 +47,65 @@ The select-expressoin binds the attribute value as an observer of the ```field``
 
   ```{{[context-object].field}}```
 
-The ```{{[context-object].field}}``` expressions could be used inside ```${..}``` as well, e.g:
+Select-expressions could be used within ```${..}``` synax as well, e.g:
 
 ``foo="${formatDate({{date}})}"``.
 
 
 
+### Environment and entities
+Clearest provides environment variables at compile time. Those variables are controlled by user, and by default have the following structure:
+ ```
+ {
+   process:{
+    // OS environment variables,
+   }
+   source:{
+    path:.. // path to compiled source file
+    dir: .. // directory of the compiled source
+   },
+   target:{
+    path: // path to target file (after compilation)
+    dir: // path to target directory
+   }
+ }
+ ```
+
+Those variables can be used at compile time in two ways.
+ 1. As conditions used with ``<t:fragment>`` or ``<t:comment>``, e.g:
+
+    Somewhere in code:
+
+    ```xml
+    <t:fragment env:build.platform="ios">
+        <t:require mylib = "mylib/ios">
+    </t:fragment>
+    <t:fragment env:build.platform="android">
+        <t:require mylib = "mylib/android">
+    </t:fragment>
+    ```
+
+    Somewhere in gulpfile:
+
+    ```javascript
+    ....
+         .pipe(clearest.compiler({
+                  environment:{
+                      build:{
+                          platform: buildPlatform // 'android' or 'ios'
+                      }
+                  },
+                  targetDir: 'tmp'
+                  ....
+                }))
+    ```
 
 
 
-
-
-
-
-
-
-
+2. As XML entities:
+  ```xml
+    <link rel="stylesheet" type="text/css" href="&env:path.to.css;/style.css">
+  ```
 
 
 

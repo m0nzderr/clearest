@@ -31,6 +31,15 @@ describe('#processor', function () {
             template(new Api(), aggregator, 0).should.be.exactly(dep1());
         });
 
+        it("should handle environment variables as entities", function () {
+            var processor = new Processor({environment:{
+                foo:{bar:"42"}
+            }});
+            var moduleCode = processor.compile('<t:fragment>&env:foo.bar;</t:fragment>');
+            var template = interpreter(moduleCode, {require: require});
+            template(new Api(), aggregator, 0).should.be.exactly("42");
+        });
+
         //TODO:
         it("should handle recurrency", function () {
             var processor = new Processor({currentLocation:'./foo.xml' });

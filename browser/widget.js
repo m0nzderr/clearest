@@ -24,7 +24,9 @@ var commons = require("../core/commons"),
     isClearest = commons.is._,
     isComposit = commons.is.composit,
     _in = commons.inside,
-    subscribe = observer.subscribe;
+    subscribe = observer.subscribe,
+    unsubscribe = observer.unsubscribe;
+
 
 var Core = require("./../core/api");
 
@@ -309,43 +311,81 @@ function Widget(app, template, context) {
             }
         }
     };
-
-
     // app reference
     this.app = app;
-
-    this.on = function (event, handler /* options */) {
-        // control function
-        return function ($widget) {
-            // wrapped element
-            var $this = $widget.app.wrapper(this);
-
-            // handler proxy
-            var proxy = function($event) {
-                var result = handler.call(this,$event,$this);
-                if (app.process && (isPromise(result) || $event !== result)) {
-                    // TODO: call processing chain
-                    app.process();
-                }
-            };
-
-            //controller:
-            return {
-                build: function() {
-                    $this.on(event, proxy );
-                },
-                destroy: function(){
-                    $this.off(event, proxy );
-                }
-            }
-        }
-    };
-
-
 }
 
-//TODO: implement .obs
+/**
+ *
+ * Observable controller
+ *
+ * @param event
+ * @param handler
+ * @returns {Function}
+ */
+Widget.prototype.obs = function (object, key, handler /* options */) {
+    // control function
+    return function (widget) {
+        // wrapped element
+        var element = this,
+            $this = widget.app.wrapper(element );
+
+        // handler proxy
+        var proxy = function(o, k, data) {
+            handler.call(element,data,$this);
+        };
+
+        // invoke first
+        proxy(object, key, object[key]);
+
+        //controller:
+        return {
+            build: function() {
+                subscribe(object, key, proxy)
+            },
+            destroy: function(){
+                unsubscribe(proxy)
+            }
+        }
+    }
+};
+
+/**
+ * Event controller
+ *
+ * @param event
+ * @param handler
+ * @returns {Function}
+ */
+Widget.prototype.on = function (event, handler /* options */) {
+    // control function
+    return function (widget) {
+        // wrapped element
+        var $this = widget.app.wrapper(this);
+
+        // handler proxy
+        var proxy = function($event) {
+            var result = handler.call(this,$event,$this);
+            //TODO: check for errors
+            //TODO: decide what to do with the promise. Possibly wait for resolution before processing.
+            if (widget.app.process && (isPromise(result) || $event !== result)) {
+                // TODO: call processing chain
+                widget.app.process();
+            }
+        };
+
+        //controller:
+        return {
+            build: function() {
+                $this.on(event, proxy );
+            },
+            destroy: function(){
+                $this.off(event, proxy );
+            }
+        }
+    }
+};
+
 //TODO: implement .ctl
-//TODO: implement .process
 
 module.exports = Widget;

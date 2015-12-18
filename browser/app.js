@@ -8,7 +8,9 @@
 var html = require("../core/html"),
     commons = require("../core/commons"),
     inside = commons.inside,
-    isClearest = commons.is._;
+    isClearest = commons.is._,
+    isValue = commons.is.value;
+
 //App = require("../interface/app");
 
 var KEY_ATTR = commons.constant.ATTR;
@@ -31,47 +33,43 @@ function BrowserApp(document, wrapper) {
 }
 
 
-function scanAtrributes(el, fun) {
-    var attrs = el.attributes;
-    if (attrs) {
-        for (var i = 0, n = attrs.length; i < n; i++) {
-            fun(attrs)
-        }
-    }
-}
+/*function scanAtrributes(el, fun) {
+ var attrs = el.attributes;
+ if (attrs) {
+ for (var i = 0, n = attrs.length; i < n; i++) {
+ fun(attrs[i])
+ }
+ }
+ }*/
 
 BrowserApp.prototype.render = function (view, presentation) {
 
-    var attrs = {}, fresh = false;
-    // catpure external attributes once
+    var localAttributes = {};//, fresh = false;
+
+    // initialize
     if (!isClearest(view) || !inside(view).attrs) {
-        scanAtrributes(view, function (attr) {
-            attrs[attr.nodeName] = attr.nodeValue;
-        })
-        inside(view).attrs = attrs;
-        fresh = true;
+        inside(view).attrs = localAttributes;
     } else {
-        attrs = inside(view).attrs;
+        localAttributes = inside(view).attrs;
     }
 
-    if (!isValue(presentation)) {
+    var plain = isValue(presentation);
 
-        // remove inexisting attributes:
-        if (!fresh) {
-            scanAtrributes(view, function (attr) {
-                if (attrs[attr.nodeName] === undefined // not external
-                    && presentation[KEY_ATTR + attr.nodeName] // nor internal
-                ) {
-                    // drop it
-                    view.removeAttributeNode(attr);
-                }
-            })
+    // remove old attributes
+    for (var attr in localAttributes) {
+        var key = KEY_ATTR + attr;
+        if (plain || presentation[key] === undefined || presentation[key] === null) {
+            view.removeAttribute(attr);
         }
+    }
 
-        // update new attributes
+    if (!plain) {
+        // add new attributes
         for (var key in presentation) {
             if (key.charAt(0) === KEY_ATTR) {
-                view.setAttribute(key.slice(1), presentation[key]);
+                var attr = key.slice(1);
+                view.setAttribute(attr, presentation[key]);
+                localAttributes[attr] = true;
             }
         }
     }

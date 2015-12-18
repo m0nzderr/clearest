@@ -85,7 +85,10 @@ module.exports = {
 
     compiler: function (userConfig) {
         var config = extend(true, {
-            processor: {}, // processor options
+            environment: {
+                //add process environment variables
+                process: process.env
+            },
             verbose: true,
             debug: false,
             /**
@@ -107,7 +110,7 @@ module.exports = {
         if (config.rename)
             config.processor.rename = config.rename;
 
-        var processor = new Processor(config.processor);
+        var processor = new Processor();//config.processor);
 
         // retrive complete configuration:
         config.processor = processor.configure();
@@ -117,7 +120,21 @@ module.exports = {
             var originalPath = file.path,
                 start = new Date();
 
-            var opts = {currentLocation: originalPath};
+            var opts = {
+                currentLocation: originalPath,
+                // extend environment vaiables with path information
+                environment: extend(true,
+                    config.environment, {
+                        source:{
+                            path: originalPath,
+                            dir: path.dirname(originalPath)
+                        },
+                        target:{
+                            path: mapToTarget(originalPath),
+                            dir: config.targetDir
+                        }
+                })
+            };
 
             if (config.staticAutodetect) {
                 opts.scopeCapture = !!(originalPath.match(config.staticHint));
@@ -342,13 +359,13 @@ module.exports = {
                 else if (transform.length === 2) {// function(file,cb) { .... cb(err,file)
                     var def = promise.defer();
                     transform(file, function (err, file) {
-                            if (err) {
-                                def.reject(err);
-                            }
-                            else {
-                                def.resolve(file);
-                            }
-                        });
+                        if (err) {
+                            def.reject(err);
+                        }
+                        else {
+                            def.resolve(file);
+                        }
+                    });
                     return def.promise.then(wrapFile.bind(file));
                 }
             }
@@ -412,7 +429,7 @@ module.exports = {
                     var def = promise.defer();
                     promise.all(jobs).then(function () {
                         def.resolve(file);
-                    },function(reason){
+                    }, function (reason) {
                         throw reason;
                     });
                     /*,function (reason){

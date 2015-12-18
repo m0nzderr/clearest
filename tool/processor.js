@@ -8,7 +8,7 @@
  * @constructor
  */
 "use strict"
-var dom = require('xmldom'),
+var DOMParser = require('./domparser'),
     xvdl = require('./xvdl'),
     extend = require('extend'),
     codegen = require("./codegen"),
@@ -17,7 +17,7 @@ var dom = require('xmldom'),
     errors = require("./errors");
 
 var API = constants.API;
-
+var ENTITY_PATH_SEPARATOR=".";
 
 function Processor(userConfig) {
 
@@ -126,7 +126,7 @@ function Processor(userConfig) {
     }
 
     var xvdlCompiler,
-        domParser = new (dom.DOMParser)(
+        domParser = new DOMParser(
             {
             errorHandler: function (error) {
                 throw new errors.ParseError(error);
@@ -140,6 +140,7 @@ function Processor(userConfig) {
         extend(true, config, userConfig);
 
         config.xvdl.scopeCapture = config.scopeCapture;
+        config.xvdl.environment = config.environment;
 
         if (!xvdlCompiler) {
             xvdlCompiler = new (xvdl.Compiler)(config.xvdl);
@@ -150,7 +151,23 @@ function Processor(userConfig) {
         return config;
     })(userConfig || {});
 
+
+    function expandEntities(prefix, scope, ent){
+        for(var k in scope){
+            var v = scope[k];
+            if (isValue(v)){
+                ent[prefix + k]=v;
+            } else {
+                expandEntities(prefix + k + ENTITY_PATH_SEPARATOR, v, ent );
+            }
+        }
+        return ent;
+    }
+
     this.compile = function (templateString) {
+
+        // expand environment variables into entity list before parsing
+        domParser.options.entities = expandEntities("env:", xvdlCompiler.configure().environment, {});
 
         var doc = domParser.parseFromString(templateString);
 
