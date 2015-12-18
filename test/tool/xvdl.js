@@ -136,12 +136,21 @@ describe('tool / xvdl instructions', function () {
         //TODO: @w:* (widget attributes)
         // implicit context
         //FIXME: implement scope separation
-        compiler.compile(dom.parseFromString('<w:foo template="bar"/>'))
+        compiler.compile(dom.parseFromString('<w:foo w:template="bar"/>'))
             .should.be.exactly('S({foo:S(P.wid(bar,$context))})');
 
         // explicit context
-        compiler.compile(dom.parseFromString('<w:foo template="bar"><bar/></w:foo>'))
+        compiler.compile(dom.parseFromString('<w:foo w:template="bar"><bar/></w:foo>'))
             .should.be.exactly('S({foo:S(P.wid(bar,function(P,S){return {bar:0}}))})');
+
+        // explicit context
+        compiler.compile(dom.parseFromString('<w:foo bar1="bar1" t:bar2="bar2" w:template="bar"><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S({"@bar1":"bar1"},P.wid(bar,function(P,S){return S({"@bar2":"bar2"},{bar:0})}))})');
+
+
+       // error
+       expect(function(){ compiler.compile(dom.parseFromString('<w:foo bar1="bar1" t:bar2="bar2"  w:template="bar"/>')) }).to.throw(Error);
+
     });
 
     it("w:* (inline)", function () {
@@ -153,6 +162,11 @@ describe('tool / xvdl instructions', function () {
         // implicit context should also switch
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'),{$context:"foo"})
             .should.be.exactly('S({foo:S(P.wid(function(P,S,foo){return {bar:0}},foo))})');
+
+        // attributes
+        compiler.compile(dom.parseFromString('<w:foo bar1="bar1" t:bar2="bar2"><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S({"@bar1":"bar1"},P.wid(function(P,S,$context){return S({"@bar2":"bar2"},{bar:0})},$context))})');
+
     });
 
     it("t:context", function () {
@@ -214,6 +228,38 @@ describe('tool / xvdl instructions', function () {
 
         compiler.compile(dom.parseFromString('<foo e:click="{return boom(powder)}">bar</foo>'))
             .should.be.exactly('S({foo:S(P.on("click",function($event){return boom(powder)}),"bar")})');
+
+    });
+
+    it("@* (with template)", function () {
+
+        // single expression
+        compiler.compile(dom.parseFromString('<foo bar="${bar}"/>'))
+            .should.be.exactly('{foo:{"@bar":bar}}');
+
+        // basic concatenation ES5
+        compiler.compile(dom.parseFromString('<foo bar="${qux}dox${fax}"/>'))
+            .should.be.exactly('{foo:{"@bar":qux+"dox"+fax}}');
+
+        //TODO: add ES6 mode
+        //compiler.compileeES6(dom.parseFromString('<foo t:bar="${qux}dox${fax}"/>'))
+        //    .should.be.exactly('{foo:{"@bar":`${qux}dox${fax}`}}');
+
+        // single select
+        compiler.compile(dom.parseFromString('<foo bar="{{bar}}"/>'))
+            .should.be.exactly('S({foo:S({"@bar":P.sel($context,"bar")})})');
+
+        // single select from another object
+        compiler.compile(dom.parseFromString('<foo bar="{{foo.bar.qux}}"/>'))
+            .should.be.exactly('S({foo:S({"@bar":P.sel(foo.bar,"qux")})})');
+
+        // concatenated select
+        compiler.compile(dom.parseFromString('<foo bar="{{bar}} and {{qux}}"/>'))
+            .should.be.exactly('S({foo:S({"@bar":P.get(function($1,$2){return $1+" and "+$2},[P.sel($context,"bar"),P.sel($context,"qux")])})})');
+
+        // single select within js expression
+        compiler.compile(dom.parseFromString('<foo bar="${func({{foo.bar.qux}})}"/>'))
+            .should.be.exactly('S({foo:S({"@bar":P.get(function($1){return func($1)},[P.sel(foo.bar,"qux")])})})');
 
     });
 

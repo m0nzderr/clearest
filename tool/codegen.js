@@ -28,7 +28,7 @@ function is(v) {
     return v !== undefined && (v.length > 0);
 }
 
-function isValidIdentifier(id){
+function isValidIdentifier(id) {
     return !!id.match(ECMA5_IDENTIFIER_REGEXP);
 }
 
@@ -99,22 +99,24 @@ function closure(o) {
         + "function($args$){"
         + (is(o.strict) ? "\"use strict\" " : "")
         + (is(o.vars) ? "var $vars$;" : "")
-        + (is(o.body) ? "$body$": "")
+        + (is(o.body) ? "$body$" : "")
         + (is(o.ret) ? "return $ret$" : "")
         + "}"
         + (is(o.call) ? ")($call$)" : "")
         , o);
 }
 
-function string(text, preserveSpaces) {
-    if (!preserveSpaces){
+function string(text, preserveSpaces, unquoted) {
+    if (!preserveSpaces) {
         text = text.trim();
         if (text.length == 0)
             return "undefined"; //
     }
-    return JSON.stringify(text
+    var string = JSON.stringify(text
         .replace("<", "&lt;")
         .replace(">", "&gt;"));
+
+    return unquoted ? string.slice(1, -1) : string;
 }
 
 
@@ -126,5 +128,5 @@ module.exports = {
     array: array,
     closure: closure,
     string: string,
-    isValidIdentifier:isValidIdentifier
+    isValidIdentifier: isValidIdentifier
 };

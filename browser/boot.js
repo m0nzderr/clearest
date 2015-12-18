@@ -27,5 +27,4 @@ var $ =require("./basic"); // default
 //var $ =require("sl8"); // for future releases
 //var $ =require("jquery"); // yes, you could use jquery here
 
-/* instanbul ingnore next */
 module.exports = new Widget(new Builder(document, $));

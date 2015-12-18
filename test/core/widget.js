@@ -101,6 +101,17 @@ describe("runtime library / widget",function(){
                 });
         })
 
+
+        it("should instantiate and build other widgets #2",function(){
+            var widget = make('<t:context test="{}"><t:control>this.test=test;</t:control><w:foo t:value="{{v}}"/><w:bar t:value="{{v}}"/></t:context>');
+            return promise.resolve(widget.build(browser.find("app")))
+                .then(function(widget){
+                    expect( browser.find("app-foo1")).to.be.ok;
+                    expect( browser.find("app-foo2")).to.be.ok;
+                    return widget;
+                });
+        })
+
         it("should process rebuild requests (no promises)",function(){
             var widget = make('<t:get scope="{}"><w:foo><s:test from="scope"/><t:control>this.scope=scope; scope.widget=arguments[0];</t:control></w:foo></t:get>');
             return promise.resolve(widget.build(browser.find("app")))

@@ -31,11 +31,13 @@ Application.prototype.render=function(element, presentation){throw "not implemen
 /**
  * Returns a wrapper function
  */
+/* istanbul ignore next */
 Application.prototype.wrapper = function(element){throw "not implemented";}
 
 /**
  * Process event chain
  */
+/* istanbul ignore next */
 Application.prototype.process = function(){throw "not implemented";}
 
 module.exports = Application;

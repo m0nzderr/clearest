@@ -176,8 +176,8 @@ describe("tool / static renderer", function () {
         var compiled = processor.compile('<t:fragment>' +
             '   <t:require mylib="mylib"/>' +
             '   <foo><t:control fun="mylib">return fun();</t:control></foo>' +
-            '   <w:bar template="bar1"/>' +
-            '   <w:bar template="bar2"><foo>hello</foo></w:bar>' +
+            '   <w:bar w:template="bar1"/>' +
+            '   <w:bar w:template="bar2"><foo>hello</foo></w:bar>' +
             '   <t:context foo="{bar:{}}">' +
             '       <w:bar><foo>hello</foo></w:bar>' +
             '   </t:context>' +

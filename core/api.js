@@ -90,6 +90,7 @@ function Core() {
     this._getId=function(id){ return widgetId;}
 }
 
+
 // --- functions to be implemented for dynamic behavior ---
 /**
  * Is called by template to hook on o[k]

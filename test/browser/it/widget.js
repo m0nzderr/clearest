@@ -5,39 +5,21 @@
  */
 
 var runtime = require("../../../runtime");
-var Widget = require("../../../browser/widget");
-var Builder = require("../../../browser/app");
-var $ = require("../../../browser/basic");
+var helper = require("./helper"), compile=helper.compile;
 
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("IT:", function () {
+    describe("IT: widget implementation", function () {
 
-        var app = new Builder(document, $);
-        var container = document.getElementById("container");
-
-        function run(template) {
-
-            if (app.root) {
-                app.root.destroy();
-            }
-
-            var boot = function (P) {
-                return P.start([{
-                    container: [P.wid(
-                        template
-                    )]
-                }]);
-            };
-
-            return runtime.promise.resolve(boot(new Widget(app)));
-        }
+        var run ,  app;
+        before(function(){ run= helper.before(); app = run.app; });
+        after(function(){ helper.after(run)});
 
         it("hello world app", function () {
             return run(function (P, S, c) {
                 return "Hello World"
             }).then(function () {
-                expect(container.innerHTML).to.be.equal("Hello World");
+                expect(run.container.innerHTML).to.be.equal("Hello World");
             });
 
         });
@@ -74,6 +56,12 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 expect(button.innerHTML).to.be.equal("click-me");
                 app.wrapper(button).trigger("click");
                 expect(button.innerHTML).to.be.equal("42");
+            });
+        });
+
+        it("in-browser compilation", function () {
+            return run(compile("Hello World")).then(function () {
+                expect(run.container.innerHTML).to.be.equal("Hello World");
             });
         });
     });

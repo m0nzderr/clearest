@@ -57,11 +57,15 @@ function Widget(app, template, context) {
             var componentView = app.find(comp.id, view);
             var controllers = [];
             // initialize controllers
+
+
             each(comp.init, function (init) {
+            //each(comp.init, function (init) {
                 //TODO: specify which arguments shoule be passed to controller
+
                 var ctl = init.call(componentView, widget);
-                if (ctl && ctl.build) {
-                    if (ctl.destroy || ctl.process)
+                if (ctl && ctl.build !==undefined) {
+                    if (ctl.destroy !==undefined || ctl.process !==undefined)
                         controllers.push(ctl);
                     // call build() method
                     var result = ctl.build(componentView);
@@ -105,11 +109,11 @@ function Widget(app, template, context) {
     // boot implementation
     function _start(_bootComponents) {
 
-        app.root = widget;
+        //app.root = widget;
 
         //tic('init');
         if (_bootComponents !== undefined) {
-            // boot
+            app.root = widget;
             _bootComponents.forEach(function (o) {
                 for (var k in o) {
                     components.push({
@@ -141,8 +145,6 @@ function Widget(app, template, context) {
         widget._scan(presentation, false);
 
         app.render(view, presentation);
-
-        //toc('render');
 
         // asynchronously build new components
         return _start();

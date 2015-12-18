@@ -49,10 +49,11 @@ Roadmap/Progress:
  |
  * - Widget spec: event processing echain,
  |
+ * - Expressions (attribute interpolation)
+ :
  * - Widget spec: observer 
  :
  * - Widget spec: error handling, incomplete object resolution
- :
  :
  * - Documentation and minimal samples (XVDL language, usage of runtime library,
  :    gulp-browserify recipes)

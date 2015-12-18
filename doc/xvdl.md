@@ -61,8 +61,10 @@ Here we only assume an existence of some well-defined convention, so that given 
 ## Dynamic extensions
 
 ## Widget (xmns:w)
-!### <w:* ![@w:*] @template [@context]/>
-!### <w:* ![@w:*]> ... </w:*>
+### <w:* [@w:*] @template [@context]/>
+### <w:* [@w:*]> ... </w:*>
+
+
 
 ## Event handling (xmlns:e, xmlns:o)
 ### @e:*
