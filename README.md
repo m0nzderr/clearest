@@ -48,10 +48,8 @@ Roadmap/Progress:
  |   code by hand!)
  |
  * - Widget spec: event processing echain,
- |
  * - Expressions (attribute interpolation)
- :
- * - Widget spec: observer 
+ * - Widget spec: observer
  :
  * - Widget spec: error handling, incomplete object resolution
  :
