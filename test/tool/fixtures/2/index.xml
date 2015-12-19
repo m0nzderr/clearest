@@ -1,0 +1,6 @@
+<!-- test: dependency resolution -->
+<t:fragment>
+    <t:require dep1="./dependency.js"/>
+    <t:require util="util"/><!-- installed module dependency -->
+    <t:script>return util.format("Hello World %d", dep1())</t:script>
+</t:fragment>

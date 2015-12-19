@@ -1,0 +1,24 @@
+<t:fragment>
+    <name>Music</name>
+    <i>
+        <name>Classical</name>
+        <i like="yes">
+            <name>Istrumental</name>
+            <i>
+                <name>Piano</name>
+            </i>
+            <i>
+                <name>Orchestra</name>
+            </i>
+        </i>
+        <i>
+            <name>Vocal</name>
+            <i like="sometimes">
+                <name>Opera</name>
+            </i>
+            <i like="rare">
+                <name >Chorus</name>
+            </i>
+        </i>
+    </i>
+</t:fragment>
