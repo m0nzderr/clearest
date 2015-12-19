@@ -240,10 +240,10 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S({foo:S(P.on("click",controller.boom),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(P.on("click",function($event,$this){return boom(gas)}),"bar")})');
+            .should.be.exactly('S({foo:S(P.on("click",function($event){return boom(gas)}),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo e:click="{return boom(powder)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(P.on("click",function($event,$this){return boom(powder)}),"bar")})');
+            .should.be.exactly('S({foo:S(P.on("click",function($event){return boom(powder)}),"bar")})');
 
     });
 
@@ -255,10 +255,10 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('S({foo:S(P.obs(foo,"bar",controller.boom),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo o:foo.bar="boom(gas)">bar</foo>'))
-            .should.be.exactly('S({foo:S(P.obs(foo,"bar",function($event,$this){return boom(gas)}),"bar")})');
+            .should.be.exactly('S({foo:S(P.obs(foo,"bar",function($event){return boom(gas)}),"bar")})');
 
         compiler.compile(dom.parseFromString('<foo o:foo.bar="{return boom(powder)}">bar</foo>'))
-            .should.be.exactly('S({foo:S(P.obs(foo,"bar",function($event,$this){return boom(powder)}),"bar")})');
+            .should.be.exactly('S({foo:S(P.obs(foo,"bar",function($event){return boom(powder)}),"bar")})');
     });
 
     it("@* (with template)", function () {

@@ -108,4 +108,58 @@ Those variables can be used at compile time in two ways.
   ```
 
 
+### Interfaces
+
+#### Core API
+Core API is the only interface that XVDL compiler is aware-of. Dispite called an API, it is not supposed to be used directly by applications.
+Instead, only compiled code relies on its.
+```
+CoreApi {
+    // functions used for implementing t:get, s:*, t:if,
+    get(fn, [arg1,...,argN])
+    sel(o, k, fn, filter)
+    cnt(o, k)
+    use(template, context)
+
+    // used to track/resolve dependencies
+    dep(dependent, dependency, provider)
+    /*
+    2.1.0:
+    inj(something) // implements t:inject
+    */
+
+    // control code generators
+    ctl(fn , scope)          // returns user-defined control functoin
+    obs(o, k, handler)       // returns control function for event handler
+    on(event, handler)       // returns control function for observer handler
+    wid(template, context, /*2.1.0: config */)   // returns control cod for widget component
+}
+
+```
+
+
+
+```
+Controller {
+    build(dom) // promise
+    destroy()
+}
+
+Widget:Controller,Api {
+    process() // promise
+}
+```
+
+
+
+### Error handling
+
+There are several error handling mechanisms
+   * Errors (or rejections) that occur while rendering (build() failures)
+   * Errors (or rejections) thrown by controller code
+
+
+Errors that occur in controller code are fed to
+
+
 

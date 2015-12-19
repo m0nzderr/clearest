@@ -34,7 +34,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             }).then(function () {
                 var button = app.find("button");
                 expect(button.innerHTML).to.be.equal("click-me");
-                app.wrapper(app.find("button")).trigger("click");
+                app.trigger(button,"click");
                 expect(button.innerHTML).to.be.equal("42");
             });
         });
@@ -54,7 +54,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             }).then(function () {
                 var button = app.find("container-button1");
                 expect(button.innerHTML).to.be.equal("click-me");
-                app.wrapper(button).trigger("click");
+                app.trigger(button,"click");
                 expect(button.innerHTML).to.be.equal("42");
             });
         });

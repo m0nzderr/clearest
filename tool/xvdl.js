@@ -169,7 +169,7 @@ function XvdlCompiler(userConfig) {
             closure: {
                 template: ['api', 'aggregator', '$context'],
                 widget: ['api', 'aggregator'], //TODO: only add 'aggregator' when its needed.
-                event: {args: "$event,$this"},
+                event: {args: "$event"},
                 select: {indexSuffix: "$index"}
             },
             environment: {

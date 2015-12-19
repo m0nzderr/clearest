@@ -88,6 +88,7 @@ Api.prototype.get = function (target, args /*, resolveIncomplete*/) {/* istanbul
 Api.prototype.agg = function() {/* istanbul ignore next */  notImplemented()}
 
 /**
+ * 2.1.0
  * Dependency injection/resolution mechanism (not a "require")
  * @param dependency
  */

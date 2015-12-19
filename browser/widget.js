@@ -296,24 +296,33 @@ function Widget(app, template, context) {
         delete view;
     };
 
-    // ------------ api implementation -----------------------------------
-    this.wid = function (template, context) {
-        // control function
-        return function () {
-            // evaluate context within new widget
-            if (isFunction(context)) {
-                return new Widget(app, function (P, S) {
-                    return P.get(template, [P, S, context(P, S)])
-                });
-            }
-            else {
-                return new Widget(app, template, context);
-            }
-        }
-    };
+
     // app reference
     this.app = app;
 }
+
+
+/**
+ * Widget controller
+ * @param template
+ * @param context
+ * @returns {Function}
+ */
+Widget.prototype.wid = function (template, context) {
+    // control function
+    return function (widget) {
+        //2.1.0 TODO: add configuration
+        // evaluate context within new widget
+        if (isFunction(context)) {
+            return new Widget(widget.app, function (P, S) {
+                return P.get(template, [P, S, context(P, S)])
+            });
+        }
+        else {
+            return new Widget(widget.app, template, context);
+        }
+    }
+};
 
 /**
  *
@@ -325,19 +334,10 @@ function Widget(app, template, context) {
  */
 Widget.prototype.obs = function (object, key, handler /* options */) {
     // control function
-    return function (widget) {
-        // wrapped element
-        var element = this,
-            $this = widget.app.wrapper(element );
-
-        // handler proxy
-        var proxy = function(o, k, data) {
-            handler.call(element,data,$this);
-        };
-
-        // invoke first
-        proxy(object, key, object[key]);
-
+    return function () {
+        var proxy = handler.bind(this);
+        // call proxy once
+        proxy(object[key]);
         //controller:
         return {
             build: function() {
@@ -361,11 +361,11 @@ Widget.prototype.on = function (event, handler /* options */) {
     // control function
     return function (widget) {
         // wrapped element
-        var $this = widget.app.wrapper(this);
+        var element = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
         var proxy = function($event) {
-            var result = handler.call(this,$event,$this);
+            var result = handler.call(this,$event);
             //TODO: check for errors
             //TODO: decide what to do with the promise. Possibly wait for resolution before processing.
             if (widget.app.process && (isPromise(result) || $event !== result)) {
@@ -377,10 +377,10 @@ Widget.prototype.on = function (event, handler /* options */) {
         //controller:
         return {
             build: function() {
-                $this.on(event, proxy );
+                app.on(element, event, proxy );
             },
             destroy: function(){
-                $this.off(event, proxy );
+                app.off(element, event, proxy );
             }
         }
     }

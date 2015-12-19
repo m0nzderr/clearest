@@ -111,10 +111,10 @@ function unsubscribe(observer) {
  *
  * @param o observable object
  * @param k event key string or (commons.constant.ANY)
- * @param data data argument passed to observer
+ * @param event data argument passed to observer
  * @returns {*} count of notifications sent or false
  */
-function notify(o, k, data) {
+function notify(o, k, event) {
     var count = 0;
     if (o === undefined ||
         o === null || o.__clearest__ === undefined)
@@ -133,7 +133,7 @@ function notify(o, k, data) {
                     (exclude !== undefined && exclude.indexOf(handler) >= 0))
                     return; // skip
 
-                handler(o, k, data);
+                handler(event, o, k);
                 count++;
             });
         }

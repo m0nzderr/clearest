@@ -84,6 +84,28 @@ BrowserApp.prototype.process = function () {
     }
 };
 
+//--- event handling ---//
+BrowserApp.prototype.on = function(element, event, handler, options) {
+    element.addEventListener(event, handler, options );
+};
+
+BrowserApp.prototype.off = function(element, event, handler, options){
+    element.removeEventListener(event, handler, options );
+};
+
+BrowserApp.prototype.trigger = function(element, event, options){
+//TODO: deal with custom events
+    if (typeof document !== 'undefined'){
+        //var e = new Event(event, options) - fails in PhantomJS
+        //var e = document.createEvent(event, options);
+        var e = document.createEvent("HTMLEvents");
+        e.initEvent(event, true, true);
+        element.dispatchEvent(e);
+    }
+};
+
+
+
 module.exports = BrowserApp;
 
 

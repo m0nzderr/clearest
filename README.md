@@ -16,9 +16,10 @@ Features:
 * No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browserify;
 * No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go. You can stay with NodeJS and require(),
  implement your DI, IoC, or nothing at all);
-* Small-footprint runtime library of essentials (the largest dependency is a promises library). Other useful features, like hash navigation/routing and REST resources
+* Small-footprint runtime library of essentials (the largest dependency is a promises library). Other useful features like hash navigation/routing and REST resources
   are optional, they are shipped only if you require() them;
 * Ready to merge into your gulp workflow off the shelf (no plugins needed);
+* Most of the job is done at compile time. No such thing as eval() at runtime.
 
 More code and docs are coming.
 
