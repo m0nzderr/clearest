@@ -8,6 +8,7 @@ var commons = require("./commons"),
     aggregator = require("./aggregator")
     is = commons.is,
     isValue = is.value,
+    isError = is.error,
     isArray = is.array,
     isFunction = is.fun,
     inside = commons.inside,
@@ -99,8 +100,14 @@ function Core() {
  * @private
  */
 /* istanbul ignore next */
-Core.prototype._listen = function (o, k, updateOnly) {
-}
+Core.prototype._listen = function (o, k, updateOnly) {}
+
+/**
+ * Is called by api on rejection.
+ * object contains wrapped error
+ */
+/* istanbul ignore next */
+Core.prototype._error = function (o) {}
 
 
 /**
@@ -256,9 +263,11 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
                     // store resolved value
                     args[i] = o;
                 }, function (error) {
-                    // pass wrapped error through
-                    args[i] = commons.error(error);
-                    //TODO: check if error must be reported somewhere at this point, as it was done in Clearest 1.0
+                    var wrapped = commons.error(error);
+                    // pass wrapped error through to the template
+                    args[i] = wrapped ;
+                    // store error inside api for further processing
+                    api._onError(wrapped )
                 })
             );
         }
@@ -293,5 +302,45 @@ Core.prototype.inj = function(dependency){
     throw 'dependency not found: '+dependency;
 }
 
+
+/**
+ * Implements error handling.
+ *
+ * @param object
+ * @param opertaion   0 - probe, 1 - probe and catch
+ * @param arguments   multiple arguments
+ * Usage:
+ * P.err(o, operation)  - returns error object itself or undefined, if no error
+ * P.err(o, operation, {String} type) - additionaly checks the error type
+ * P.err(o, operation, {String} type, function filter($error) { ...}) - applies filter to error, if exists
+ *
+ * @returns {*} error object os speficied type or undefined otherwise
+ */
+Core.prototype.err = function(o, docatch) {
+
+    var filter, type;
+
+    if (arguments.length > 2) {
+        if (typeof arguments[2] === 'string') {
+            type = arguments[2];
+            if (arguments.length === 4) {
+                filter = arguments[3]
+            }
+        } else {
+            filter = arguments[2]
+        }
+    }
+
+    if (!isError(o, type))
+        return;
+
+    var error = inside(o).error;
+
+    if (docatch)
+        delete inside(o).error;
+
+    return filter ? filter(error) : error;
+
+}
 
 module.exports = Core;

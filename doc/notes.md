@@ -114,7 +114,7 @@ Those variables can be used at compile time in two ways.
 Core API is the only interface that XVDL compiler is aware-of. Dispite called an API, it is not supposed to be used directly by applications.
 Instead, only compiled code relies on its.
 ```
-CoreApi {
+Api {
     // functions used for implementing t:get, s:*, t:if,
     get(fn, [arg1,...,argN])
     sel(o, k, fn, filter)
@@ -137,29 +137,158 @@ CoreApi {
 
 ```
 
-
-
+Widget interface imlements Api and the Component interface.
 ```
-Controller {
-    build(dom) // promise
-    destroy()
-}
-
-Widget:Controller,Api {
-    process() // promise
+Widget: Component , Api {
+        process() // recursively called by parent widget in order to detect changes and update view, may return promise
 }
 ```
+
+The Component interface is used by Widget to control almost any dynamic behavior: events, user components and other Widgets.
+
+Component interface assumes the following methods:
+```
+Component {
+    build(dom) // called to build component on specified domElement, may return promise
+    destroy() // calld to destroy component (it must clean-up all event hadlers to prevent leaks)
+}
+```
+
+
 
 
 
 ### Error handling
 
-There are several error handling mechanisms
-   * Errors (or rejections) that occur while rendering (build() failures)
-   * Errors (or rejections) thrown by controller code
+Errors are handled on many levels.
+
+#### Presentation layer (XVDL)
+The highest level of error handling is provided by XVDL.
+It is designed to deal with the failures that occur during rendering of the view, in the scenario like this one:
+
+```xml
+<t:get payload="service.callThatMayFail()">
+      <!--   presentation for received payload -->
+      Foo is <s:foo from="payload"/>
+</t:get>
+```
+
+It is assumed that ```callThatMayFail()``` returns an object containing the data or error otherwise. For example, a promise that may resolve or fail:
+```
+service.callThatMayFail = function(){
+    var d = promise.defer();
+    askGuru(function(){
+        d.resolve({foo:42})
+    },function(){
+        d.reject({type:'badmood', message:'come back later'})
+        }
+    ));
+    return d.promise;
+}
+```
+
+The default behavior In case of failure, the is as if payload was empty. E.g., assuming the service implementation would be
+
+the output of the above template would be either
+```
+Foo is 42
+```
+when call succeeds, or
+```
+Foo is
+```
+when call fails.
+
+In order to handle the errors the instructions "<t:if-error>", "<t:error>" and "<t:catch>" could be used like that:
+```xml
+<t:get payload="service.callThatMayFail()">
+    <t:if-error
+        from="payload"
+        test="$error.type==='badmood'"
+       >
+        <then>
+            <t:error from="payload">
+              Guru is not in the mood right now.
+              He asked to <s:message/>
+            </t:error>
+            <t:catch from="payload"/>
+        </then>
+        <else>
+            <!--   presentation for received payload -->
+            Foo is <s:foo from="payload"/>
+        </else>
+     </t:if-error>
+</t:get>
+```
+
+The ``<t:if-error>`` instruction tests if result contains an error. Additional conditions could be used to
+distinguish between specific error types.
+
+The ``<t:error>`` switches the context variable to error object, so it becomes accessible from the template.
+It is equivalent to ``<t:context error="getErrorFrom(payload)">``.
+
+The ``<t:catch>`` is used to stop the propagated of error to other layers.
+
+If the attribute ``@from`` is omitted, all three instructions operate on current context object. For example, the above
+template could be simplified:
+ ```xml
+ <t:context payload="service.callThatMayFail()">
+     <t:if-error  test="$error.type==='badmood'">
+         <then>
+             <t:error>
+               Guru is not in the mood right now.
+               He asked to <s:message/>
+             </t:error>
+             <t:catch/>
+         </then>
+         <else>
+             <!--   presentation for received payload -->
+             Foo is <s:foo/>
+         </else>
+      </t:if-error>
+ </t:get>
+ ```
+
+#### Application layer
+Errors, generater while rendering and left uncaught by presentation layer "remain" in Api and handeled by its implementation.
+Same thing happens to errors returned by controller calls in reaction to events:
+```
+    <button e:click="controller.doJobThatMayFail()"/>
+```
+
+Widget implements simple mechanism for handling such errors throug its configuration settings:
+ ```
+    <w:div  w:set.error ="function(/*Object []*/ errors){/* handle your errors here*/}" />
+ ```
+
+ By default, the error handler is similar to
+ ```
+    function(errors){
+        errors.forEach(function(error){
+            app.trigger(dom,new CustomEvent("error",error));
+        })
+    }
+ ```
+ that mirrors all errors into DOM events, which bubble-up to higher application levels.
+
+ For convinience, additional settings can alter the default behavior:
+
+ * error.event is the name of custom event
+ * error.filter is the filter function, applied before each event goes to DOM.
+
+For example:
+```xml
+<w:div
+   w:set.error.event ="unhandeled.error"
+   w:ser.error.filter="function(error){ return error.type !== 'business'? true: (displayError(error), false) }"
+>
+...
+</w:div>
+```
 
 
-Errors that occur in controller code are fed to
+
+
 
 
 

@@ -34,6 +34,43 @@ var Core = require("./../core/api");
 var FLAG_UPDATE = 1,
     FLAG_REBUILD = 2;
 
+
+var DEFAULT_PARAMETERS = {
+    error: {
+        handler: function (app, view, errors) {
+            var event = this.event,
+                filter = this.filter;
+
+            errors.forEach(function (error) {
+                (filter === undefined || filter(error))
+                &&
+                app.trigger(view, new CustomEvent(event, {
+                    detail: error,
+                    bubbles: true,
+                    cancelable: true
+                }))
+            });
+        },
+        event: "error",
+        filter: undefined
+    }
+};
+
+
+function mergeParameters(defaults, user) {
+    //TODO: check if this is too buggy since user side gets modified
+    if (user === undefind)
+        return defaults;
+
+    if (defaults === undefind)
+        return user;
+    for (var k in defaults) {
+        var u = user[k];
+        u[k] = mergeParameters(defaults[k], u);
+    }
+    return user;
+}
+
 //Inherit core API implementation
 commons.inherit(Widget, Core);
 /**
@@ -42,13 +79,15 @@ commons.inherit(Widget, Core);
  * @param context optional context object for presentation
  * @constructor
  */
-
-function Widget(app, template, context) {
+function Widget(app, template, context, config) {
 
     Widget.super(this);
 
     var widget = this,
         view, components = this.components;
+
+    config = (config === undefined) ? DEFAULT_PARAMETERS     // fast lane
+        : mergeParameters(DEFAULT_PARAMETERS, config);   // slow lane;
 
     // ---------------- private ----------------------------------------
     function _buildComponents() {
@@ -62,12 +101,12 @@ function Widget(app, template, context) {
 
 
             each(comp.init, function (init) {
-            //each(comp.init, function (init) {
+                //each(comp.init, function (init) {
                 //TODO: specify which arguments shoule be passed to controller
 
                 var ctl = init.call(componentView, widget);
-                if (ctl && ctl.build !==undefined) {
-                    if (ctl.destroy !==undefined || ctl.process !==undefined)
+                if (ctl && ctl.build !== undefined) {
+                    if (ctl.destroy !== undefined || ctl.process !== undefined)
                         controllers.push(ctl);
                     // call build() method
                     var result = ctl.build(componentView);
@@ -84,16 +123,20 @@ function Widget(app, template, context) {
             // wait for asynchronous components to build
             var def = promise.defer();
             promise.all(queue)
+                .then(undefined, function () {
+                    widget._error(commons.error(e));
+                })
                 //TODO: check if failure chain must be considered
                 .finally(function () {
                     //toc('init');
                     def.resolve(widget);
                 });
-            return def.promise;
-        } //else
-            //toc('init');
 
-        return widget;
+            return def.promise.then(_finalize);
+        } //else
+        //toc('init');
+
+        return _finalize();
     }
 
     function _destroyComponents() {
@@ -128,12 +171,13 @@ function Widget(app, template, context) {
         return _buildComponents();
     }
 
-    this.start =_start;
+    this.start = _start;
 
     // updates widget view and its components
 
 
     var presentation;
+
     function _update(newPresentation) {
 
         presentation = newPresentation;
@@ -156,22 +200,40 @@ function Widget(app, template, context) {
     function _abort(error) {
         progress = null;
         //console.log("widget build aborted due to unexpected error");
-        //console.log(error, error.stack);
-        //console.log(promise.getUnhandledReasons());
+
+        widget._error(commons.error(error));
+
+        _finalize();
+    }
+
+    function _finalize() {
+        // process errors
+        if (templateErrors.length > 0) {
+            var uncaught = [];
+            templateErrors.forEach(function (o) {
+                if (isError(o)) {
+                    uncaught.push(inside(o).error);
+                }
+            });
+            if (uncaught.length > 0) {
+                config.error.handler(widget, uncaught);
+            }
+        }
+        return widget;
     }
 
     /*var t={};
-    function tic(k) {
-        t[k]= (new Date());
-    }
+     function tic(k) {
+     t[k]= (new Date());
+     }
 
-    function toc(k) {
-        t[k] = (new Date()) - t[k];
-    }
+     function toc(k) {
+     t[k] = (new Date()) - t[k];
+     }
 
-    this.stats=function(){
-        return t;
-    }*/
+     this.stats=function(){
+     return t;
+     }*/
 
     //--------------- component interface implementation -------------------
 
@@ -184,15 +246,19 @@ function Widget(app, template, context) {
         //TODO: check progress state
         view = targetView || view;
         widget._setId(view.id);
+
+        // clear errors
+        templateErrors.length = 0;
+
         // generate presentation and update view
         var newPresentation = template(this, this.agg, context);
 
         // use promises only when needed, that runs faster
-        if (isPromise(newPresentation ))
+        if (isPromise(newPresentation))
             return promise.resolve(newPresentation)
                 .then(_update, _abort)
         else {
-            return _update(newPresentation );
+            return _update(newPresentation);
         }
     };
 
@@ -208,7 +274,7 @@ function Widget(app, template, context) {
         requestFlag |= FLAG_UPDATE;
     }
 
-    this._listen=function(o,k, updateOnly){
+    this._listen = function (o, k, updateOnly) {
         if (updateOnly) {
             subscribe(o, k, requestUpdate);
         }
@@ -224,8 +290,14 @@ function Widget(app, template, context) {
         }
     };
 
+    // error handling
+    var templateErrors = [];
+    this._error = function (o) {
+        templateErrors.push(o);
+    };
 
-    this.process = function(){
+
+    this.process = function () {
         var widget = this;
 
         if (requestFlag) {
@@ -235,35 +307,36 @@ function Widget(app, template, context) {
                     progress = widget.build();
                 } else if (requestFlag & FLAG_UPDATE) {
                     progress = _update(presentation);
-                };
+                }
+                ;
 
-                 requestFlag = 0;
+                requestFlag = 0;
 
-                 if (isPromise(progress)) {
-                     var after = progress.then(function () {
-                         if (requestFlag) {
-                             // restart chain
-                             return widget.process();
-                         } else {
-                             // done
-                             progress = null;
-                             return widget;
-                         }
-                     });
+                if (isPromise(progress)) {
+                    var after = progress.then(function () {
+                        if (requestFlag) {
+                            // restart chain
+                            return widget.process();
+                        } else {
+                            // done
+                            progress = null;
+                            return widget;
+                        }
+                    });
 
-                     progress = after;
-                     return progress;
+                    progress = after;
+                    return progress;
 
-                 } else {
-                         // done
-                      progress = null;
-                     return widget;
-                 }
+                } else {
+                    // done
+                    progress = null;
+                    return widget;
+                }
             }
             else
                 return progress;
         } else {
-            var queue =[];
+            var queue = [];
             each(components, function (controller) {
                 if (controller.process) {
                     var res = controller.process();
@@ -308,7 +381,7 @@ function Widget(app, template, context) {
  * @param context
  * @returns {Function}
  */
-Widget.prototype.wid = function (template, context) {
+Widget.prototype.wid = function (template, context, parameters) {
     // control function
     return function (widget) {
         //2.1.0 TODO: add configuration
@@ -316,10 +389,10 @@ Widget.prototype.wid = function (template, context) {
         if (isFunction(context)) {
             return new Widget(widget.app, function (P, S) {
                 return P.get(template, [P, S, context(P, S)])
-            });
+            }, parameters);
         }
         else {
-            return new Widget(widget.app, template, context);
+            return new Widget(widget.app, template, context, parameters);
         }
     }
 };
@@ -340,10 +413,10 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
         proxy(object[key]);
         //controller:
         return {
-            build: function() {
+            build: function () {
                 subscribe(object, key, proxy)
             },
-            destroy: function(){
+            destroy: function () {
                 unsubscribe(proxy)
             }
         }
@@ -364,8 +437,8 @@ Widget.prototype.on = function (event, handler /* options */) {
         var element = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
-        var proxy = function($event) {
-            var result = handler.call(this,$event);
+        var proxy = function ($event) {
+            var result = handler.call(this, $event);
             //TODO: check for errors
             //TODO: decide what to do with the promise. Possibly wait for resolution before processing.
             if (widget.app.process && (isPromise(result) || $event !== result)) {
@@ -376,11 +449,11 @@ Widget.prototype.on = function (event, handler /* options */) {
 
         //controller:
         return {
-            build: function() {
-                app.on(element, event, proxy );
+            build: function () {
+                app.on(element, event, proxy);
             },
-            destroy: function(){
-                app.off(element, event, proxy );
+            destroy: function () {
+                app.off(element, event, proxy);
             }
         }
     }

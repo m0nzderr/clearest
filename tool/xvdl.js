@@ -6,6 +6,8 @@
 /**
  *  XVDL JavasSript compiler
  */
+"use strict";
+
 var codegen = require("./codegen"),
     extend = require("extend"),
     commons = require("../core/commons"),
@@ -15,9 +17,10 @@ var codegen = require("./codegen"),
 
 var API = constants.API,
     SYMBOL = constants.SYMBOL,
-    COMMENT = commons.constant.COMMENT;
+    COMMENT = commons.constant.COMMENT,
+    OBJECT_PATH_SEPARATOR = '.';
 
-//------------------------------------- helpers -----------------------------------
+//------------------------------------- xml helpers -----------------------------------
 
 function isText(node) {
     return node.nodeType === node.TEXT_NODE;
@@ -25,6 +28,13 @@ function isText(node) {
 
 function isEmpty(node) {
     return !node.childNodes || node.childNodes.length === 0;
+}
+
+function nodeNamespaceCondition(condition) {
+    return function (node) {
+        var nsPrefix = node.nodeName.slice(0, -1 - node.localName.length);
+        return condition(nsPrefix);
+    }
 }
 
 function foreach(nodeSet, iterate, stopCriterion) {
@@ -55,17 +65,6 @@ function invertMap(target, map) {
     return target;
 }
 
-function valueOf(o, path) {
-    var key = path.split(".");
-
-    for (var i in key) {
-        if (o === undefined || o === null)
-            return;
-        o = o[key[i]];
-    }
-    return o;
-}
-
 function textContent(node) {
     var content = '';
 
@@ -76,6 +75,58 @@ function textContent(node) {
     });
 
     return content;
+}
+
+
+//------------ object manipulation helpers --------------
+
+function getProperty(o, path) {
+    var key = path.split(OBJECT_PATH_SEPARATOR);
+
+    for (var i in key) {
+        if (o === undefined || o === null)
+            return;
+        o = o[key[i]];
+    }
+    return o;
+}
+
+function _putProperty(o, path, value) {
+    var field = path[0];
+    if (path.length === 1) {
+        o[field] = value;
+    }
+    else {
+        if (isValue(o[field])) {
+            throw new CompilerError("Unable to expand property '" + field + "' into object since it already has a value '" + o[field] + "'");
+        }
+        if (!o[field])
+            o[field] = {};
+        _putProperty(o[field], path.slice(1), value);
+    }
+}
+
+function putProperty(o, path, value) {
+    return _putProperty(o, path.split(OBJECT_PATH_SEPARATOR), value)
+
+}
+
+function parseObjectPath(string, scope) {
+    var expr = string.trim();
+    var path = expr.split(OBJECT_PATH_SEPARATOR);
+    // foo => context = scope.$context, field = foo
+    var context = (scope || {}).$context,
+        field = expr;
+    // foo.bar.qux => context = foo.bar, fild = qux
+    if (path.length > 1) {
+        field = path.pop();
+        context = path.join(".");
+    }
+
+    return {
+        context: context,
+        field: field
+    }
 }
 
 //------------------- Compiler Errors -------------------------------------
@@ -106,25 +157,6 @@ function explicitContextError(node) {
 
 function invalidIdentifier(id, node) {
     throw compilerError("'" + id + "' is not a valid identifier", node);
-}
-
-
-function parseObjectPath(string, scope) {
-    var expr = string.trim();
-    var path = expr.split(".");
-    // foo => context = scope.$context, field = foo
-    var context = (scope || {}).$context,
-        field = expr;
-    // foo.bar.qux => context = foo.bar, fild = qux
-    if (path.length > 1) {
-        field = path.pop();
-        context = path.join(".");
-    }
-
-    return {
-        context: context,
-        field : field
-    }
 }
 
 //------------------------ Compiler implementation ----------------------
@@ -170,6 +202,7 @@ function XvdlCompiler(userConfig) {
                 template: ['api', 'aggregator', '$context'],
                 widget: ['api', 'aggregator'], //TODO: only add 'aggregator' when its needed.
                 event: {args: "$event"},
+                error: {args: "$error"},
                 select: {indexSuffix: "$index"}
             },
             environment: {
@@ -215,7 +248,7 @@ function XvdlCompiler(userConfig) {
              */
             env: function (acc, node, scope, output) {
                 if (output)
-                    output.value = valueOf(config.environment, node.localName) == node.nodeValue;
+                    output.value = getProperty(config.environment, node.localName) == node.nodeValue;
             },
             /**
              *
@@ -244,7 +277,7 @@ function XvdlCompiler(userConfig) {
                 var path = parseObjectPath(node.localName);
 
                 if (!path.context)
-                    throw new compilerError("Attribute name must follow the [object].[field] syntax",node);
+                    throw new compilerError("Attribute name must follow the [object].[field] syntax", node);
 
                 acc.push(
                     apicall(API.observe, [path.context, codegen.string(path.field), closure.eventHandler(node.nodeValue)])
@@ -318,7 +351,7 @@ function XvdlCompiler(userConfig) {
             if (node.hasAttributes()) {
                 foreach(node.attributes, function (node) {
                     if (getInstruction(node) === attributeInstructions.env) {
-                        output = {};
+                        var output = {};
                         attributeInstructions.env([], node, scope, output);
                         match &= output.value;
                     }
@@ -327,6 +360,41 @@ function XvdlCompiler(userConfig) {
 
             return match;
         },
+        conditionalFlowControl = function (conditions, node, scope, flags) {
+            var thenBranch = node,
+                elseBranch = false, defaultThenBranch = true, defaultElseBranch = true;
+
+            // capture t:then and t:else
+            foreach(node.childNodes, function (node) {
+                if (getInstruction(node) == elementInstructions.template.then) {
+                    if (defaultThenBranch) {
+                        thenBranch = node;
+                        defaultThenBranch = false;
+                    }
+                    else
+                        throw compilerError("only unique t:then element is allowed", node);
+                }
+                if (getInstruction(node) == elementInstructions.template.else) {
+                    if (defaultElseBranch) {
+                        if (defaultThenBranch) {
+                            thenBranch = false;
+                        }
+                        elseBranch = node;
+                        defaultElseBranch = false;
+                    }
+                    else
+                        throw compilerError("only unique t:else element is allowed", node);
+                }
+            });
+
+            flags = {ignoreAttributes: true, keepMultiples: true};
+            return codegen.iff({
+                cond: conditions.join("&&"),
+                then: thenBranch ? compileChildNodes([], thenBranch, scope, flags) : config.symbol.empty,
+                else: elseBranch ? compileChildNodes([], elseBranch, scope, flags) : config.symbol.empty
+            });
+        }
+        ,
         elementInstructions = {
 
             template: {
@@ -408,7 +476,7 @@ function XvdlCompiler(userConfig) {
                         }
 
                         if (!subContext)
-                            throw compilerError("Context is not defined in scop", node);
+                            throw compilerError("Context is not defined in scope", node);
                     }
 
                     if (node.hasAttribute("test"))
@@ -417,38 +485,8 @@ function XvdlCompiler(userConfig) {
                     if (conditions.length == 0)
                         throw compilerError("condition attribute is missing: @test or @exist", node);
 
-                    var thenBranch = node,
-                        elseBranch = false, defaultThenBranch = true, defaultElseBranch = true;
-
-                    // capture t:then and t:else
-                    foreach(node.childNodes, function (node) {
-                        if (getInstruction(node) == elementInstructions.template.then) {
-                            if (defaultThenBranch) {
-                                thenBranch = node;
-                                defaultThenBranch = false;
-                            }
-                            else
-                                throw compilerError("only unique t:then element is allowed", node);
-                        }
-                        if (getInstruction(node) == elementInstructions.template.else) {
-                            if (defaultElseBranch) {
-                                if (defaultThenBranch) {
-                                    thenBranch = false;
-                                }
-                                elseBranch = node;
-                                defaultElseBranch = false;
-                            }
-                            else
-                                throw compilerError("only unique t:else element is allowed", node);
-                        }
-                    });
-
-                    var flags = {ignoreAttributes: true, keepMultiples: true};
-                    var conditionExpression = codegen.iff({
-                        cond: conditions.join("&&"),
-                        then: thenBranch ? compileChildNodes([], thenBranch, scope, flags) : config.symbol.empty,
-                        else: elseBranch ? compileChildNodes([], elseBranch, scope, flags) : config.symbol.empty
-                    });
+                    var flags = {};
+                    var conditionExpression = conditionalFlowControl(conditions, node, scope, flags);
 
                     if (closureArguments.length == 0) {
                         // only test condition
@@ -473,6 +511,55 @@ function XvdlCompiler(userConfig) {
                         // may haves promises
                         return true;
                     }
+                },
+                /**
+                 * t:if-error @type @test @from
+                 *
+                 * @param acc
+                 * @param node
+                 * @param scope
+                 */
+                "if-error": function (acc, node, scope) {
+
+                    // obtain subContext
+                    var subContext = scope.$context;
+
+                    if (node.hasAttribute("from")) {
+                        subContext = node.getAttribute("from");
+                    }
+
+                    if (!subContext)
+                        throw compilerError("Context is not defined in scope", node);
+
+                    var args = [subContext, 0];
+
+                    // add type argument
+                    if (node.hasAttribute("type")) {
+                        args.push(codegen.string(node.getAttribute("type")));
+                    }
+
+                    // add test closure
+                    if (node.hasAttribute("test")) {
+                        args.push(codegen.closure({
+                            args: config.closure.error.args,
+                            ret: node.getAttribute("test")
+                        }));
+                    }
+
+                    // omit 0 flag is last
+                    if (args.length == 2) {
+                        args.pop();
+                    }
+
+                    var conditions = [apicall(API.error, args)];
+
+                    var flags = {};
+                    var conditionExpression = conditionalFlowControl(conditions, node, scope, flags);
+
+                    acc.push(conditionExpression);
+
+                    // depends on inner content
+                    return flags.needAggregatorCall;
                 },
                 then: function () {
                     throw compilerError("t:then cannot be used without t:if", node);
@@ -641,6 +728,75 @@ function XvdlCompiler(userConfig) {
 
                 },
 
+
+                /**
+                 * Error selection
+                 * t:error [@from @as @catch @type]
+                 */
+                error: function (acc, node, scope) {
+
+                    // obtain subContext
+                    var subContext = scope.$context;
+
+                    if (node.hasAttribute("from")) {
+                        subContext = node.getAttribute("from");
+                    }
+
+                    if (!subContext)
+                        throw compilerError("Context is not defined in scope", node);
+
+                    var args = [subContext];
+
+                    // add type argument
+                    if (node.hasAttribute("type")) {
+                        args.push(0);
+                        if (node.getAttribute("type") !== constants.SYMBOL.wildcard) {
+                            args.push(codegen.string(node.getAttribute("type")));
+                        }
+                    }
+                    else {
+                        args.push(1); // catch by default
+                        if (node.hasAttribute("catch")) {
+                            if (node.getAttribute("catch") !== constants.SYMBOL.wildcard) {
+                                args.push(codegen.string(node.getAttribute("catch")));
+                            }
+                        }
+                    }
+
+                    if (isEmpty(node)) {
+                        // <t:error/>
+                        acc.push(
+                            apicall(API.error, args)
+                        );
+                    }
+                    else {
+                        // <t:error>...</t:error>
+
+                        var newContext = node.getAttribute("as") || config.closure.error.args;
+
+                        if (!codegen.isValidIdentifier(newContext))
+                            throw invalidIdentifier(newContext, node);
+
+
+                        var flags = {
+                            ignoreAttributes: true,
+                            keepMultiples: true
+                        };
+
+                        args.push(codegen.closure({
+                            args: newContext,
+                            ret: compileChildNodes([], node, {$context: newContext}, flags)
+                        }));
+
+                        acc.push(
+                            apicall(API.error, args)
+                        );
+
+                        // depends on code inside
+                        return flags.needAggregatorCall;
+                    }
+                },
+
                 /**
                  *
                  * t:require
@@ -784,10 +940,15 @@ function XvdlCompiler(userConfig) {
                 });
 
                 var implicitContext = false;
-                var isInternalAttribute = function (node) {
-                    var prefix = node.nodeName.slice(0, -1 - node.localName.length);
-                    return prefix !== "" && prefix != config.prefix.widget;
-                }
+
+                var isInternalAttribute = nodeNamespaceCondition(function (prefix) {
+                    return prefix !== "" && prefix != config.prefix.widget
+                });
+
+                var isWidgetAttribute = nodeNamespaceCondition(function(prefix){
+                    return prefix === config.prefix.widget
+                });
+
 
                 var widgetArguments = [];
                 var widgetPrefix = config.prefix.widget;
@@ -842,20 +1003,33 @@ function XvdlCompiler(userConfig) {
                 }
 
 
-                var o = {}, accumulator = [];
+                var o = {}, accumulator = [], widgetParams = {}, hasWidgetParams = false;
 
                 scope.o = o;
 
+                // process external and widget attributes
                 accumulateAttributes(accumulator, node.attributes, scope, {
                     attributeFilter: function (node) {
 
                         if (implicitContext && isInternalAttribute(node))
                             throw compilerError("Context must be explicit in order be extended. Use @:* attributes instead", node);
 
+                        if (isWidgetAttribute(node)) {
+                            var PREFIX = "set.";
+
+                            if (node.localName.indexOf(PREFIX) === 0) {
+                                hasWidgetParams = true;
+                                putProperty(widgetParams, node.localName.slice(PREFIX.length), node.nodeValue);
+                            }
+                        }
+
                         // explicitly static (t:*) attributes are compiled outside widget
                         return node.nodeName === node.localName;
                     }
                 });
+
+                if (hasWidgetParams)
+                    widgetArguments.push(codegen.object(widgetParams));
 
                 // add widget controller
                 accumulator.push(apicall(API.widget, widgetArguments));

@@ -96,11 +96,16 @@ BrowserApp.prototype.off = function(element, event, handler, options){
 BrowserApp.prototype.trigger = function(element, event, options){
 //TODO: deal with custom events
     if (typeof document !== 'undefined'){
-        //var e = new Event(event, options) - fails in PhantomJS
-        //var e = document.createEvent(event, options);
-        var e = document.createEvent("HTMLEvents");
-        e.initEvent(event, true, true);
-        element.dispatchEvent(e);
+
+        if (typeof event === 'string') {
+            //FIXME: deprecated code
+            var e = document.createEvent("HTMLEvents");
+            e.initEvent(event, true, true);
+            element.dispatchEvent(e);
+        }
+        else {
+            element.dispatchEvent(event);
+        }
     }
 };
 

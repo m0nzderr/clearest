@@ -150,10 +150,6 @@ function tokenize(string) {
 };
 
 
-function compileJs(tokens) {
-
-}
-
 function compileEs5(tokens, onSelect, insideJsBlock) {
 
     var code = [];

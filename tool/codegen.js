@@ -76,7 +76,7 @@ function object(o, v) {
             }
 
             s += propname(k) + ':';
-            s += o[k];
+            s += (typeof o[k] === 'object') ? object(o[k]) : o[k];
         }
 
         s += "}";
