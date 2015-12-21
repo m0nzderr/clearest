@@ -58,7 +58,7 @@ function propname(k) {
     return (k.match(ECMA5_IDENTIFIER_REGEXP)) ? k : ('"' + k + '"');
 }
 
-/* FIXME: use better contract */
+
 function object(o, v) {
 
     if (typeof o !== 'string') {
@@ -76,7 +76,7 @@ function object(o, v) {
             }
 
             s += propname(k) + ':';
-            s += o[k];
+            s += (typeof o[k] === 'object') ? object(o[k]) : o[k];
         }
 
         s += "}";

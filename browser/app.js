@@ -79,10 +79,38 @@ BrowserApp.prototype.render = function (view, presentation) {
 };
 
 BrowserApp.prototype.process = function () {
-    if (this.root) {
-        return this.root.process();
+    return promise.resolve(this.root.process());
+};
+
+//--- event handling ---//
+BrowserApp.prototype.on = function(element, event, handler, options) {
+    element.addEventListener(event, handler, options );
+};
+
+BrowserApp.prototype.off = function(element, event, handler, options){
+    element.removeEventListener(event, handler, options );
+};
+
+BrowserApp.prototype.event = function(event,initializer){
+    //TODO 2.1.0: add compatibility with older browsers
+    return new CustomEvent(event, initializer);
+}
+
+BrowserApp.prototype.trigger = function(element, event){
+    if (typeof document !== 'undefined'){
+        if (typeof event === 'string') {
+            //FIXME: 2.1.0  remove deprecated code
+            var e = document.createEvent("HTMLEvents");
+            e.initEvent(event, true, true);
+            element.dispatchEvent(e);
+        }
+        else {
+            element.dispatchEvent(event);
+        }
     }
 };
+
+
 
 module.exports = BrowserApp;
 

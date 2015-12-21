@@ -163,11 +163,7 @@ module.exports = {
             file.contents = new Buffer(processor.compile(decoder.write(file.contents)), 'utf8');  // compile and store contents
             if (config.verbose)
                 config.log(file, (new Date()) - start);
-            /*} catch (error) {
-             //FIXME: how not to write to file at all?
-             file.contents = new Buffer("/** compilation of " + originalPath + " failed **"+"/\n throw " + codegen.string(error.message), 'utf8');
-             config.error(file, error);
-             }*/
+
             return file;
         });
     },
@@ -459,7 +455,7 @@ module.exports = {
                 });
             } else throw Error("Unable to load compiled module for" + file.path);
 
-            //TODO: check if error are treated here
+            //TODO: check if errors are treated here
             var output = staticRenderer.render(
                 file.path,
                 templateModule,

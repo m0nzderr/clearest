@@ -17,6 +17,31 @@ var xvdl = require("../../../tool/xvdl"),
     codegen = require("../../../tool/codegen"),
     Compiler = xvdl.Compiler;
 
+if (typeof window !== 'undefined') {
+    // detect PhantomJs and fix its CustomEvent implementation
+    if (/PhantomJS/.test(window.navigator.userAgent)) {
+
+        var CustomEvent;
+
+        CustomEvent = function(event, params) {
+            var evt;
+            params = params || {
+                    bubbles: false,
+                    cancelable: false,
+                    detail: undefined
+                };
+            evt = document.createEvent("CustomEvent");
+            evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+            return evt;
+        };
+
+        CustomEvent.prototype = window.Event.prototype;
+
+        window.CustomEvent = CustomEvent;
+
+
+    }
+}
 
 function before(){
     var app = new Builder(document, $);
@@ -70,16 +95,25 @@ function getNamespaceDeclarations(compiler){
  * @param code
  * @returns {Object}
  */
-function compile(code){
+function compile(code, imports){
 
     var parser = new DOMParser();
-    var compiler = new Compiler();
+    var vars = [];
+    var compiler = new Compiler({
+        resolver:{
+            dependency:function(variable, module){
+                vars.push(variable + " = imports[" + codegen.string(module) +"]");
+            }
+        }
+    });
     var ns = getNamespaceDeclarations(compiler);
     var template =  parser.parseFromString("<t:fragment "+ns.join(" ")+">"+code+"</t:fragment>","application/xml");
+    var compiled =  compiler.compile(template);
     var exportClosure = codegen.closure({
+        vars: codegen.list(vars),
         args: codegen.list(compiler.templateArguments()), // closure arguments
 //        body: body.join("\n"), // closure body (lazy loading stuff)
-        ret: compiler.compile(template)// whole code sits in return statement
+        ret: compiled // whole code sits in return statement
     });
     return eval("template= "+exportClosure);
 }

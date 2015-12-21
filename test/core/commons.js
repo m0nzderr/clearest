@@ -134,25 +134,6 @@ describe("runtime library / commons", function () {
 
         });
 
-        test("promise basic mocontract", function () {
-            //TODO: add more contract tests for reject, throw, fail
-
-            it("should implement all, then, defer", function () {
-                function job1() {
-                    var def = promise.defer();
-                    setTimeout(function () {
-                        def.resolve(42);
-                    }, 10);
-                    return def.promise;
-                }
-
-                return promise.all(job1()).then(function (res) {
-                    equal(res, 42, "promises seem to work ");
-                    //done();
-                });
-            })
-
-        })
     });
 
     describe("inherit pattern", function () {

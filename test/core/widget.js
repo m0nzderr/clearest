@@ -24,10 +24,13 @@ function BrowserShim(){
     this.find = function(id){
         return this.dom[id] || (this.dom[id]={id:id});
     };
-
+    this.event = function(event){
+        return event;
+    };
     this.getContent=function(id){
         return this.dom[id].content;
-    }
+    };
+    this.trigger = function(event){ };
 }
 
 describe("runtime library / widget",function(){
@@ -35,9 +38,9 @@ describe("runtime library / widget",function(){
     var browser = new BrowserShim();
     var processor = new Processor();
 
-    function make(templateString){
+    function make(templateString, parameters){
         var template  = processor.compile(templateString);
-        return new Widget(browser, interpreter(template,{require:require}));
+        return new Widget(browser, interpreter(template,{require:require}), undefined, parameters);
     }
 
 
@@ -49,6 +52,44 @@ describe("runtime library / widget",function(){
             });
         });
     });
+
+    describe("parameters", function(){
+        it("should set default",function(){
+            var widget = new Widget({}, {}, {});
+            expect(widget.parameters.error.event).to.be.equal(Widget.DEFAULT_PARAMETERS.error.event);
+        });
+
+        it("merge user parameters",function(){
+            var widget2 = new Widget({}, {}, {}, {error:{event:"foo", custom:"bar"}});
+            expect(widget2.parameters.error.event).to.be.equal("foo");
+            expect(widget2.parameters.error.custom).to.be.equal("bar");
+        });
+    });
+
+    describe("error handling", function(){
+        it("should pass rendering errors to handler",function(){
+            var caught = null;
+            var widget = new Widget(browser, function (P){
+                P._error(commons.error(1));
+                P._error(commons.error(2))
+            }, {}, { error:{handler:function(errors, widget){ caught = errors;}}});
+            return promise.resolve(widget.build(browser.find("app"))).then(function(){
+                expect( caught ).to.deep.equal([1, 2]);
+            });
+        });
+
+        it("default error handler should call caputre",function(){
+            var caught = null;
+            var widget = new Widget(browser, function (P){
+                P._error(commons.error(1));
+            }, {}, { error:{capture:function(error, widget){ caught = error;}}});
+            return promise.resolve(widget.build(browser.find("app"))).then(function(){
+                expect( caught ).to.deep.equal(1);
+            });
+        });
+    });
+
+
 
     describe("component model", function(){
         it("should execute controller code",function(){
@@ -73,11 +114,8 @@ describe("runtime library / widget",function(){
                     expect( browser.find("app-foo1").destroyed).to.be.ok;
                    // expect( browser.find("app-bar1").destroyed).to.be.ok;
                 });
-
             expect(commons.is.promise(chain)).to.be.ok;
-
             return chain;
-
         });
 
         it("should build and destroy asynchronous components",function(){

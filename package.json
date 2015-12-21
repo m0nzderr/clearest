@@ -1,6 +1,6 @@
 {
   "name": "clearest",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {
@@ -20,7 +20,8 @@
     "gulp-util": "^3.0.7",
     "rsvp": "^3.1.0",
     "through2": "^2.0.0",
-    "vinyl": "^1.0.0"
+    "vinyl": "^1.0.0",
+    "stream-array": "^1.1.1"
   },
   "devDependencies": {
     "browserify": "^12.0.1",
@@ -32,8 +33,7 @@
     "mocha": "^2.3.3",
     "mocha-phantomjs": "^4.0.1",
     "mocha-phantomjs-istanbul": "0.0.2",
-    "should": "^7.1.0",
-    "stream-array": "^1.1.1"
+    "should": "^7.1.0"
   },
   "scripts": {
     "test-browser-build": "./node_modules/.bin/browserify test/browser/main.js -t browserify-istanbul -o .test.bundle.js",

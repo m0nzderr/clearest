@@ -9,44 +9,44 @@ var wrapper = require("../../../browser/basic.js");
 
 
 /**
- * Created by M0nZDeRR on 09/11/2015.
+ * BroserApp implementation tests
  */
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("browser dom layer implementation", function () {
+    describe("browser app (dom abstraction)", function () {
 
-        var builder = new App(document, wrapper );
+        var app = new App(document, wrapper );
 
         it("should resolve elements by id", function () {
-            expect(builder.find("container").id).to.equal("container");
+            expect(app.find("container").id).to.equal("container");
         });
 
         it("should render html presentation ", function () {
             var presentation = "hello world";
-            var container = builder.find("container");
-            builder.render(container ,presentation);
+            var container = app.find("container");
+            app.render(container ,presentation);
             expect(container.innerHTML).to.equal(presentation);
         });
 
         it("should handle basic events", function () {
 
             var presentation = {button:{"@id":"testButton", $:"test"}};
-            var $ = builder.wrapper;
-            var container = builder.find("container");
-            builder.render(container ,presentation);
+            var $ = app.wrapper;
+            var container = app.find("container");
+            app.render(container ,presentation);
 
-            var button = builder.find("testButton"), passWord =  "passed";
+            var button = app.find("testButton"), passWord =  "passed";
             var handler = function(event){ this.innerHTML = passWord; };
-            $(button).on("click",handler);
-            $(button).trigger("click");
+            app.on(button,"click",handler);
+            app.trigger(button,"click");
 
             expect(button.innerHTML).to.equal(passWord);
 
             button.innerHTML = "off";
 
-            $(button).off("click",handler);
+            app.off(button,"click",handler);
 
             // handler should not execute
-            $(button).trigger("click");
+            app.trigger(button,"click");
             expect(button.innerHTML).to.equal( "off");
 
         });
@@ -55,12 +55,12 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
         it("should manage attributes", function () {
 
             var presentation = {"@internal":"42"};
-            var container = builder.find("container");
+            var container = app.find("container");
 
             container.removeAttribute("internal");
             container.setAttribute("external",42);
 
-            builder.render(container ,presentation);
+            app.render(container ,presentation);
 
             expect(container.hasAttribute("internal")).to.be.ok;
             expect(container.getAttribute("internal")).to.be.equal("42");
@@ -70,7 +70,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
 
             presentation = {"@internal2":"42"};
 
-            builder.render(container ,presentation);
+            app.render(container ,presentation);
 
             // remove old and add new
             expect(!container.hasAttribute("internal")).to.be.ok;
@@ -84,7 +84,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
 
 
         //TODO: should handle custom events
-        //TODO: ...
+
 
     });
 }

@@ -66,16 +66,15 @@ Api.prototype.use = function (templateModule, o) {/* istanbul ignore next */  no
  * @param o - object
  * @param k - key/property
  * @param iteration - iteration template
- * @param filter - filtering options
+ * @param filter - filtering settings
  * @returns {*}
  */
-//TODO: implement filtering
 Api.prototype.sel = function (o, k, iteration, filter) {/* istanbul ignore next */  notImplemented()}
 
 /**
  * cnt = function cnt(o, k)
  *
- * Provide count of items represented by the property
+ * Provide count of items stored in the property
  *
  * @param o object
  * @param k property/key (string) or array of strings
@@ -88,6 +87,22 @@ Api.prototype.get = function (target, args /*, resolveIncomplete*/) {/* istanbul
 Api.prototype.agg = function() {/* istanbul ignore next */  notImplemented()}
 
 /**
+ * Implements error handling.
+ *
+ * @param object
+ * @param opertaion   0 - probe, 1 - probe and catch
+ * @param arguments   multiple arguments
+ * Usage:
+ * P.err(o, operation)  - returns error object itself or undefined, if no error
+ * P.err(o, operation, {String} type) - additionaly checks the error type
+ * P.err(o, operation, {String} type, function filter($error) { ...}) - applies filter to error, if exists
+ *
+ * @returns {*} error object os speficied type or undefined otherwise
+ */
+Api.prototype.err = function(object, opertaion, arguments) {/* istanbul ignore next */  notImplemented()}
+
+/**
+ * 2.1.0
  * Dependency injection/resolution mechanism (not a "require")
  * @param dependency
  */

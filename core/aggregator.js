@@ -71,7 +71,7 @@ var TEXT = commons.constant.TEXT,
 module.exports = agg;
 
 // builds a composit object
-// TODO: change summation logic for attributes (concat strings instead of push, add numbers)?
+// TODO: review summation logic for attributes (concat strings instead of push)?
 function compose(seq) // sequence is a plain array
 {
     var o = {}, // generate result object

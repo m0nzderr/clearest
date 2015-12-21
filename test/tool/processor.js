@@ -40,7 +40,6 @@ describe('#processor', function () {
             template(new Api(), aggregator, 0).should.be.exactly("42");
         });
 
-        //TODO:
         it("should handle recurrency", function () {
             var processor = new Processor({currentLocation:'./foo.xml' });
             var moduleCode = processor.compile('<t:if test="$context.count>0"><t:then><t:use template="./foo.xml" context="{count:$context.count-1,seed:$context.seed+14}"/></t:then><t:else><t:script>return $context.seed</t:script></t:else></t:if>');

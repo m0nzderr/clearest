@@ -150,10 +150,6 @@ function tokenize(string) {
 };
 
 
-function compileJs(tokens) {
-
-}
-
 function compileEs5(tokens, onSelect, insideJsBlock) {
 
     var code = [];
@@ -179,11 +175,11 @@ function compileEs5(tokens, onSelect, insideJsBlock) {
     return code.join(insideJsBlock ? '' : '+');
 }
 
-function compile(expression, onSelect) {
+function compile(expression, onSelect, insideJs) {
 
     var tokens = tokenize(expression);
 
-    return /*es6 ? compileEs6(tokens, scope, config): */ compileEs5(tokens, onSelect);
+    return /*es6 ? compileEs6(tokens, scope, config): */ compileEs5(tokens, onSelect, insideJs);
 
 
 }

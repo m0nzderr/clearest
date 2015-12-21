@@ -21,9 +21,9 @@ var //qunit = require("./../shim/qunit"),
     send = observer .send,
     CLEAREST = commons.constant.CLEAREST;
 
-describe("runtime library / commons", function () {
+describe("core  ", function () {
 
-    describe("observable pattern", function () {
+    describe("observer / subscribe-notify", function () {
 
         it('should not break on unsupported objects', function () {
             // nothing happens:
@@ -93,7 +93,7 @@ describe("runtime library / commons", function () {
                 expected2 = {o: [], k: [], d: []};
 
             var handler = function (log) {
-                return function (o, k, d) {
+                return function (d, o, k) {
                     log.o.push(o);
                     log.k.push(k);
                     log.d.push(d);
@@ -139,8 +139,8 @@ describe("runtime library / commons", function () {
             notify(o, 'foo', 1);
 
             // expect two calls on foo:
-            call1(o, 'foo', 1);
-            call2(o, 'foo', 1);
+            call1(1, o, 'foo');
+            call2(1, o, 'foo');
 
             assertLogs();
 
@@ -148,7 +148,7 @@ describe("runtime library / commons", function () {
             notify(o, 'bar', 2);
 
             // expect one call to obs2
-            call2(o, 'bar', 2);
+            call2(2, o, 'bar');
 
             assertLogs();
 
@@ -156,9 +156,9 @@ describe("runtime library / commons", function () {
             notify(o, '*', 3);
 
             // expect:
-            call1(o, 'foo', 3);
-            call2(o, 'foo', 3);
-            call2(o, 'bar', 3);
+            call1(3, o, 'foo');
+            call2(3, o, 'foo');
+            call2(3, o, 'bar');
 
             assertLogs();
 
@@ -169,21 +169,21 @@ describe("runtime library / commons", function () {
             notify(o, 'foo', 1);
 
             // expect
-            call1(o, 'foo', 1);
-            call2(o, 'foo', 1);
+            call1(1, o, 'foo');
+            call2(1, o, 'foo');
 
             assertLogs();
 
             notify(o, 'bar', 2);
 
-            call2(o, 'bar', 2);
+            call2(2, o, 'bar');
 
             assertLogs();
 
             notify(o, '*', 3);
 
-            call1(o, 'foo', 3);
-            call2(o, '*', 3);
+            call1(3, o, 'foo');
+            call2(3, o, '*');
 
             assertLogs();
         });
@@ -227,10 +227,10 @@ describe("runtime library / commons", function () {
     });
 
 
-    describe("commons / send", function () {
+    describe("observer / send", function () {
         it('should notify and store', function () {
             var o = {}, log = {};
-            subscribe(o, '*', function (o, k, data) {
+            subscribe(o, '*', function (data, o, k) {
                 log[k] = data;
             });
             // will
@@ -241,7 +241,7 @@ describe("runtime library / commons", function () {
 
         it('should notify with specific data', function () {
             var o = {}, log = {};
-            subscribe(o, '*', function (o, k, data) {
+            subscribe(o, '*', function (data, o, k) {
                 log[k] = data;
             });
             // will

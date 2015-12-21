@@ -34,7 +34,7 @@ function html(o, tag) {
     var head, body, buf = '';
 
     if (o === undefined || o === null) {
-        return buf; //FIXME: determine what todo with empty elements
+        return buf;
     }
 
     if (tag !== undefined && tag !== TEXT) {

@@ -14,14 +14,14 @@ var CLEAREST = commons.constant.CLEAREST;
  * @constructor
  */
 function Serializer() {
-    //TODO: preseve references to same objects
+    //TODO: preserve references to same objects
     var self = this, vars = [], deps = {}, depCount = 0;
     this.serialize = serialize;
     this.vars = vars;
 
     function serialize(o) {
 
-        //TODO: use refernces to objects
+        //TODO: use references to objects
 
         if (isArray(o))
             return o.map(serialize);

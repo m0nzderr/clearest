@@ -3,17 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strcict";
 
 /**
- * Clearest Widget (dynamic implementation of api)
- *
- * TODO: add rebuild/update hooks
- * TODO: implement in-progress request negotiation
- * TODO: implement widget events
- * TODO: implement error handling
- * TODO: decide if bidirectional context proxy is needed (.bind)
+ * Clearest Widget
  */
-
 var commons = require("../core/commons"),
     observer = require("../core/observer"),
     promise = commons.promise,
@@ -25,14 +19,96 @@ var commons = require("../core/commons"),
     isComposit = commons.is.composit,
     _in = commons.inside,
     subscribe = observer.subscribe,
-    unsubscribe = observer.unsubscribe;
+    unsubscribe = observer.unsubscribe,
+    each = commons.each;
 
 
 var Core = require("./../core/api");
 
 
+/**
+ * Default widget configuration parameters.
+ *
+ * Parameters could be customized with "w:set.*" attribute syntax.
+ * E.g.:
+ *
+ * <w:mycontainer w:set.error.capture="true"/>
+ *
+ *
+ */
+Widget.DEFAULT_PARAMETERS = {
+    error: {
+        /**
+         * Name of custom event for propagated errors
+         */
+        event: "error",
+        /**
+         * Error capturing mode.
+         * It could be set to
+         *      true,
+         *      false
+         * or
+         *      function(error) { } that returns those values.
+         *
+         * When false is set or returned, errors are propagated into the DOM as custom events for
+         * further handling. Otherwise errors are not propagated (i.e., captured by a widget).
+         * For more control, provide a function with a custom implementation, e.g:
+         *
+         * function (error, widget) {
+         *          console.error(widget.getId(),error);
+         *          // do not propagate (capture)
+         *          return true;
+         * }
+         *
+         */
+        capture: false,
+        /**
+         * Default error handler
+         *
+         * It receives and array of erros.
+         *
+         * @param {Widget} widget
+         * @param {Element} view
+         * @param {Array} errors
+         */
+        handler: function (errors, widget) {
+            var event = this.event,
+                capture = this.capture,
+                app = widget.app,
+                view = widget.view;
+
+            errors.forEach(function (error) {
+                ((typeof capture === 'function') ? capture(error, widget) : capture)
+                ||
+                app.trigger(view, app.event(event, {
+                    detail: error,
+                    bubbles: true,
+                    cancelable: true
+                }))
+            });
+        }
+    }
+};
+
+
+function mergeParameters(defaults, user) {
+    if (user === undefined)
+        return defaults;
+    if (defaults === undefined)
+        return user;
+    if (typeof defaults === 'object') {
+        for (var k in defaults) {
+            var u = user[k];
+            user[k] = mergeParameters(defaults[k], u);
+        }
+    }
+    return user;
+}
+
+
 var FLAG_UPDATE = 1,
     FLAG_REBUILD = 2;
+
 
 //Inherit core API implementation
 commons.inherit(Widget, Core);
@@ -42,13 +118,15 @@ commons.inherit(Widget, Core);
  * @param context optional context object for presentation
  * @constructor
  */
-
-function Widget(app, template, context) {
+function Widget(app, template, context, parameters) {
 
     Widget.super(this);
 
     var widget = this,
         view, components = this.components;
+
+    this.parameters = parameters = (parameters === undefined) ? Widget.DEFAULT_PARAMETERS     // fast lane
+        : mergeParameters(Widget.DEFAULT_PARAMETERS, parameters);   // slow lane;
 
     // ---------------- private ----------------------------------------
     function _buildComponents() {
@@ -60,14 +138,10 @@ function Widget(app, template, context) {
             var controllers = [];
             // initialize controllers
 
-
             each(comp.init, function (init) {
-            //each(comp.init, function (init) {
-                //TODO: specify which arguments shoule be passed to controller
-
                 var ctl = init.call(componentView, widget);
-                if (ctl && ctl.build !==undefined) {
-                    if (ctl.destroy !==undefined || ctl.process !==undefined)
+                if (ctl && ctl.build !== undefined) {
+                    if (ctl.destroy !== undefined || ctl.process !== undefined)
                         controllers.push(ctl);
                     // call build() method
                     var result = ctl.build(componentView);
@@ -84,16 +158,21 @@ function Widget(app, template, context) {
             // wait for asynchronous components to build
             var def = promise.defer();
             promise.all(queue)
+                .then(undefined, function (error) {
+                    // handle build error
+                    widget._error(commons.error(error));
+                })
                 //TODO: check if failure chain must be considered
                 .finally(function () {
                     //toc('init');
                     def.resolve(widget);
                 });
-            return def.promise;
-        } //else
-            //toc('init');
 
-        return widget;
+            return def.promise.then(_finalize);
+        } //else
+        //toc('init');
+
+        return _finalize();
     }
 
     function _destroyComponents() {
@@ -128,20 +207,17 @@ function Widget(app, template, context) {
         return _buildComponents();
     }
 
-    this.start =_start;
+    this.start = _start;
 
     // updates widget view and its components
 
 
     var presentation;
+
     function _update(newPresentation) {
-
         presentation = newPresentation;
-        //TODO: check progress state
-
         // remove existing components
         _destroyComponents();
-
         //TODO: optimize, by adding callback to html() renderer
         // extract components from generated view, hook-up to change events, etc.
         widget._scan(presentation, false);
@@ -155,44 +231,63 @@ function Widget(app, template, context) {
 
     function _abort(error) {
         progress = null;
-        //console.log("widget build aborted due to unexpected error");
-        //console.log(error, error.stack);
-        //console.log(promise.getUnhandledReasons());
+        widget._error(commons.error(error));
+        _finalize();
+    }
+
+    function _finalize() {
+        // process errors
+        if (templateErrors.length > 0) {
+            var uncaught = [];
+            templateErrors.forEach(function (o) {
+                if (isError(o)) {
+                    uncaught.push(inside(o).error);
+                }
+            });
+            if (uncaught.length > 0) {
+                parameters.error.handler(uncaught, widget);
+            }
+        }
+        return widget;
     }
 
     /*var t={};
-    function tic(k) {
-        t[k]= (new Date());
-    }
+     function tic(k) {
+     t[k]= (new Date());
+     }
 
-    function toc(k) {
-        t[k] = (new Date()) - t[k];
-    }
+     function toc(k) {
+     t[k] = (new Date()) - t[k];
+     }
 
-    this.stats=function(){
-        return t;
-    }*/
+     this.stats=function(){
+     return t;
+     }*/
 
     //--------------- component interface implementation -------------------
 
     /**
-     * Called by parent component to generate a inside given container,
+     * Called by parent component to generate presentation inside given container,
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
     this.build = function (targetView) {
-        //TODO: check progress state
-        view = targetView || view;
+
+        this.view = view = targetView || view;
         widget._setId(view.id);
+
+        // clear errors
+        templateErrors.length = 0;
+
         // generate presentation and update view
         var newPresentation = template(this, this.agg, context);
 
         // use promises only when needed, that runs faster
-        if (isPromise(newPresentation ))
+        if (isPromise(newPresentation))
             return promise.resolve(newPresentation)
                 .then(_update, _abort)
         else {
-            return _update(newPresentation );
+            return _update(newPresentation);
         }
     };
 
@@ -208,7 +303,7 @@ function Widget(app, template, context) {
         requestFlag |= FLAG_UPDATE;
     }
 
-    this._listen=function(o,k, updateOnly){
+    this._listen = function (o, k, updateOnly) {
         if (updateOnly) {
             subscribe(o, k, requestUpdate);
         }
@@ -224,8 +319,14 @@ function Widget(app, template, context) {
         }
     };
 
+    // error handling
+    var templateErrors = [];
+    this._error = function (o) {
+        templateErrors.push(o);
+    };
 
-    this.process = function(){
+
+    this.process = function () {
         var widget = this;
 
         if (requestFlag) {
@@ -235,35 +336,36 @@ function Widget(app, template, context) {
                     progress = widget.build();
                 } else if (requestFlag & FLAG_UPDATE) {
                     progress = _update(presentation);
-                };
+                }
+                ;
 
-                 requestFlag = 0;
+                requestFlag = 0;
 
-                 if (isPromise(progress)) {
-                     var after = progress.then(function () {
-                         if (requestFlag) {
-                             // restart chain
-                             return widget.process();
-                         } else {
-                             // done
-                             progress = null;
-                             return widget;
-                         }
-                     });
+                if (isPromise(progress)) {
+                    var after = progress.then(function () {
+                        if (requestFlag) {
+                            // restart chain
+                            return widget.process();
+                        } else {
+                            // done
+                            progress = null;
+                            return widget;
+                        }
+                    });
 
-                     progress = after;
-                     return progress;
+                    progress = after;
+                    return progress;
 
-                 } else {
-                         // done
-                      progress = null;
-                     return widget;
-                 }
+                } else {
+                    // done
+                    progress = null;
+                    return widget;
+                }
             }
             else
                 return progress;
         } else {
-            var queue =[];
+            var queue = [];
             each(components, function (controller) {
                 if (controller.process) {
                     var res = controller.process();
@@ -296,24 +398,32 @@ function Widget(app, template, context) {
         delete view;
     };
 
-    // ------------ api implementation -----------------------------------
-    this.wid = function (template, context) {
-        // control function
-        return function () {
-            // evaluate context within new widget
-            if (isFunction(context)) {
-                return new Widget(app, function (P, S) {
-                    return P.get(template, [P, S, context(P, S)])
-                });
-            }
-            else {
-                return new Widget(app, template, context);
-            }
-        }
-    };
+
     // app reference
     this.app = app;
 }
+
+
+/**
+ * Widget controller
+ * @param template
+ * @param context
+ * @returns {Function}
+ */
+Widget.prototype.wid = function (template, context, parameters) {
+    // control function
+    return function (widget) {
+        // evaluate context within new widget
+        if (isFunction(context)) {
+            return new Widget(widget.app, function (P, S) {
+                return P.get(template, [P, S, context(P, S)])
+            }, parameters);
+        }
+        else {
+            return new Widget(widget.app, template, context, parameters);
+        }
+    }
+};
 
 /**
  *
@@ -325,30 +435,29 @@ function Widget(app, template, context) {
  */
 Widget.prototype.obs = function (object, key, handler /* options */) {
     // control function
-    return function (widget) {
-        // wrapped element
-        var element = this,
-            $this = widget.app.wrapper(element );
-
-        // handler proxy
-        var proxy = function(o, k, data) {
-            handler.call(element,data,$this);
-        };
-
-        // invoke first
-        proxy(object, key, object[key]);
-
+    return function () {
+        var proxy = handler.bind(this);
+        // call proxy once
+        proxy(object[key]);
         //controller:
         return {
-            build: function() {
+            build: function () {
                 subscribe(object, key, proxy)
             },
-            destroy: function(){
+            destroy: function () {
                 unsubscribe(proxy)
             }
         }
     }
 };
+
+/**
+ * Handles errors produced by controller code
+ * @param error
+ */
+Widget.prototype._controllerError = function (error) {
+    this.parameters.error.handler([error], this);
+}
 
 /**
  * Event controller
@@ -360,32 +469,29 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
 Widget.prototype.on = function (event, handler /* options */) {
     // control function
     return function (widget) {
-        // wrapped element
-        var $this = widget.app.wrapper(this);
+        //  element
+        var element = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
-        var proxy = function($event) {
-            var result = handler.call(this,$event,$this);
-            //TODO: check for errors
-            //TODO: decide what to do with the promise. Possibly wait for resolution before processing.
-            if (widget.app.process && (isPromise(result) || $event !== result)) {
-                // TODO: call processing chain
-                widget.app.process();
-            }
+        var proxy = function ($event) {
+            new (promise.Promise)(function(resolve){
+                resolve(handler.call(element, $event))
+            }).then(
+                function(){ return app.process(); },
+                function (e) {widget._controllerError(e)}
+            );
         };
 
         //controller:
         return {
-            build: function() {
-                $this.on(event, proxy );
+            build: function () {
+                app.on(element, event, proxy);
             },
-            destroy: function(){
-                $this.off(event, proxy );
+            destroy: function () {
+                app.off(element, event, proxy);
             }
         }
     }
 };
-
-//TODO: implement .ctl
 
 module.exports = Widget;

@@ -49,8 +49,19 @@ var is_ = function (o) {
         incomplete: function (o) {
             return is_(o) && o.__clearest__.complete !== undefined;
         },
-        error: function (o) {
-            return is_(o) && o.__clearest__.error !== undefined;
+        error: function (o, type) {
+            var itis = is_(o) && o.__clearest__.error !== undefined;
+
+            if (!itis || type === undefined)
+                return itis;
+
+            var e = o.__clearest__.error;
+
+            if (e.type !== undefined)
+                return e.type === type;
+
+            if (typeof e === 'object' && e.constructor !== undefined)
+                return ("class:"+e.constructor.name) === type;
         }
     },
     CLEAREST = '__clearest__';
@@ -97,7 +108,6 @@ function fin(f, o, defaultValue) {
 function inside(o) {
     return (o.__clearest__ !== undefined) ? o.__clearest__ : (o.__clearest__ = {});
 }
-
 
 
 function slice(args, n) {
@@ -171,7 +181,7 @@ function error(e) {
  * @param o incmplete object
  * @returns {*}
  */
-function complete(o){
+function complete(o) {
     return o.__clearest__.complete(o)
 }
 

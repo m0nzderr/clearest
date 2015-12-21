@@ -29,7 +29,7 @@ Application.prototype.find=function(id, parentView){throw "not implemented";}
 Application.prototype.render=function(element, presentation){throw "not implemented";}
 
 /**
- * Returns a wrapper function
+ * Returns a wrapper to element, providing some additional functions
  */
 /* istanbul ignore next */
 Application.prototype.wrapper = function(element){throw "not implemented";}
@@ -39,5 +39,38 @@ Application.prototype.wrapper = function(element){throw "not implemented";}
  */
 /* istanbul ignore next */
 Application.prototype.process = function(){throw "not implemented";}
+
+
+/**
+ * Binds a handler to events
+ * TODO: specify handler contract
+ * @param events - event declaration string (could be multiple events)
+ * @param handler - event handler function
+ * @return irrelevant
+ */
+/* istanbul ignore next */
+Application.prototype.on=function(element, event, handler, options){throw "not implemented";}
+
+/**
+ * Unbinds a handler to events
+ * @param events - event epecification
+ * @param handler - event handler function
+ * @return irrelevant
+ */
+/* istanbul ignore next */
+Application.prototype.off=function(element, event, handler, options){throw "not implemented";}
+/**
+ * Triggers specified event on wrapped element
+ * @return irrelevant
+ */
+/* istanbul ignore next */
+Application.prototype.trigger=function(element, event, options){throw "not implemented";}
+
+/**
+ * Creates (custom) event
+ * @return irrelevant
+ */
+/* istanbul ignore next */
+Application.prototype.event=function(event, initializer){throw "not implemented";}
 
 module.exports = Application;
