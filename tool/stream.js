@@ -95,7 +95,7 @@ module.exports = {
              * Switches scopeCapture mode on when detects sources used for static renering by its filename.
              */
             staticAutodetect: true,
-            staticHint: /\.html\.xml$/,
+            staticHint: /(^|\W)(html|static)($|\W)/i,
             /**
              * If source and target directories are different, must be provided
              * in order to correctly map dependencies for compiled code.
@@ -120,26 +120,6 @@ module.exports = {
             var originalPath = file.path,
                 start = new Date();
 
-            var opts = {
-                currentLocation: originalPath,
-                // extend environment vaiables with path information
-                environment: extend(true,
-                    config.environment, {
-                        source:{
-                            path: originalPath,
-                            dir: path.dirname(originalPath)
-                        },
-                        target:{
-                            path: mapToTarget(originalPath),
-                            dir: config.targetDir
-                        }
-                })
-            };
-
-            if (config.staticAutodetect) {
-                opts.scopeCapture = !!(originalPath.match(config.staticHint));
-            }
-
             // supposed to map relative dependencies from source dir to targetDir
             function mapToTarget(location) {
                 if (!location.match(/^\./)) // not a relative path
@@ -153,11 +133,35 @@ module.exports = {
                 return fixer.toPosix(targetRelative);
             }
 
+
+            file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
+
+            var opts = {
+                currentLocation: originalPath,
+                // extend environment vaiables with path information
+                environment: extend(true,
+                    config.environment, {
+                        source:{
+			    file: path.basename(originalPath),
+                            path: originalPath,
+                            dir: path.dirname(originalPath)
+                        },
+                        target:{
+			    file: path.basename(file.path),
+                            path: file.path,
+                            dir: config.targetDir
+                        }
+                })
+            };
+
             if (config.targetDir)
                 opts.dependencyMapper = mapToTarget;
 
+            if (config.staticAutodetect) {
+                opts.scopeCapture = !!(originalPath.match(config.staticHint));
+            }
+
             processor.configure(opts); // provide currentLocation
-            file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
 
             //try {
             file.contents = new Buffer(processor.compile(decoder.write(file.contents)), 'utf8');  // compile and store contents
