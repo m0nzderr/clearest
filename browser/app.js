@@ -79,9 +79,7 @@ BrowserApp.prototype.render = function (view, presentation) {
 };
 
 BrowserApp.prototype.process = function () {
-    if (this.root) {
-        return this.root.process();
-    }
+    return promise.resolve(this.root.process());
 };
 
 //--- event handling ---//
@@ -93,12 +91,15 @@ BrowserApp.prototype.off = function(element, event, handler, options){
     element.removeEventListener(event, handler, options );
 };
 
-BrowserApp.prototype.trigger = function(element, event, options){
-//TODO: deal with custom events
-    if (typeof document !== 'undefined'){
+BrowserApp.prototype.event = function(event,initializer){
+    //TODO 2.1.0: add compatibility with older browsers
+    return new CustomEvent(event, initializer);
+}
 
+BrowserApp.prototype.trigger = function(element, event){
+    if (typeof document !== 'undefined'){
         if (typeof event === 'string') {
-            //FIXME: deprecated code
+            //FIXME: 2.1.0  remove deprecated code
             var e = document.createEvent("HTMLEvents");
             e.initEvent(event, true, true);
             element.dispatchEvent(e);

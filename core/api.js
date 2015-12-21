@@ -64,7 +64,6 @@ function Core() {
             || isFunction(o)
         ) return; // skip
 
-        // todo: subscribe th changes in o
         self._listen(o, KEY_ANY, true);
 
         if (isClearest(o)) {
@@ -161,7 +160,6 @@ Core.prototype.use = function (templateModule, o) {
  * @param filter - filtering options
  * @returns {*}
  */
-//TODO: implement filtering
 Core.prototype.sel = function (o, k, iteration, filter) {
     if (o === undefined ||
         o === null ||
@@ -186,12 +184,12 @@ Core.prototype.sel = function (o, k, iteration, filter) {
         return item; // return data as is
 
     if (!isArray(item))
-        return iteration(item, 0); //TODO: implement filtering logic
+        return iteration(item, 0); //TODO: add filtering
 
     // iterate over array
     var output = [];
     each(o[k], function (item, index) {
-        //TODO: implement filtering logic
+        //TODO: add filtering
         output.push(iteration(
             item, index
         ))
@@ -244,18 +242,10 @@ Core.prototype.cnt = function (o, k) {
     }
 }
 
-//TODO: vetify if resolveIncomplete is needed, probably not
+
 Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
-
     var jobs = [], api = this;
-
     args.forEach(function (o, i) {
-        /*if (resolveIncomplete){
-         if (isIncomplete(o)) {
-         // trigger completion and substitute incomplete object by its promise
-         o = o[CLEAREST].complete();
-         }
-         }*/
         if (isPromise(o)) {
             // enqueue promises
             jobs.push(
@@ -265,9 +255,8 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
                 }, function (error) {
                     var wrapped = commons.error(error);
                     // pass wrapped error through to the template
-                    args[i] = wrapped ;
                     // store error inside api for further processing
-                    api._onError(wrapped )
+                    api._error( args[i] = wrapped );
                 })
             );
         }
@@ -278,14 +267,12 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
         var def = promise.defer();
         promise.all(jobs).finally(function () {
             // call when arguments are ready
-            //TODO: decide, which context object (this) should be passed to target
             def.resolve(target.apply(api, args));
         });
         return def.promise;
     }
     else {
-        // just call it
-        //TODO: decide, which context object (this) should be passed to target
+        // just call target
         return target.apply(api, args);
     }
 }

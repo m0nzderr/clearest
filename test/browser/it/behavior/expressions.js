@@ -5,12 +5,12 @@
  */
 
 
-var runtime = require("../../../runtime");
-var helper = require("./helper"), compile = helper.compile;
+var runtime = require("../../../../runtime");
+var helper = require("./../helper"), compile = helper.compile;
 
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("IT: behavior", function () {
+    describe("IT: behavior / expressions", function () {
         var run, app;
         before(function () {
             run = helper.before();
@@ -47,14 +47,6 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             });
         });
 
-        it("direct observe (@o:*.*)", function () {
-            var code = compile('<t:context test="{answer:42}"><t:control>this.test=test;</t:control><w:input id="test-input1" o:test.answer="{this.value = $event}"/></t:context>');
-            return run(code).then(function () {
-                expect(app.find("test-input1").value).to.be.equal("42");
-                runtime.send(run.container.test, {answer: 43});
-                expect(app.find("test-input1").value).to.be.equal("43");
-            });
-        });
 
 
     });

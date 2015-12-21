@@ -32,6 +32,30 @@ describe("runtime library / core api", function () {
                 expect(result).to.be.equals(2);
             });
         });
+
+        it("should handle errors",function(){
+
+            var api = new Core();
+
+            var errors =[];
+            // override internal error hook
+            api._error =function(o){
+                errors.push(o);
+            };
+
+            return api.get(function (a,b,c) {
+                expect(isError(b)).to.be.ok;
+                expect(isError(a)).to.be.ok;
+                expect(!isError(c)).to.be.ok;
+            }, [promise.reject(1), promise.reject(2), 3]).then(function (result) {
+                expect(errors).to.deep.equal([
+                    commons.error(1),
+                    commons.error(2)
+                ]);
+            });
+
+
+        });
     });
 
     describe("api.use()", function () {
@@ -60,7 +84,7 @@ describe("runtime library / core api", function () {
 
     describe("api.sel()", function () {
 
-        //TODO: test behavior for incomplete objects
+        //TODO 2.1.0: test behavior for incomplete objects
 
         it("should return propery data as is, if no iteration/filter specified", function () {
             expect(api.sel({data: "hello"}, 'data')).to.be.equals("hello");
@@ -152,34 +176,29 @@ describe("runtime library / core api", function () {
 
         });
 
-
-
-        it("should catch errors", function () {
+        it("should implement probe api", function () {
 
             var err;
 
-            err =  commons.error({});
+            err =  commons.error(1);
+            err.test=1;
             expect(commons.is.error(err)).to.be.ok;
             api.err(err,1);
             expect(commons.is.error(err)).not.to.be.ok;
 
 
-            err =  commons.error({});
+            err =  commons.error(2);
+            err.test=2;
             expect(commons.is.error(err,"1")).not.to.be.ok;
             api.err(err,1,"1");
             expect(commons.is.error(err)).to.be.ok;
-
-
-
         });
-
-
     });
 
 
     describe("api.cnt()", function () {
 
-        //TODO: test behavior for incomplete objects
+        //TODO 2.1.0: test behavior for incomplete objects
 
         it("should be a binary indicator for singletones", function () {
             expect(api.cnt({data: "hello"}, 'data')).to.be.equals(1);

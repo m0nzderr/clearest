@@ -9,7 +9,7 @@ var helper = require("./helper"), compile=helper.compile;
 
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("IT: widget implementation", function () {
+    describe("IT: minimal widget implementation", function () {
 
         var run ,  app;
         before(function(){ run= helper.before(); app = run.app; });
@@ -55,16 +55,11 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 var button = app.find("container-button1");
                 expect(button.innerHTML).to.be.equal("click-me");
                 app.trigger(button,"click");
-                expect(button.innerHTML).to.be.equal("42");
+                return app.process().then(function(){
+                    expect(button.innerHTML).to.be.equal("42");
+                });
             });
         });
-
-        it("in-browser compilation", function () {
-            return run(compile("Hello World")).then(function () {
-                expect(run.container.innerHTML).to.be.equal("Hello World");
-            });
-        });
-
 
     });
 }

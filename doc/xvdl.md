@@ -1,72 +1,234 @@
 # eXtensible View Definition Language (XVDL)
 
-This is a formal specification of XVDL. It does not cover any of its implementations. See [Clearest tutorial](tutorial) for examples.
-
-##Key concepts
-### Structure
-XVDL is an abstract language built on top of the XML syntax provided with some EL (expression language) implementation. XVDL does not impose any particular structure of XML documents. By XVDL program, which will loosely call a ``template``, it is  assumes any well-formed XML document that may contain
-
-* instructions (elements or attributes that belong to certain namespaces)
-* content (any other elements or attributes which are not instructions)
-
-Instruction may contain expressions, content, and other instructions.
-It is assumed that EL supports the notion of ``objects`` and ``variables``.
- 
-### Scopes, objects and context
-Similar to common procedural languages, XVDL uses the concept of ``variables`` in``scopes``. Variables contain objects, and can be manipulated by means of instructions and/or expressions. 
-
-Many instructions operate on a ``context`` object, which is always associated to some variable in scope. Certain instructions may redefine (switch) context object to different variables in scope.
-
-### Data is content, content is data
-It is assumed that any ``object`` has its presentation in a form of XML ``content``. It is also assumed that ``content`` is an ``object``. 
-
-Naturally, one would expect some consistency of such representations: an object converted to XML content and back, should be equivalent (in some terms) to its original. Such conversion is implementation-specific and should be totally transparent at language level. 
-
-Here we only assume an existence of some well-defined convention, so that given an object, its XML equivalent it is predictable to the programmer.
-
->One may think of bi-directional marshaling between objects and XML. However, in most implementations such marshaling does needed to be done explicitly. Instead, one may consider an implementation of XVDL instructions in which objects are "scanned", "viewed", or "transformed" resulting in other objects, without being converted to XML. For instance, in Clearest, XML content is converted into its JavaScipt form only at compilation time. In runtime, presentations are generated as objects, and only rendered back to XML form when fed to browser as HTML content. 
-
-## Template namespace (xmlns:t)
-
-### <t:require @*/>
-### <t:use @template [@context]/>
-### <t:use @template [@context]> ... </t:use>
-
-### <t:context [@*]/>
-### <t:context [@*]> ... </t:context>
-
-!### < t:control/>
-### < t:control @*> ... </t:control>
-
-### <t:get [@*]/>
-### <t:get [@*]> ... </t:get>
-
-!### t:catch [@from]
-### < t:fragment [@env:*] [/]>
-### < t:comment [@env:*] [/]>
-### <t:if @test|@exist [@from]>[< t:then >][< t:else >]
-!### @t:*
-
-## Select namespaces (xmlns:s , xmlns:sa)
-### <s:* [@from] [@as] ![@where] ![@orderby] ![@filter]>...</s:*>
-!### <s:* [@from] [@as] ![@where] ![@orderby] ![!@filter]/>
-!### sa:* [@from] [@as] [@where] [@orderby] [@filter]
-
-!### s:* @bind [@from] [@as]
-!### sa:* @bind [@from] [@as]
-!### @s:*
-!### @sa:*
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-## Dynamic extensions
+- [Template instructions (xmlns:t)](#template-instructions-xmlnst)
+  - [``<t:attr>``](#tattr)
+  - [``<t:comment>``](#tcomment)
+  - [``<t:context>``](#tcontext)
+  - [``<t:control>``](#tcontrol)
+  - [``<t:element>``](#telement)
+  - [``<t:error>``](#terror)
+  - [``<t:fragment>``](#tfragment)
+  - [``<t:get>``](#tget)
+  - [``<t:if>``, ``<t:if-error>``](#tif-tif-error)
+  - [``<t:inject>``](#tinject)
+  - [``<t:require>``](#trequire)
+  - [``<t:script>``](#tscript)
+  - [``<t:use>``](#tuse)
+  - [``@*`` and ``@t:*``](#@-and-@t)
+- [Selection instructions (xmlns:s)](#selection-instructions-xmlnss)
+  - [``<s:*>, <s:.*>``](#s-s)
+  - [``<s:...>``](#s)
+- [Events (xmlns:e, xmlns:o)](#events-xmlnse-xmlnso)
+  - [``@e:*``, ``@o:*.*``](#@e-@o)
+- [Widget  (xmlns:w)](#widget--xmlnsw)
+  - [``<w:*>``](#w)
 
-## Widget (xmns:w)
-### <w:* [@w:*] @template [@context]/>
-### <w:* [@w:*]> ... </w:*>
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Template instructions (xmlns:t)
+
+Elements
+
+<!-- A -->
+
+
+### ``<t:attr>``
+**TODO 2.0.0**
+
+``<t:attr name="expression"> ... <t:attr>``
+
+``<t:attr name="expression" value="expression">``
+
+<!-- B -->
+<!-- C -->
+
+### ``<t:comment>``
+``<t:comment [@env:*]> ... </t:comment>``
+
+### ``<t:context>``
+``<t:context/>``
+
+``<t:context @* > ... </t:context>``
+
+### ``<t:control>``
+``< t:control [@*]> js-code </t:control>``
+
+*2.1.0:*
+
+``<t:control [@from]/>``
+
+<!-- D -->
+<!-- E -->
+
+### ``<t:element>``
+**TODO 2.0.0**
+
+``<t:element name="expression"> ... <t:element>``
+
+``<t:element name="expression" value="expression">``
 
 
 
-## Event handling (xmlns:e, xmlns:o)
-### @e:*
-!### @o:*.*
+### ``<t:error>``
+``<t:error [@type] [@catch] [@from]/>``
 
+``<t:error [@type] [@catch] [@from] [@as]> ... </t:error>``
+
+<!-- F -->
+
+### ``<t:fragment>``
+``<t:fragment [@env:*]> ... </t:fragment>``
+
+<!-- G -->
+
+
+
+### ``<t:get>``
+ ``<t:get [@*]/>``
+
+ ``<t:get [@*]> ... </t:get>``
+
+``@*="js-expression"``
+
+``@*="{{object.field}}"``
+
+``@*="js-expression with {{object.field}}"``
+
+<!-- H -->
+<!-- I -->
+
+### ``<t:if>``, ``<t:if-error>``
+
+```<t:if [@exist] [@test]  [@from]> ... </t:if>```
+
+```<t:if-error  [@type]  [@test] [@from]> ... </t:if>```
+
+```xml
+<t:if [@exist] [@test]  [@from]>
+        <t:then>...</t:then>
+        <t:else>...</t:else>
+</t:if>
+
+<t:if-error [@type] [@test] [@from]>
+        <t:then>...</t:then>
+        <t:else>...</t:else>
+</t:if>
+```
+
+### ``<t:inject>``
+*2.1.0*
+
+<!-- J -->
+<!-- K -->
+<!-- L -->
+<!-- M -->
+<!-- N -->
+<!-- O -->
+<!-- P -->
+<!-- Q -->
+<!-- R -->
+
+### ``<t:require>``
+``<t:require @*/>``
+
+``<t:require @*> ... </t:require>``
+
+<!-- S -->
+
+
+### ``<t:script>``
+``<t:script> js-code </t:script>``
+
+
+<!-- T -->
+<!-- U -->
+
+
+
+
+### ``<t:use>``
+``<t:use @template [@context]/>``
+
+``<t:use @template > ... </t:use>``
+
+
+<!-- V -->
+<!-- W -->
+<!-- X -->
+<!-- Y -->
+<!-- Z -->
+
+
+
+
+### ``@*`` and ``@t:*``
+
+``@*="static text``
+
+``@*="${js-expression}``
+
+``@*="{{object.field}}``
+
+``@*="${js-expression, {{object.field}} }``
+
+
+## Selection instructions (xmlns:s)
+### ``<s:*>, <s:.*>``
+
+``<s:* [@from] [@as] [@where] [@orderby] [@filter]>...</s:*>``
+
+``<s:* [@from] [@as] [@where] [@orderby] [@filter]/>``
+
+**TODO: 2.0.0:**
+
+``@where``
+
+``@orderby``
+
+``@transform``
+
+*2.1.0:*
+
+``@bind``
+
+``@filter``
+
+``@first``
+
+``@last``
+
+
+### ``<s:...>``
+*2.1.0:*
+
+
+
+## Events (xmlns:e, xmlns:o)
+### ``@e:*``, ``@o:*.*``
+
+``@e:*="js-expression"`
+
+``@o:\*.\*="js-expression"`
+
+Handler syntax
+* Autodetect: ``"js-expression"``
+* Closure with return: ``@e.*="= js-expression"``
+* Handler call: ``@e.*=": js-expression"``
+
+
+## Widget  (xmlns:w)
+
+### ``<w:*>``
+``<w:* [@w:set.*] [@*] [@t:*]>...</w:*>``
+
+``<w:* @w:template [@w:set.*] [@*] [@t:*]>...</w:*>``
+
+``<w:* @w:template @w:context [@w:set.*] [@*] [@t:*]>...</w:*>``
+
+*2.1.0:*
+
+``@w:controller``

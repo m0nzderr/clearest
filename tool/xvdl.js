@@ -129,6 +129,7 @@ function parseObjectPath(string, scope) {
     }
 }
 
+
 //------------------- Compiler Errors -------------------------------------
 
 var CompilerError = errors.CompilerError;
@@ -200,7 +201,7 @@ function XvdlCompiler(userConfig) {
             scope: ['$context'],
             closure: {
                 template: ['api', 'aggregator', '$context'],
-                widget: ['api', 'aggregator'], //TODO: only add 'aggregator' when its needed.
+                widget: ['api', 'aggregator'], //TODO 2.2: only add 'aggregator' when its needed.
                 event: {args: "$event"},
                 error: {args: "$error"},
                 select: {indexSuffix: "$index"}
@@ -218,25 +219,56 @@ function XvdlCompiler(userConfig) {
                     body: code
                 });
             },
+            /**
+             * Generates event handler closure from its definition
+             *
+             *
+             * syntax:
+             *          = whatever          -> {return whatever }
+             *          : whatever          -> whatever
+             * auto-guess:
+             *
+             *          {... code...} -> function($event){...code....}
+             *           ... code...; -> function($event){...code....}
+             *          call.to.something() -> {return call.to.something
+             * otherwise
+             *          ...code... -> ...code...
+             *
+             * @param def
+             * @returns {*}
+             */
             eventHandler: function (def) {
-                //FIXME: preserve caller context!
-                // literal: "{...code...}" -> function($event,$this){...code...}
-                if (def.charAt(0) == '{' && def.charAt(def.length - 1) == '}') {
+
+                def = def.trim();
+
+                if (def.charAt(0) == '=') {
+                    return codegen.closure({
+                        args: config.closure.event.args,
+                        ret: def.slice(1)
+                    })
+                } else if (def.charAt(0) == ':') {
+                    return def.slice(1);
+                } else if (def.charAt(0) == '{' && def.charAt(def.length - 1) == '}') {
                     return codegen.closure({
                         args: config.closure.event.args,
                         body: def.slice(1, -1)
                     })
                 }
+                else if (def.charAt(def.length - 1) == ';') {
+                    return codegen.closure({
+                        args: config.closure.event.args,
+                        body: def.slice(0, -1)
+                    })
+                }
                 else if (def.charAt(def.length - 1) == ')') {
-                    // "foo.bar(...)" -> function($event,$this){return foo.bar(...)}
-                    return codegen.closure(
-                        {
+                    // return call
+                    return codegen.closure({
                             args: config.closure.event.args,
                             ret: def
                         });
                 }
                 else {
-                    // "foo.bar" -> "foo.bar"
+                    // return as it is
                     return def;
                 }
             }
@@ -297,46 +329,16 @@ function XvdlCompiler(userConfig) {
              * @param scope
              */
             template: function (acc, node, scope) {
-                var hasSelect = false, args = [], values = [];
-                var code = expression.compile(node.nodeValue, function (string) {
-                    hasSelect = true;
-                    var expr = parseObjectPath(string, scope);
-                    var variable = "$" + (args.length + 1);
-                    args.push(variable);
-                    values.push(apicall(API.select, [
-                        expr.context,
-                        codegen.string(expr.field)
-                    ]));
-
-                    return variable;
-                });
-
-                if (hasSelect) {
-
-                    if (args.length === 1 && code === args[0]) {
-                        // optimize single select expression
-                        code = values[0];
-                    }
-                    else {
-                        // wrap expression into get to resolve promises before expression is evaluated
-                        code = apicall(API.get, [codegen.closure({
-                            args: codegen.list(args),
-                            ret: code
-                        }), codegen.array(values)]);
-                    }
-                }
-
+                var flags = {};
+                var code = compileExpression(node, scope, false, flags);
                 var o = scope.o || {};
-
                 o['@' + node.localName] = code;
-
                 if (!scope.o) {
                     // add as separate object, object is not in scope
                     acc.push(code)
                 }
-
                 // if it has select operation, promises may appear, so aggregator call is needed
-                return hasSelect;
+                return flags.needAggregatorCall;
             }
         },
         /**
@@ -642,12 +644,8 @@ function XvdlCompiler(userConfig) {
 
                 /**
                  * t:context
-                 *
                  * <t:context/> - retrives context
-                 * TODO:
-                 *
                  * <t:context var="expr"> - switches context
-                 *
                  * </t:context>
                  */
                 context: function (acc, node, scope) {
@@ -683,12 +681,14 @@ function XvdlCompiler(userConfig) {
                         throw compilerError("must be at least one expresson/attribute specified", node);
 
                     if (isEmpty(node)) {
+                        var flags = {needAggregatorCall:false};
                         // pass through all expressions as is
                         foreach(node.attributes, function (attribute) {
-                            var expression = attribute.nodeValue;
-                            // implement other expression syntaxes here
-                            acc.push(expression);
+                            // compile {{..}}
+                            var code = compileExpression(attribute, scope, true, flags);
+                            acc.push(code );
                         });
+                        return flags.needAggregatorCall;
                     } else {
                         // <t:get foo="expression">....</t:get>
                         // compiles to API.get(function(a,b,c){return template...},[expr1, expr2, expr3...])
@@ -702,8 +702,8 @@ function XvdlCompiler(userConfig) {
 
                             }
                             variables.push(attribute.localName);
-                            //TODO: implement other expression syntaxes here
-                            expressions.push(attribute.nodeValue);
+                            // compile {{..}} syntax
+                            expressions.push(compileExpression(attribute, scope, true));
                         });
 
                         acc.push(
@@ -863,9 +863,6 @@ function XvdlCompiler(userConfig) {
                         )
                     );
                 }
-
-                //TODO: implement t:get
-                //TODO: implement t:catch
             },
 
             /**
@@ -921,7 +918,6 @@ function XvdlCompiler(userConfig) {
             },
             header: {},
 
-            //TODO: implement widget
             /**
              * w:*
              *
@@ -932,7 +928,6 @@ function XvdlCompiler(userConfig) {
              * @param scope
              */
             widget: function (acc, node, scope) {
-                //TODO: implement widget attributes processing (w:@*)
                 //TODO: insert additional arguments for clsure separation into closureArguments, and to widgetArguments (at the end)
 
                 var closureArguments = config.closure.widget.map(function (argument) {
@@ -945,7 +940,7 @@ function XvdlCompiler(userConfig) {
                     return prefix !== "" && prefix != config.prefix.widget
                 });
 
-                var isWidgetAttribute = nodeNamespaceCondition(function(prefix){
+                var isWidgetAttribute = nodeNamespaceCondition(function (prefix) {
                     return prefix === config.prefix.widget
                 });
 
@@ -1234,6 +1229,43 @@ function XvdlCompiler(userConfig) {
             fn: config.symbol.api + fn,
             args: codegen.list(args)
         });
+    }
+
+
+    function compileExpression(node, scope, jsMode, flags){
+
+        var hasSelect = false, args = [], values = [];
+        var code = expression.compile(node.nodeValue, function (string) {
+            hasSelect = true;
+            var expr = parseObjectPath(string, scope);
+            var variable = "$" + (args.length + 1);
+            args.push(variable);
+            values.push(apicall(API.select, [
+                expr.context,
+                codegen.string(expr.field)
+            ]));
+
+            return variable;
+        }, jsMode);
+
+        if (hasSelect) {
+
+            if (args.length === 1 && code === args[0]) {
+                // optimize single select expression
+                code = values[0];
+            }
+            else {
+                // wrap expression into get to resolve promises before expression is evaluated
+                code = apicall(API.get, [codegen.closure({
+                    args: codegen.list(args),
+                    ret: code
+                }), codegen.array(values)]);
+            }
+        }
+
+        (flags || {}).needAggregatorCall |= hasSelect;
+
+        return code;
     }
 
     this.apicall = apicall;

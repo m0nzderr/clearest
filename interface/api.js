@@ -66,10 +66,9 @@ Api.prototype.use = function (templateModule, o) {/* istanbul ignore next */  no
  * @param o - object
  * @param k - key/property
  * @param iteration - iteration template
- * @param filter - filtering options
+ * @param filter - filtering settings
  * @returns {*}
  */
-//TODO: implement filtering
 Api.prototype.sel = function (o, k, iteration, filter) {/* istanbul ignore next */  notImplemented()}
 
 /**

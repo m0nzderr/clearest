@@ -2,84 +2,56 @@
 # Clearest Framework
 
 This is another front-end development framework for NodeJS.
-Despite of being created recently, the project already had a couple of years of mileage in highly complex projects.
+Despite of being created recently on GitHub, the project already has a couple of years of mileage in highly complex projects.
 
-Its previous versions were closed-source and based on a combination of XSLT with other custom-built tools. Today it is being re-implemented to stay within NodeJS ecosystem. 
+Previous versions were closed-source and based on a combination of XSLT with other custom-built tools.
+Since its version 2.0 it went open-source, being re-implemented from scratch to stay within NodeJS ecosystem.
 
-The WIP is going towards its first open-source release of v2.0.0. Hopefully, one may find in it resembling (in some aspects) to other MVC front-end frameworks like AngularJS and ReactJS.
+Of course, there is a room to improve, and it would be wise to consider it "experimental" for some time until it gets more stable.
+However, it might be worth a try for those who are looking for alternatives to AngularJS or ReactJS.
 
-Features:
-* Designed for development of modular MVC/MVVM apps with minimal coding effort;
-* Provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
-* 99% of code is browser-independent (no DOM needed to to run its core behind the scenes)
-* Compilable into JavaScript modules: no sources distributed, no parsing at runtime;
-* No struggle with writing custom components or external plugins - it'll work out of the box with almost anything you can browserify;
-* No need to learn complex framework-specific mechanisms. Just a couple of useful api functions and you are ready to go. You can stay with NodeJS and require(),
- implement your DI, IoC, or nothing at all);
-* Small-footprint runtime library of essentials (the largest dependency is a promises library). Other useful features like hash navigation/routing and REST resources
-  are optional, they are shipped only if you require() them;
-* Ready to merge into your gulp workflow off the shelf (no plugins needed);
-* Most of the job is done at compile time. No such thing as eval() at runtime.
+Here is why:
+* It is designed for development of modular MVC/MVVM apps with minimal coding effort;
+* It provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
+* 99% of code is browser-independent (no such thing as DOM manipulation, it could work without a browser at all)
+* Sources are compiled before distribution: most of the job is done at compile time, no heavy processing or parsing at runtime;
+* Open architecture: no struggle with writing custom components or external plugins - it is supposed to work with almost anything you can browserify;
+* No restrictions on patterns or composition: put your logic anywhere you want (within XML "templates" or external JS files) and call it as you wish (view, model, controller or service);
+* It only needs a tiny runtime library (<)to run a compiled app (the heaviest dependency is a RSVP promises);
+* It is shipped as a gulp-ready tool which merges in almost any workflow;
 
-More code and docs are coming.
+[Documentation](doc/index.md) is on its way....
 
 Roadmap/Progress:
 ```
-(x) - 2.0.0-wip branch
+(<wip>) - 2.0.0 first release estimated on Jan 1 2016
  |
- * - Initial project structure
- |
- * - XVDL compiler (basic instructions)
- |
- * - Core runtime library functions: commons, aggregator, html
- |
- * - Template module compiler (compiles .xml files into modules)
- |
- * - Static renderer (renders compiled modules into static .html pages, useful for
- |   generation of bootstrapping code, stylesheets, and other multi-page static content)
- |
- * - Gulp-friendly interface that boils all stuff into browser-ready apps
- |
- * - Runtime library essentials for dynamic context: oo, observable, api
- |
- * - Widget (it does all the glue between M, V and C to asynchronously run
- |    your compiled modules in browser)
- |
- * - Automatic widget bootstrapping from static context (never ever write bootstrapping
- |   code by hand!)
- |
- * - Widget spec: event processing echain,
- * - Expressions (attribute interpolation)
- * - Widget spec: observer
- |
- * - Widget spec: error handling
- |
-(* ) - 2.0.0 release (without documentation)
- |
- * - Documentation and minimal samples (XVDL language, usage of runtime library,
- :    gulp-browserify recipes)
+( ) - Minimal complete documentation (getting started, usage of runtime library,
+ :      gulp-browserify recipes, XVDL specification)
  .
- . - Utilities: css/dom helpers, hash navigation, observable data models for browser
- .   storage, generic REST, etc.
+ .    - Swiss knife: css/dom helpers, hash navigation, models for browser storage and generic REST/ORM, etc.
  .
- . - "Vendor" kit of generic UI components: layouts, forms, etc.
+ .    - "Vendor" kit of generic UI components: layouts, forms, etc.
  .
- . - Tutorials/Sample apps (e.g.: todo list, google search, etc.)
+ .    - Tutorials and sample apps (e.g.: todo list, search, etc.)
  .
-( ) - 2.1.0 release
+( ) - 2.1.0
  .
- . - Going hybrid-ready (touch events, cordova wrapping)
+ . - Hybrid-ready (touch events, cordova, adaptations for third-party UI libraries)
  .
- . - Optimizations and performance improvements (e.g., using web workers for smooth
- .	 rendering,  etc.)
+ . - Optimizations and performance improvements (e.g., using web workers behind the scenes for smoother
+ .	 rendering?)
  .
- . - Adaptation/packaging of some existing web/mobile UI libraries
  .
-( ) - 2.2.0 release
+( ) - 2.2.0
+ .
+ . - Project web page, wiki
  .
  . - Improvement of dev-tools: e2e, sourcemaps for XVDL, IDE plugins, etc.
  .
- . - Browser-side compiler port (for tutorial/demo use only)
+ . - Browser-only toolkit for fiddling
+ .
+
  V
 ```
 

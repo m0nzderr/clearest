@@ -9,10 +9,10 @@ var wrapper = require("../../../browser/basic.js");
 
 
 /**
- * Created by M0nZDeRR on 09/11/2015.
+ * BroserApp implementation tests
  */
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
-    describe("browser dom layer implementation", function () {
+    describe("browser app (dom abstraction)", function () {
 
         var app = new App(document, wrapper );
 
@@ -84,7 +84,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
 
 
         //TODO: should handle custom events
-        //TODO: ...
+
 
     });
 }

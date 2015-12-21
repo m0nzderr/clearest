@@ -66,4 +66,11 @@ Application.prototype.off=function(element, event, handler, options){throw "not 
 /* istanbul ignore next */
 Application.prototype.trigger=function(element, event, options){throw "not implemented";}
 
+/**
+ * Creates (custom) event
+ * @return irrelevant
+ */
+/* istanbul ignore next */
+Application.prototype.event=function(event, initializer){throw "not implemented";}
+
 module.exports = Application;

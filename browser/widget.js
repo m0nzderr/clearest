@@ -3,17 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strcict";
 
 /**
- * Clearest Widget (dynamic implementation of api)
- *
- * TODO: add rebuild/update hooks
- * TODO: implement in-progress request negotiation
- * TODO: implement widget events
- * TODO: implement error handling
- * TODO: decide if bidirectional context proxy is needed (.bind)
+ * Clearest Widget
  */
-
 var commons = require("../core/commons"),
     observer = require("../core/observer"),
     promise = commons.promise,
@@ -25,51 +19,96 @@ var commons = require("../core/commons"),
     isComposit = commons.is.composit,
     _in = commons.inside,
     subscribe = observer.subscribe,
-    unsubscribe = observer.unsubscribe;
+    unsubscribe = observer.unsubscribe,
+    each = commons.each;
 
 
 var Core = require("./../core/api");
 
 
-var FLAG_UPDATE = 1,
-    FLAG_REBUILD = 2;
-
-
-var DEFAULT_PARAMETERS = {
+/**
+ * Default widget configuration parameters.
+ *
+ * Parameters could be customized with "w:set.*" attribute syntax.
+ * E.g.:
+ *
+ * <w:mycontainer w:set.error.capture="true"/>
+ *
+ *
+ */
+Widget.DEFAULT_PARAMETERS = {
     error: {
-        handler: function (app, view, errors) {
+        /**
+         * Name of custom event for propagated errors
+         */
+        event: "error",
+        /**
+         * Error capturing mode.
+         * It could be set to
+         *      true,
+         *      false
+         * or
+         *      function(error) { } that returns those values.
+         *
+         * When false is set or returned, errors are propagated into the DOM as custom events for
+         * further handling. Otherwise errors are not propagated (i.e., captured by a widget).
+         * For more control, provide a function with a custom implementation, e.g:
+         *
+         * function (error, widget) {
+         *          console.error(widget.getId(),error);
+         *          // do not propagate (capture)
+         *          return true;
+         * }
+         *
+         */
+        capture: false,
+        /**
+         * Default error handler
+         *
+         * It receives and array of erros.
+         *
+         * @param {Widget} widget
+         * @param {Element} view
+         * @param {Array} errors
+         */
+        handler: function (errors, widget) {
             var event = this.event,
-                filter = this.filter;
+                capture = this.capture,
+                app = widget.app,
+                view = widget.view;
 
             errors.forEach(function (error) {
-                (filter === undefined || filter(error))
-                &&
-                app.trigger(view, new CustomEvent(event, {
+                ((typeof capture === 'function') ? capture(error, widget) : capture)
+                ||
+                app.trigger(view, app.event(event, {
                     detail: error,
                     bubbles: true,
                     cancelable: true
                 }))
             });
-        },
-        event: "error",
-        filter: undefined
+        }
     }
 };
 
 
 function mergeParameters(defaults, user) {
-    //TODO: check if this is too buggy since user side gets modified
-    if (user === undefind)
+    if (user === undefined)
         return defaults;
-
-    if (defaults === undefind)
+    if (defaults === undefined)
         return user;
-    for (var k in defaults) {
-        var u = user[k];
-        u[k] = mergeParameters(defaults[k], u);
+    if (typeof defaults === 'object') {
+        for (var k in defaults) {
+            var u = user[k];
+            user[k] = mergeParameters(defaults[k], u);
+        }
     }
     return user;
 }
+
+
+var FLAG_UPDATE = 1,
+    FLAG_REBUILD = 2;
+
 
 //Inherit core API implementation
 commons.inherit(Widget, Core);
@@ -79,15 +118,15 @@ commons.inherit(Widget, Core);
  * @param context optional context object for presentation
  * @constructor
  */
-function Widget(app, template, context, config) {
+function Widget(app, template, context, parameters) {
 
     Widget.super(this);
 
     var widget = this,
         view, components = this.components;
 
-    config = (config === undefined) ? DEFAULT_PARAMETERS     // fast lane
-        : mergeParameters(DEFAULT_PARAMETERS, config);   // slow lane;
+    this.parameters = parameters = (parameters === undefined) ? Widget.DEFAULT_PARAMETERS     // fast lane
+        : mergeParameters(Widget.DEFAULT_PARAMETERS, parameters);   // slow lane;
 
     // ---------------- private ----------------------------------------
     function _buildComponents() {
@@ -99,11 +138,7 @@ function Widget(app, template, context, config) {
             var controllers = [];
             // initialize controllers
 
-
             each(comp.init, function (init) {
-                //each(comp.init, function (init) {
-                //TODO: specify which arguments shoule be passed to controller
-
                 var ctl = init.call(componentView, widget);
                 if (ctl && ctl.build !== undefined) {
                     if (ctl.destroy !== undefined || ctl.process !== undefined)
@@ -123,8 +158,9 @@ function Widget(app, template, context, config) {
             // wait for asynchronous components to build
             var def = promise.defer();
             promise.all(queue)
-                .then(undefined, function () {
-                    widget._error(commons.error(e));
+                .then(undefined, function (error) {
+                    // handle build error
+                    widget._error(commons.error(error));
                 })
                 //TODO: check if failure chain must be considered
                 .finally(function () {
@@ -179,13 +215,9 @@ function Widget(app, template, context, config) {
     var presentation;
 
     function _update(newPresentation) {
-
         presentation = newPresentation;
-        //TODO: check progress state
-
         // remove existing components
         _destroyComponents();
-
         //TODO: optimize, by adding callback to html() renderer
         // extract components from generated view, hook-up to change events, etc.
         widget._scan(presentation, false);
@@ -199,10 +231,7 @@ function Widget(app, template, context, config) {
 
     function _abort(error) {
         progress = null;
-        //console.log("widget build aborted due to unexpected error");
-
         widget._error(commons.error(error));
-
         _finalize();
     }
 
@@ -216,7 +245,7 @@ function Widget(app, template, context, config) {
                 }
             });
             if (uncaught.length > 0) {
-                config.error.handler(widget, uncaught);
+                parameters.error.handler(uncaught, widget);
             }
         }
         return widget;
@@ -238,13 +267,13 @@ function Widget(app, template, context, config) {
     //--------------- component interface implementation -------------------
 
     /**
-     * Called by parent component to generate a inside given container,
+     * Called by parent component to generate presentation inside given container,
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
     this.build = function (targetView) {
-        //TODO: check progress state
-        view = targetView || view;
+
+        this.view = view = targetView || view;
         widget._setId(view.id);
 
         // clear errors
@@ -384,7 +413,6 @@ function Widget(app, template, context, config) {
 Widget.prototype.wid = function (template, context, parameters) {
     // control function
     return function (widget) {
-        //2.1.0 TODO: add configuration
         // evaluate context within new widget
         if (isFunction(context)) {
             return new Widget(widget.app, function (P, S) {
@@ -424,6 +452,14 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
 };
 
 /**
+ * Handles errors produced by controller code
+ * @param error
+ */
+Widget.prototype._controllerError = function (error) {
+    this.parameters.error.handler([error], this);
+}
+
+/**
  * Event controller
  *
  * @param event
@@ -433,18 +469,17 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
 Widget.prototype.on = function (event, handler /* options */) {
     // control function
     return function (widget) {
-        // wrapped element
+        //  element
         var element = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
         var proxy = function ($event) {
-            var result = handler.call(this, $event);
-            //TODO: check for errors
-            //TODO: decide what to do with the promise. Possibly wait for resolution before processing.
-            if (widget.app.process && (isPromise(result) || $event !== result)) {
-                // TODO: call processing chain
-                widget.app.process();
-            }
+            new (promise.Promise)(function(resolve){
+                resolve(handler.call(element, $event))
+            }).then(
+                function(){ return app.process(); },
+                function (e) {widget._controllerError(e)}
+            );
         };
 
         //controller:
@@ -458,7 +493,5 @@ Widget.prototype.on = function (event, handler /* options */) {
         }
     }
 };
-
-//TODO: implement .ctl
 
 module.exports = Widget;
