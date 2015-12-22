@@ -73,7 +73,8 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 		//patch: var xt = source.substring(start,end).replace(/&#?\w+;/g,entityReplacer);
 		var xt = source.substring(start,end).replace(ENTITY_REFERENCE_RE,entityReplacer);
 		locator&&position(start);
-		domBuilder.characters(xt,0,end-start);
+		//Patched: domBuilder.characters(xt,0,end-start); - incorrect length argument (length has changed after replacement of entities)
+		domBuilder.characters(xt,0,xt.length);
 		start = end
 	}
 	function position(start,m){
