@@ -11,7 +11,7 @@ var
     ex = require("../../tool/expression");
 
 
-describe("expression",function(){
+describe("tool / expression syntax",function(){
 
     it("should tokenize valid plain expressions",function(){
         expect(ex.tokenize("foo")).deep.equal(["foo"]);

@@ -29,7 +29,7 @@ Roadmap/Progress:
 ( ) - Minimal complete documentation (getting started, usage of runtime library,
  :      gulp-browserify recipes, XVDL specification)
  .
- .    - Swiss knife: css/dom helpers, hash navigation, models for browser storage and generic REST/ORM, etc.
+ .    - Swiss knife libraries: css/dom helpers, hash navigation, models for browser storage and generic REST/ORM, etc.
  .
  .    - "Vendor" kit of generic UI components: layouts, forms, etc.
  .
@@ -37,7 +37,9 @@ Roadmap/Progress:
  .
 ( ) - 2.1.0
  .
- . - Hybrid-ready (touch events, cordova, adaptations for third-party UI libraries)
+ . - Window to parallel universes: t:compile and macro
+ .
+ . - Hybrid-ready (touch events, cordova)
  .
  . - Optimizations and performance improvements (e.g., using web workers behind the scenes for smoother
  .	 rendering?)
