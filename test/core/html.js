@@ -22,7 +22,8 @@ describe("runtime library / html", function () {
             equal(html('bar', 'foo'), '<foo>bar</foo>', 'value+tag');
             equal(html({$: 'foo'}), 'foo', 'value node');
             equal(html({$: 'foo'}, 'bar'), '<bar>foo</bar>', 'value node+tag');
-            equal(html({}, 'bar'), '<bar/>', 'empty node+tag');
+            equal(html({}, 'br'), '<br/>', 'void tag');
+            equal(html({}, 'bar'), '<bar></bar>', 'empty node+tag');
             equal(html('', 'bar'), '<bar></bar>', 'empty string node+tag');
             equal(html({$: ''}, 'bar'), '<bar></bar>', 'empty string node+tag');
             equal(html({$: ''}, 'bar'), '<bar></bar>', 'empty string node+tag');
@@ -43,7 +44,7 @@ describe("runtime library / html", function () {
                 '@foo': 'hidden'
             }), '<foo>bar</foo><qux>fix</qux>', 'many value properties');
             equal(html({foo: [1, 'bar', 3]}), '<foo>1</foo><foo>bar</foo><foo>3</foo>', 'array properties');
-            equal(html({foo: {}}), '<foo/>', 'object properties');
+            equal(html({foo: {}}), '<foo></foo>', 'object properties');
             equal(html({foo: {$: 'bar'}}), '<foo>bar</foo>', 'object properties');
             equal(html({
                 foo: {
@@ -55,15 +56,15 @@ describe("runtime library / html", function () {
         });
 
         test("attributes objects", function () {
-            equal(html({foo: {'@bar': 'qux'}}), '<foo bar="qux"/>', 'attributes (no body)');
-            equal(html({foo: {'@bar': null}}), '<foo/>', 'attributes (null value)');
-            equal(html({foo: {'@bar': ''}}), '<foo bar=""/>', 'attributes (empty value)');
-            equal(html({foo: {'@bar': {}}}), '<foo bar=""/>', 'attributes (empty value)');
-            equal(html({foo: {'@bar': []}}), '<foo bar=""/>', 'attributes (empty value)');
+            equal(html({foo: {'@bar': 'qux'}}), '<foo bar="qux"></foo>', 'attributes (no body)');
+            equal(html({foo: {'@bar': null}}), '<foo></foo>', 'attributes (null value)');
+            equal(html({foo: {'@bar': ''}}), '<foo bar=""></foo>', 'attributes (empty value)');
+            equal(html({foo: {'@bar': {}}}), '<foo bar=""></foo>', 'attributes (empty value)');
+            equal(html({foo: {'@bar': []}}), '<foo bar=""></foo>', 'attributes (empty value)');
             equal(html({foo: {'@bar': 'qux', $: 'bar'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
             equal(html({foo: {$: 'bar', '@bar': 'qux'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
-            equal(html({foo: {'@bar': ['qux', 1, 2, 'data']}}), '<foo bar="qux12data"/>', 'complex attributes');
-            equal(html({foo: {'@bar': ['qux', {$: 1}, 2, 'data']}}), '<foo bar="qux12data"/>', 'complex attributes');
+            equal(html({foo: {'@bar': ['qux', 1, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
+            equal(html({foo: {'@bar': ['qux', {$: 1}, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
             equal(html({
                 foo: {
                     '@bar': ['qux', {
@@ -73,12 +74,12 @@ describe("runtime library / html", function () {
                         }
                     }, 2, 'data']
                 }
-            }), '<foo bar="qux<foo hitme=&quot;its impossible!&quot;>1</foo>2data"/>', 'very complex attributes');
+            }), '<foo bar="qux<foo hitme=&quot;its impossible!&quot;>1</foo>2data"></foo>', 'very complex attributes');
         });
 
         test("composits", function () {
             equal(html(agg('foo', 'bar')), 'foobar', 'composition of values');
-            equal(html(agg('foo', {data: {}}, 'bar')), 'foo<data/>bar', 'composition of values and nodes');
+            equal(html(agg('foo', {data: {}}, 'bar')), 'foo<data></data>bar', 'composition of values and nodes');
             equal(html(agg({data: 1, foo: 1}, {data: 2}, {
                 data: 3,
                 foo: 2
@@ -91,7 +92,7 @@ describe("runtime library / html", function () {
             equal(html(agg({
                 data: 1,
                 foo: {bar: agg('foo', {data: {}}, 'bar')}
-            }), 'test'), '<test><data>1</data><foo><bar>foo<data/>bar</bar></foo></test>', 'nested composits');
+            }), 'test'), '<test><data>1</data><foo><bar>foo<data></data>bar</bar></foo></test>', 'nested composits');
 
         });
 

@@ -949,6 +949,11 @@ function XvdlCompiler(userConfig) {
                 var widgetPrefix = config.prefix.widget;
 
                 if (node.hasAttribute(widgetPrefix + ":template")) {
+
+                    if (node.getAttribute(widgetPrefix + ":template").trim().length == 0) {
+                        throw compilerError("Template source must be specified",node);
+                    }
+
                     // external widget: <w:* template='...'>...</w:*>
                     var templateVariable = config.resolver.template(node.getAttribute(widgetPrefix + ":template"));
                     widgetArguments.push(templateVariable);

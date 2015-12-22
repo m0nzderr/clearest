@@ -15,7 +15,31 @@ var commons = require("./commons.js"),
 var TEXT = commons.constant.TEXT,
     COMMENT = commons.constant.COMMENT,
     ATTR = commons.constant.ATTR,
-    CLEAREST = commons.constant.CLEAREST;
+    CLEAREST = commons.constant.CLEAREST,
+    VOID_TAG_LIST = [
+        "area",
+        "base",
+        "br",
+        "col",
+        "command",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "keygen",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr"
+    ],
+    IS_VOID_TAG = {};
+
+// build IS_VOID_TAG lookup table
+VOID_TAG_LIST.forEach(function(tag){
+    IS_VOID_TAG[tag]=IS_VOID_TAG[tag.toUpperCase()]=true;
+});
 
 // exports
 module.exports = html;
@@ -107,7 +131,12 @@ function html(o, tag) {
                 head += '>';
                 body += '</' + tag + '>';
             }
-            else head += '/>';
+            else {
+                if (IS_VOID_TAG[tag] !== undefined) {
+                    head += '/>';
+                } else
+                    head += '></' + tag + '>';
+            }
         }
         else {
             if (body !== undefined) {
