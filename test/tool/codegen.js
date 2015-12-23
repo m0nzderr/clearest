@@ -17,13 +17,15 @@ describe('#codegen', function () {
         codegen.closure({args: "foo", call: "bar"})
             .should.be.exactly("(function(foo){})(bar)");
 
+
         codegen.closure({
+            strict: true,
             args: "foo",
             call: "bar",
             vars: "a,b,c",
             body: "c=c+b;",
             ret: "a+b+c"
-        }).should.be.exactly("(function(foo){var a,b,c;c=c+b;return a+b+c})(bar)");
+        }).should.be.exactly("(function(foo){\"use strict\";var a,b,c;c=c+b;return a+b+c})(bar)");
     });
 
     it("should generate objects", function () {
