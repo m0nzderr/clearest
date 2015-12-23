@@ -436,8 +436,17 @@ Widget.prototype.wid = function (template, context, parameters) {
  */
 Widget.prototype.obs = function (object, key, handler /* options */) {
     // control function
-    return function () {
-        var proxy = handler.bind(this);
+    return function (widget) {
+        var element = this;
+
+        var proxy = (handler.length == 0)?
+            //if no arguments, bind is just enough
+                handler.bind(element)
+            :
+                function(sender){
+                    handler.call(element, object[key], widget, sender);
+                }
+
         // call proxy once
         proxy(object[key]);
         //controller:
@@ -480,7 +489,7 @@ Widget.prototype.on = function (event, handler /* options */) {
         // handler proxy
         var proxy = function ($event) {
             new (promise.Promise)(function(resolve){
-                resolve(handler.call(element, $event))
+                resolve(handler.call(element, $event, widget))
             }).then(
                 function(){ return app.process(); },
                 function (e) {widget._controllerError(e)}
