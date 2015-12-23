@@ -109,6 +109,7 @@ function mergeParameters(defaults, user) {
 var FLAG_UPDATE = 1,
     FLAG_REBUILD = 2;
 
+var EVENT_SEPARATOR = '-or-';
 
 //Inherit core API implementation
 commons.inherit(Widget, Core);
@@ -467,6 +468,10 @@ Widget.prototype._controllerError = function (error) {
  * @returns {Function}
  */
 Widget.prototype.on = function (event, handler /* options */) {
+
+    //proposal #17
+    var events = event.split(EVENT_SEPARATOR);
+
     // control function
     return function (widget) {
         //  element
@@ -485,10 +490,17 @@ Widget.prototype.on = function (event, handler /* options */) {
         //controller:
         return {
             build: function () {
-                app.on(element, event, proxy);
+                //proposal #17
+                events.forEach(function(event){
+                    app.on(element, event, proxy);
+                })
+
             },
             destroy: function () {
-                app.off(element, event, proxy);
+                //proposal #17
+                events.forEach(function(event) {
+                    app.off(element, event, proxy);
+                });
             }
         }
     }
