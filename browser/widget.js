@@ -61,11 +61,12 @@ Widget.DEFAULT_PARAMETERS = {
          * }
          *
          */
-        capture: false,
+        capture: function(error, widget){
+            if (error instanceof Error)
+                console.error(error,widget);
+        },
         /**
          * Default error handler
-         *
-         * It receives and array of erros.
          *
          * @param {Widget} widget
          * @param {Element} view
