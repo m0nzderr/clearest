@@ -178,6 +178,7 @@ function Processor(userConfig) {
         var templateCode = xvdlCompiler.compile(doc);
 
         var exportClosure = codegen.closure({
+            strict: true,
             args: codegen.list(xvdlCompiler.templateArguments()), // closure arguments
             vars: injections.length? injections.join("\n") : false,
             body: body.join("\n"), // closure body (lazy loading stuff)

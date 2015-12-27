@@ -97,7 +97,7 @@ function closure(o) {
     return interpolate(
         (is(o.call) ? "(" : "")
         + "function($args$){"
-        + (is(o.strict) ? "\"use strict\" " : "")
+        + (o.strict ? "\"use strict\";" : "")
         + (is(o.vars) ? "var $vars$;" : "")
         + (is(o.body) ? "$body$" : "")
         + (is(o.ret) ? "return $ret$" : "")

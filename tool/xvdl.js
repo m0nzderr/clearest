@@ -202,7 +202,8 @@ function XvdlCompiler(userConfig) {
             closure: {
                 template: ['api', 'aggregator', '$context'],
                 widget: ['api', 'aggregator'], //TODO 2.2: only add 'aggregator' when its needed.
-                event: {args: "$event"},
+                event: {args: ["$event","$widget"]},
+                observer: {args: ["$value","$widget","$sender"]},
                 error: {args: "$error"},
                 select: {indexSuffix: "$index"}
             },
@@ -219,6 +220,20 @@ function XvdlCompiler(userConfig) {
                     body: code
                 });
             },
+            eventClosureArguments: function(args,code){
+
+                var numArgs = 0;
+
+                args.forEach(function(argument, index){
+                    if (code.indexOf(argument) > 0){
+                        if (numArgs < index+1 ) {
+                            numArgs = index+1
+                        }
+                    }
+                });
+
+                return codegen.list(args.slice(0, numArgs));
+            },
             /**
              * Generates event handler closure from its definition
              *
@@ -230,6 +245,7 @@ function XvdlCompiler(userConfig) {
              *
              *          {... code...} -> function($event){...code....}
              *           ... code...; -> function($event){...code....}
+             *           ... code = code ... -> function($event){...code....}             *
              *          call.to.something() -> {return call.to.something
              * otherwise
              *          ...code... -> ...code...
@@ -237,33 +253,39 @@ function XvdlCompiler(userConfig) {
              * @param def
              * @returns {*}
              */
-            eventHandler: function (def) {
+            eventHandler: function (args,def) {
 
                 def = def.trim();
 
                 if (def.charAt(0) == '=') {
                     return codegen.closure({
-                        args: config.closure.event.args,
+                        args: closure.eventClosureArguments(args,def),
                         ret: def.slice(1)
                     })
                 } else if (def.charAt(0) == ':') {
                     return def.slice(1);
                 } else if (def.charAt(0) == '{' && def.charAt(def.length - 1) == '}') {
                     return codegen.closure({
-                        args: config.closure.event.args,
+                        args: closure.eventClosureArguments(args,def),
                         body: def.slice(1, -1)
                     })
                 }
                 else if (def.charAt(def.length - 1) == ';') {
                     return codegen.closure({
-                        args: config.closure.event.args,
+                        args: closure.eventClosureArguments(args,def),
                         body: def.slice(0, -1)
+                    })
+                }
+                else if (def.indexOf('=') !== -1) {
+                    return codegen.closure({
+                        args: closure.eventClosureArguments(args,def),
+                        body: def
                     })
                 }
                 else if (def.charAt(def.length - 1) == ')') {
                     // return call
                     return codegen.closure({
-                            args: config.closure.event.args,
+                            args: closure.eventClosureArguments(args,def),
                             ret: def
                         });
                 }
@@ -292,7 +314,7 @@ function XvdlCompiler(userConfig) {
              */
             event: function (acc, node, scope) {
                 acc.push(
-                    apicall(API.on, [codegen.string(node.localName), closure.eventHandler(node.nodeValue)])
+                    apicall(API.on, [codegen.string(node.localName), closure.eventHandler(config.closure.event.args,node.nodeValue)])
                 );
                 // has controller
                 return true;
@@ -312,7 +334,7 @@ function XvdlCompiler(userConfig) {
                     throw new compilerError("Attribute name must follow the [object].[field] syntax", node);
 
                 acc.push(
-                    apicall(API.observe, [path.context, codegen.string(path.field), closure.eventHandler(node.nodeValue)])
+                    apicall(API.observe, [path.context, codegen.string(path.field), closure.eventHandler(config.closure.observer.args,node.nodeValue)])
                 );
 
                 // has controller

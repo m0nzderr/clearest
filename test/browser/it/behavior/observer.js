@@ -21,7 +21,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
         });
 
         it("direct observe (@o:*.*)", function () {
-            var code = compile('<t:context test="{answer:42}"><t:control>this.test=test;</t:control><w:input id="test-input1" o:test.answer="{this.value = $event}"/></t:context>');
+            var code = compile('<t:context test="{answer:42}"><t:control>this.test=test;</t:control><w:input id="test-input1" o:test.answer="{this.value = $value}"/></t:context>');
             return run(code).then(function () {
                 expect(app.find("test-input1").value).to.be.equal("42");
                 runtime.send(run.container.test, {answer: 43});
