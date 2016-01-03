@@ -24,7 +24,7 @@ Here is why:
 
 Roadmap/Progress:
 ```
-(<wip>) - 2.0.0 first release estimated on Jan 1 2016
+(<wip>) - 2.0.0 first release estimated on ~~Jan 1 2016~~ UPD: Mar 1 2016.
  |
 ( ) - Minimal complete documentation (getting started, usage of runtime library,
  :      gulp-browserify recipes, XVDL specification)
