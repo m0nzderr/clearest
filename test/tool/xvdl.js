@@ -45,6 +45,11 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<foo bar="qux"/>'))
             .should.be.exactly('{foo:{"@bar":"qux"}}');
 
+        // issue #19
+        compiler.compile(dom.parseFromString('<foo bar=""/>'))
+            .should.be.exactly('{foo:{"@bar":""}}');
+
+
         compiler.compile(dom.parseFromString('<foo bar="qux">dox</foo>'))
             .should.be.exactly('{foo:S({"@bar":"qux"},"dox")}');
 

@@ -10,6 +10,20 @@ var codegen = require("../../tool/codegen.js");
 
 
 describe('#codegen', function () {
+
+    it("should generate strings", function () {
+
+        codegen.string("foo")
+            .should.be.exactly('"foo"');
+
+        codegen.string("",true)
+            .should.be.exactly('""');
+
+        codegen.string("",false)
+            .should.be.exactly('undefined');
+
+    })
+
     it("should generate closures", function () {
         codegen.closure({args: "foo"})
             .should.be.exactly("function(foo){}");

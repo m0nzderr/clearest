@@ -352,7 +352,7 @@ function XvdlCompiler(userConfig) {
              */
             template: function (acc, node, scope) {
                 var flags = {};
-                var code = compileExpression(node, scope, false, flags);
+                var code = compileExpression(node, scope, false, flags) || codegen.string('',true);
                 var o = scope.o || {};
                 o['@' + node.localName] = code;
                 if (!scope.o) {
