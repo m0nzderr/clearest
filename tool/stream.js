@@ -101,6 +101,7 @@ module.exports = {
              * in order to correctly map dependencies for compiled code.
              */
             targetDir: null,
+	    sourceDir: null,
             log: defaultLog("Compiling"),
             trace: defaultTrace("[TRACE]"),
             error: defaultError("Clearet.Compiler")
@@ -117,23 +118,37 @@ module.exports = {
 
 
         return pipe(function (file) {
-            var originalPath = file.path,
+            var originalPath = file.path, originalRelative = file.relative,
                 start = new Date();
 
             // supposed to map relative dependencies from source dir to targetDir
-            function mapToTarget(location) {
+            function mapFromSourceToTarget(location) {
+		//TODO: deal with root dependencies ("/foo")
                 if (!location.match(/^\./)) // not a relative path
                     return location;
 
-                var absoluteLocation = path.resolve(path.dirname(originalPath), fixer.fromPosix(location));
-                var targetRelative = fixer.toPosix(path.relative(config.targetDir, absoluteLocation));
+		var referrerLocation = path.resolve(config.targetDir, fixer.fromPosix(originalRelative));
+                var dependencyLocation = path.resolve(path.dirname(originalPath), fixer.fromPosix(location));
+
+                var targetRelative = fixer.toPosix(path.relative(path.dirname(referrerLocation), dependencyLocation));
                 if (config.debug) {
                     config.trace(file, 'relative dependency', location, 'mapped to', targetRelative)
                 }
                 return fixer.toPosix(targetRelative);
             }
 
+            function mapFromSourceToSource(location) {
+		if (!location.match(/^\//))
+		    return location; 
 
+                var absoluteLocation = path.join(config.sourceDir, fixer.fromPosix(location));
+                var sourceRelative = fixer.toPosix(path.relative(path.dirname(originalPath), absoluteLocation));
+                if (config.debug) {
+                    config.trace(file, 'component', location, 'mapped to', sourceRelative)
+                }
+                return fixer.toPosix(sourceRelative);
+            }
+             
             file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
 
             var opts = {
@@ -155,7 +170,11 @@ module.exports = {
             };
 
             if (config.targetDir)
-                opts.dependencyMapper = mapToTarget;
+                opts.dependencyMapper = mapFromSourceToTarget;
+
+            if (config.sourceDir)
+                opts.componentMapper = mapFromSourceToSource;
+
 
             if (config.staticAutodetect) {
                 opts.scopeCapture = !!(originalPath.match(config.staticHint));

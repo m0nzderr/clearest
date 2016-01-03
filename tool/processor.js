@@ -79,7 +79,10 @@ function Processor(userConfig) {
 
         if (config.scopeCapture) {
             // add capture to require call
-            requireCall = xvdlCompiler.apicall(API.depend,[config.module.exportVar, requireCall, dependencyReference]);
+            requireCall = xvdlCompiler.apicall(API.depend,
+		[config.module.exportVar, 
+		 requireCall, 
+	         dependencyReference]);
         }
 
         var assignment = variableName + " = " + requireCall;
@@ -103,7 +106,10 @@ function Processor(userConfig) {
 
 
     // called when template loads another template (component)
-    function requireTemplate(url) {
+    function requireTemplate(location) {
+
+	var url = config.dependencyMapper? config.dependencyMapper(location): location;
+
         if (config.isSelf(url)) {
             // return variable if it is a self reference
             return config.module.exportVar;

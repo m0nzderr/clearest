@@ -37,6 +37,11 @@ var Core = require("./../core/api");
  *
  */
 Widget.DEFAULT_PARAMETERS = {
+    on:{
+	render:false,
+	build:false,
+	ready:false
+    },
     error: {
         /**
          * Name of custom event for propagated errors
@@ -226,6 +231,10 @@ function Widget(app, template, context, parameters) {
 
         app.render(view, presentation);
 
+	if (parameters.on.render) {
+		parameters.on.render.call(view,this);
+	}
+
         // asynchronously build new components
         return _start();
     }
@@ -238,6 +247,11 @@ function Widget(app, template, context, parameters) {
     }
 
     function _finalize() {
+
+	if (parameters.on.ready) {
+		parameters.on.ready.call(view,this);
+	}
+
         // process errors
         if (templateErrors.length > 0) {
             var uncaught = [];
@@ -277,6 +291,10 @@ function Widget(app, template, context, parameters) {
 
         this.view = view = targetView || view;
         widget._setId(view.id);
+
+	if (parameters.on.build) {
+		parameters.on.build.call(view,this);
+	}
 
         // clear errors
         templateErrors.length = 0;

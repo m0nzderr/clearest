@@ -33,7 +33,7 @@ describe("runtime library / core api", function () {
             });
         });
 
-        it("should handle errors",function(){
+        it("should handle argument errors",function(){
 
             var api = new Core();
 
@@ -56,6 +56,28 @@ describe("runtime library / core api", function () {
 
 
         });
+
+        it("should handle syncronous template errors (issue #21)",function(){
+
+            var api = new Core();
+
+            var errors =[];
+            // override internal error hook
+            api._error =function(o){
+                errors.push(o);
+            };
+
+            return api.get(function (a) {
+                throw 'failed'
+            }, [promise.resolve(42)]).then(function (result) {
+                expect(true).not.to.be.ok;
+            },function(err){
+                expect(err).to.be.ok;
+            });
+
+
+        });
+
     });
 
     describe("api.use()", function () {

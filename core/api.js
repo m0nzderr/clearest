@@ -266,8 +266,11 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
         // there are promises need to be resolved
         var def = promise.defer();
         promise.all(jobs).finally(function () {
-            // call when arguments are ready
-            def.resolve(target.apply(api, args));
+            // when arguments are ready (even with errors, template processing should not abort)
+            promise.resolve(target) // ensure target is callable
+                .then(function(target){
+                    return target.apply(api, args); // call inside promise resolution, so it will reject on any failure
+                }).then(def.resolve, def.reject);
         });
         return def.promise;
     }

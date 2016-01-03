@@ -161,10 +161,13 @@ Renderer.prototype.ctl = function (ctl, scope) {
 };
 
 // wraps arguments of function into a call to itself
-Renderer.prototype.wid = function (template, context) {
+Renderer.prototype.wid = function (template, context, parameters) {
     var scope = [template];
     if (context) {
         scope.push(context);
+    }
+    if (parameters) {
+        scope.push(parameters);
     }
     /* istanbul ignore next */
     var stub = function () {
