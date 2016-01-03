@@ -57,7 +57,7 @@ describe("runtime library / core api", function () {
 
         });
 
-        it("should handle syncronous template errors",function(){
+        it("should handle syncronous template errors (issue #21)",function(){
 
             var api = new Core();
 
