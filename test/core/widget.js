@@ -6,6 +6,7 @@
 
 var commons = require("../../core/commons"),
     observer = require("../../core/observer"),
+    promise = commons.promise,
     html = require("../../core/html"),
     interpreter = require("eval"),
     Processor = require("../../tool/processor.js"),

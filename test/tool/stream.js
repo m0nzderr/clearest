@@ -3,6 +3,8 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strict";
+
 
 var chai = require("chai"),
     expect = chai.expect,
@@ -120,7 +122,8 @@ describe("tool / rendering pipe", function () {
                 useInterpreter: true, // force using of interpreter
             })).on("data", wrap(function (file) {
                 file.path.should.be.exactly(path.resolve(fixture + ".html"));
-            }, done));
+            }, done))
+            .on("error",done);
     });
 
     it("should be able to render .html by require()'ing compiled modules directly ", function (done) {

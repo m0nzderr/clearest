@@ -9,6 +9,8 @@
  */
 var chai = require("chai"),
     expect = chai.expect,
+    commons = require("../../core/commons"),
+    inside = commons.inside,
     Serializer = require("../../tool/serializer.js");
 
 describe("tool / serializer", function(){

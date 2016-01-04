@@ -14,7 +14,10 @@ var DOMParser = require('./domparser'),
     codegen = require("./codegen"),
     path = require('path'),
     constants = require("./constants"),
+    commons = require("../core/commons"),
     errors = require("./errors");
+
+var isValue = commons.is.value;
 
 var API = constants.API;
 var ENTITY_PATH_SEPARATOR=".";

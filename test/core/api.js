@@ -11,7 +11,10 @@ var Core = require("../../core/api"),
     commons = require("../../core/commons"),
     promise = commons.promise,
     delay = commons.delay;
-expect = chai.expect;
+    expect = chai.expect;
+
+var isError = commons.is.error,
+    inside = commons.inside;
 
 describe("runtime library / core api", function () {
 
@@ -106,8 +109,6 @@ describe("runtime library / core api", function () {
 
     describe("api.sel()", function () {
 
-        //TODO 2.1.0: test behavior for incomplete objects
-
         it("should return propery data as is, if no iteration/filter specified", function () {
             expect(api.sel({data: "hello"}, 'data')).to.be.equals("hello");
         });
@@ -119,23 +120,32 @@ describe("runtime library / core api", function () {
             expect(api.sel({data: ["hello", "world"]}, 'data', function (e, i) {
                 return e + i;
             })).deep.equals(["hello0", "world1"]);
-            expect(api.sel({data: ["hello", ["world"]]}, 'data', function (e, i) {
-                return e + i;
-            })).deep.equals(["hello0", "world1"]);
         });
 
-        it("should return combined iteration results", function () {
-            expect(api.sel({data: "hello"}, 'data', function (e) {
-                return e;
-            })).to.be.equals("hello");
-            expect(api.sel({data: ["hello", "world"]}, 'data', function (e, i) {
-                return e + i;
-            })).deep.equals(["hello0", "world1"]);
-            expect(api.sel({data: ["hello", ["world"]]}, 'data', function (e, i) {
-                return e + i;
-            })).deep.equals(["hello0", "world1"]);
+        it("should deal with incomplete objects", function () {
+            var o ={};
+            inside(o).complete=function(o){
+                return promise.resolve({data: "hello"});
+            };
+            return promise.resolve(api.sel(o, 'data')).then(function(data){
+                expect(data).to.be.equals("hello");
+            });
         });
 
+
+        it("should not fail when incomplete resolution fails", function () {
+            var o ={data:'hello'};
+            inside(o).complete=function(o){
+                inside(o).error='failed';
+                return promise.reject(o);
+            };
+            return promise.resolve(api.sel(o, 'data')).then(function(data){
+                // operation finishes
+                // operation finishes
+                expect(data).to.be.equals("hello");
+                expect(commons.is.error(data));
+            });
+        });
     });
 
 

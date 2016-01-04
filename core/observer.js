@@ -3,9 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strict";
+
 var commons = require("./commons"),
     inside = commons.inside,
-    isValue = commons.is.value;
+    isValue = commons.is.value,
     promise = commons.promise;
 
 /**

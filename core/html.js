@@ -4,6 +4,8 @@
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
 
+"use strict";
+
 // imports
 var commons = require("./commons.js"),
     isArray = commons.is.array,

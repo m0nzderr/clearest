@@ -7,6 +7,12 @@
 var codegen = require("./codegen"),
     commons = require("../core/commons");
 
+var isArray = commons.is.array,
+    isClearest = commons.is._,
+    isValue = commons.is.value,
+    isFunction = commons.is.fun,
+    inside = commons.inside;
+
 var CLEAREST = commons.constant.CLEAREST;
 
 /**

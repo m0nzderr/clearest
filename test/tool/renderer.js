@@ -11,7 +11,11 @@ var chai = require("chai"),
     Api = require("../../core/api.js"),
     Processor = require("../../tool/processor.js"),
     fs = require("fs"),
+    commons = require("../../core/commons"),
+    inside = commons.inside,
     interpreter = require("eval");
+
+var each = commons.each;
 
 var StringDecoder = require('string_decoder').StringDecoder;
 
