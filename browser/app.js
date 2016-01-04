@@ -3,10 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-'use strict'
+'use strict';
 
 var html = require("../core/html"),
     commons = require("../core/commons"),
+    promise = commons.promise,
     inside = commons.inside,
     isClearest = commons.is._,
     isValue = commons.is.value;

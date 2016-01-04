@@ -3,9 +3,10 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strict";
 
 var commons = require("./commons"),
-    aggregator = require("./aggregator")
+    aggregator = require("./aggregator"),
     is = commons.is,
     isValue = is.value,
     isError = is.error,
@@ -174,7 +175,7 @@ Core.prototype.sel = function (o, k, iteration, filter) {
         return isIncomplete(o) ?
             // return completion promise
             complete(o).then(function (o) {
-                return api.sel(o, j, iteration, filter);
+                return api.sel(o, k, iteration, filter);
             }) :
             undefined; // no element
     }

@@ -3,6 +3,7 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
+"use strict";
 
 var runtime = require("../../../runtime");
 var helper = require("./helper"), compile=helper.compile;

@@ -20,6 +20,8 @@ var API = constants.API,
     COMMENT = commons.constant.COMMENT,
     OBJECT_PATH_SEPARATOR = '.';
 
+var isValue = commons.is.value;
+
 //------------------------------------- xml helpers -----------------------------------
 
 function isText(node) {

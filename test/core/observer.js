@@ -19,7 +19,8 @@ var //qunit = require("./../shim/qunit"),
     unsubscribe = observer .unsubscribe,
     notify = observer .notify,
     send = observer .send,
-    CLEAREST = commons.constant.CLEAREST;
+    CLEAREST = commons.constant.CLEAREST,
+    inside = commons.inside;
 
 describe("core  ", function () {
 

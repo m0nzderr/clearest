@@ -32,6 +32,9 @@ var fixer = require("./fixer");
 var promise = commons.promise;
 var decoder = new StringDecoder("utf8");
 
+var isArray = commons.is.array;
+var isFunction = commons.is.fun;
+
 function pipe(processBuffer) {
     /* istanbul ignore next */
     return through.obj(function (file, enc, cb) {
@@ -101,7 +104,7 @@ module.exports = {
              * in order to correctly map dependencies for compiled code.
              */
             targetDir: null,
-	    sourceDir: null,
+            sourceDir: null,
             log: defaultLog("Compiling"),
             trace: defaultTrace("[TRACE]"),
             error: defaultError("Clearet.Compiler")
@@ -123,11 +126,11 @@ module.exports = {
 
             // supposed to map relative dependencies from source dir to targetDir
             function mapFromSourceToTarget(location) {
-		//TODO: deal with root dependencies ("/foo")
+                //TODO: deal with root dependencies ("/foo")
                 if (!location.match(/^\./)) // not a relative path
                     return location;
 
-		var referrerLocation = path.resolve(config.targetDir, fixer.fromPosix(originalRelative));
+                var referrerLocation = path.resolve(config.targetDir, fixer.fromPosix(originalRelative));
                 var dependencyLocation = path.resolve(path.dirname(originalPath), fixer.fromPosix(location));
 
                 var targetRelative = fixer.toPosix(path.relative(path.dirname(referrerLocation), dependencyLocation));
@@ -138,8 +141,8 @@ module.exports = {
             }
 
             function mapFromSourceToSource(location) {
-		if (!location.match(/^\//))
-		    return location; 
+                if (!location.match(/^\//))
+                    return location;
 
                 var absoluteLocation = path.join(config.sourceDir, fixer.fromPosix(location));
                 var sourceRelative = fixer.toPosix(path.relative(path.dirname(originalPath), absoluteLocation));
@@ -148,7 +151,7 @@ module.exports = {
                 }
                 return fixer.toPosix(sourceRelative);
             }
-             
+
             file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
 
             var opts = {
@@ -156,17 +159,17 @@ module.exports = {
                 // extend environment vaiables with path information
                 environment: extend(true,
                     config.environment, {
-                        source:{
-			    file: path.basename(originalPath),
+                        source: {
+                            file: path.basename(originalPath),
                             path: originalPath,
                             dir: path.dirname(originalPath)
                         },
-                        target:{
-			    file: path.basename(file.path),
+                        target: {
+                            file: path.basename(file.path),
                             path: file.path,
                             dir: config.targetDir
                         }
-                })
+                    })
             };
 
             if (config.targetDir)

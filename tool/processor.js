@@ -14,7 +14,10 @@ var DOMParser = require('./domparser'),
     codegen = require("./codegen"),
     path = require('path'),
     constants = require("./constants"),
+    commons = require("../core/commons"),
     errors = require("./errors");
+
+var isValue = commons.is.value;
 
 var API = constants.API;
 var ENTITY_PATH_SEPARATOR=".";
@@ -108,7 +111,7 @@ function Processor(userConfig) {
     // called when template loads another template (component)
     function requireTemplate(location) {
 
-	var url = config.dependencyMapper? config.dependencyMapper(location): location;
+	var url = config.componentMapper? config.componentMapper(location): location;
 
         if (config.isSelf(url)) {
             // return variable if it is a self reference

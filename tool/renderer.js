@@ -7,7 +7,8 @@
  * Static renderer
  * @constructor
  */
-"use strict"
+"use strict";
+
 var commons = require("../core/commons"),
     codegen = require("./codegen"),
     promise = commons.promise,
@@ -18,12 +19,13 @@ var commons = require("../core/commons"),
     inside = commons.inside,
     constants = require("./constants"),
     Serializer = require("./serializer"),
+    commons = require("../core/commons"),
     fixer = require("./fixer");
 
+var each = commons.each;
 
 var API = constants.API,
     SYMBOL = constants.SYMBOL;
-
 
 function apicall(api, args) {
     return codegen.call({
