@@ -7,6 +7,7 @@
 
 var html = require("../core/html"),
     commons = require("../core/commons"),
+    promise = commons.promise,
     inside = commons.inside,
     isClearest = commons.is._,
     isValue = commons.is.value;

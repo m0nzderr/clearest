@@ -3,7 +3,7 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-
+"use strict";
 /**
  * Created by M0nZDeRR on 17/12/2015.
  */

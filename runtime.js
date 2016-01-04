@@ -3,10 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-
+"use strict";
 /**
  * Framework functions to be used in runtime by applications
  */
+
 var commons = require("./core/commons"),
     observer = require("./core/observer");
 module.exports = {

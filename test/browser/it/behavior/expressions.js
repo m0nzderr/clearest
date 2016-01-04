@@ -3,11 +3,11 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-
+"use strict";
 
 var runtime = require("../../../../runtime");
 var helper = require("./../helper"), compile = helper.compile;
-
+var promise = runtime.promise;
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
     describe("IT: behavior / expressions", function () {

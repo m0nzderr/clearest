@@ -3,11 +3,12 @@
  * Provided under MIT License.
  * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
  */
-
+"use strict";
 
 var runtime = require("../../../../runtime");
 var helper = require("./../helper"), compile = helper.compile;
-
+var commons = require("../../../../core/commons");
+var isValue = commons.is.value;
 
 if (typeof document !== 'undefined') { // simple trick to prevent this running by mocha from NodeJs
     describe("IT: behavior / error handling", function () {
