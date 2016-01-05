@@ -40,10 +40,10 @@ var Core = require("./../core/api");
  *
  */
 Widget.DEFAULT_PARAMETERS = {
-    on:{
-	render:false,
-	build:false,
-	ready:false
+    on: {
+        render: false,
+        build: false,
+        ready: false
     },
     error: {
         /**
@@ -69,9 +69,9 @@ Widget.DEFAULT_PARAMETERS = {
          * }
          *
          */
-        capture: function(error, widget){
+        capture: function (error, widget) {
             if (error instanceof Error)
-                console.error(error,widget);
+                console.error(error, widget);
         },
         /**
          * Default error handler
@@ -234,9 +234,9 @@ function Widget(app, template, context, parameters) {
 
         app.render(view, presentation);
 
-	if (parameters.on.render) {
-		parameters.on.render.call(view,this);
-	}
+        if (parameters.on.render) {
+            parameters.on.render.call(view, this);
+        }
 
         // asynchronously build new components
         return _start();
@@ -251,9 +251,9 @@ function Widget(app, template, context, parameters) {
 
     function _finalize() {
 
-	if (parameters.on.ready) {
-		parameters.on.ready.call(view,this);
-	}
+        if (parameters.on.ready) {
+            parameters.on.ready.call(view, this);
+        }
 
         // process errors
         if (templateErrors.length > 0) {
@@ -295,9 +295,10 @@ function Widget(app, template, context, parameters) {
         this.view = view = targetView || view;
         widget._setId(view.id);
 
-	if (parameters.on.build) {
-		parameters.on.build.call(view,this);
-	}
+
+        if (parameters.on.build) {
+            parameters.on.build.call(view, this);
+        }
 
         // clear errors
         templateErrors.length = 0;
@@ -315,23 +316,59 @@ function Widget(app, template, context, parameters) {
     };
 
 
-    var requestFlag = 0,
+    // initialize request dobule buffer
+    var flag0 = 0, flag1 = 0, currentRq = 0,
+        curRebuild = rebuild0,
+        lastRebuild = rebuild1,
+        curUpdate = update0,
+        lastUpdate = update1,
         progress = null;
 
-    function requestRebuild() {
-        requestFlag |= FLAG_REBUILD;
+    function rebuild0() {
+        flag0 |= FLAG_REBUILD;
     }
 
-    function requestUpdate() {
-        requestFlag |= FLAG_UPDATE;
+    function rebuild1() {
+        flag1 |= FLAG_REBUILD;
+    }
+
+    function update0() {
+        flag0 |= FLAG_UPDATE;
+    }
+
+    function update1() {
+        flag1 |= FLAG_UPDATE;
+    }
+
+    function flipFlag() {
+        currentRq = 1 - currentRq;
+        curRebuild = currentRq ? rebuild1 : rebuild0;
+        lastRebuild = currentRq ? rebuild0 : rebuild1;
+        curUpdate = currentRq ? update1 : update0;
+        lastUpdate = currentRq ? update0 : update1;
+
+        unsubscribe(lastRebuild);
+        unsubscribe(lastUpdate);
+    }
+
+    function reqFlag() {
+        return currentRq ? flag1 : flag0;
+    }
+
+    function clearFlag() {
+        if (currentRq) {
+            flag1 = 0;
+        }
+        else
+            flag0 = 0;
     }
 
     this._listen = function (o, k, updateOnly) {
         if (updateOnly) {
-            subscribe(o, k, requestUpdate);
+            subscribe(o, k, curUpdate);
         }
         else {
-            subscribe(o, k, requestRebuild);
+            subscribe(o, k, curRebuild);
             if (!isClearest(o)) return;
             //if (inside(o).bind && inside(o).bind[k]) return;
             // subscribe to the same key of sequence components
@@ -351,22 +388,26 @@ function Widget(app, template, context, parameters) {
 
     this.process = function () {
         var widget = this;
+        var flag = reqFlag();
 
-        if (requestFlag) {
+        if (flag) {
             if (!progress) {
 
-                if (requestFlag & FLAG_REBUILD) {
-                    progress = widget.build();
-                } else if (requestFlag & FLAG_UPDATE) {
-                    progress = _update(presentation);
-                }
-                ;
+                flipFlag();
 
-                requestFlag = 0;
+
+                if (flag & FLAG_REBUILD) {
+                    progress = widget.build();
+                } else if (flag & FLAG_UPDATE) {
+                    progress = _update(presentation);
+                };
+
+                clearFlag();
 
                 if (isPromise(progress)) {
                     var after = progress.then(function () {
-                        if (requestFlag) {
+                        var flag = reqFlag();
+                        if (flag) {
                             // restart chain
                             return widget.process();
                         } else {
@@ -461,13 +502,13 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
     return function (widget) {
         var element = this;
 
-        var proxy = (handler.length == 0)?
+        var proxy = (handler.length == 0) ?
             //if no arguments, bind is just enough
-                handler.bind(element)
+            handler.bind(element)
             :
-                function(sender){
-                    handler.call(element, object[key], widget, sender);
-                }
+            function (sender) {
+                handler.call(element, object[key], widget, sender);
+            }
 
         // call proxy once
         proxy(object[key]);
@@ -487,8 +528,8 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
  * Handles errors produced by controller code
  * @param error
  */
-Widget.prototype._controllerError = function (error) {
-    this.parameters.error.handler([error], this);
+Widget.prototype._controllerError = function (o) {
+    this.parameters.error.handler([isError(o) ? inside(o).error : o], this);
 }
 
 /**
@@ -510,26 +551,28 @@ Widget.prototype.on = function (event, handler /* options */) {
 
         // handler proxy
         var proxy = function ($event) {
-            new (promise.Promise)(function(resolve){
+            new (promise.Promise)(function (resolve) {
                 resolve(handler.call(element, $event, widget))
-            }).then(
-                function(){ return app.process(); },
-                function (e) {widget._controllerError(e)}
-            );
+            }).then(function () {
+                return app.process();
+            }, function (e) {
+                widget._controllerError(e);
+                return app.process();
+            });
         };
 
         //controller:
         return {
             build: function () {
                 //proposal #17
-                events.forEach(function(event){
+                events.forEach(function (event) {
                     app.on(element, event, proxy);
                 })
 
             },
             destroy: function () {
                 //proposal #17
-                events.forEach(function(event) {
+                events.forEach(function (event) {
                     app.off(element, event, proxy);
                 });
             }

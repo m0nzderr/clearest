@@ -1052,8 +1052,12 @@ function XvdlCompiler(userConfig) {
                     }
                 });
 
-                if (hasWidgetParams)
+                if (hasWidgetParams) {
+                    if (widgetArguments.length ==1) {
+                        widgetArguments.push(scope.$context);
+                    }
                     widgetArguments.push(codegen.object(widgetParams));
+                }
 
                 // add widget controller
                 accumulator.push(apicall(API.widget, widgetArguments));

@@ -146,6 +146,11 @@ module.exports = {
 
                 var absoluteLocation = path.join(config.sourceDir, fixer.fromPosix(location));
                 var sourceRelative = fixer.toPosix(path.relative(path.dirname(originalPath), absoluteLocation));
+
+		// prepend "./" to ensure require() will resolve it
+		if (sourceRelative.charAt(0) !== '.')
+			sourceRelative = './' + sourceRelative;
+
                 if (config.debug) {
                     config.trace(file, 'component', location, 'mapped to', sourceRelative)
                 }
@@ -472,11 +477,10 @@ module.exports = {
                 // try loading module from buffer contents and running an interpreter
                 templateModule = interpreter(decoder.write(file.contents), file.path, {
                     require: function (module) {
-                        //FIXME: this is buggy
-                        if (module.match(/^\.\./)) {
-                            return require(module.replace(/^\.\./, file.base + "/.."))
-                        }
-                        return require(module.replace(/^\./, file.base));
+                        if (module.charAt(0)==='.' || module.charAt(0)==='/')
+                            return require( path.resolve(path.dirname(file.path), module) );
+                        else
+                            return require( module);
                     }
                 });
             } else throw Error("Unable to load compiled module for" + file.path);

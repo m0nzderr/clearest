@@ -15,4 +15,5 @@ require("./it/compiler.js");
 require("./it/widget.js");
 require("./it/behavior/errors.js");
 require("./it/behavior/expressions.js");
+require("./it/behavior/livetemplate.js");
 require("./it/behavior/observer.js");

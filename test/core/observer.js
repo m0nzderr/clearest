@@ -240,6 +240,17 @@ describe("core  ", function () {
             expect(o.foo).to.be.equal("bar");
         });
 
+        it('should notify and store (single field)', function () {
+            var o = {}, log = {};
+            subscribe(o, '*', function (data, o, k) {
+                log[k] = data;
+            });
+            // will
+            send(o, "foo", "bar");
+            expect(log).deep.equal({foo: "bar"});
+            expect(o.foo).to.be.equal("bar");
+        });
+
         it('should notify with specific data', function () {
             var o = {}, log = {};
             subscribe(o, '*', function (data, o, k) {

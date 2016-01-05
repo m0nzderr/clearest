@@ -68,14 +68,14 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                     runtime: runtime
                 });
             return run(code).then(function () {
-                app.trigger(app.find("button1"),"click");
+                app.trigger(app.find("button1"), "click");
                 return app.process();
-            }).then(function(){
+            }).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error1');
             }).then(function () {
-                app.trigger(app.find("button2"),"click");
+                app.trigger(app.find("button2"), "click");
                 return app.process();
-            }).then(function(){
+            }).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error2');
             })
         });
@@ -91,8 +91,24 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 '</t:require>', {
                     runtime: runtime
                 });
-            return run(code).then(function(){
+            return run(code).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error1');
+            })
+        });
+
+        it("should fail on errors in control code", function () {
+            var code = compile(
+                '<t:require rt="runtime">' +
+                '<w:div id="test" >' +
+                '<t:control> throw {error1:42}</t:control>' +
+                '</w:div>' +
+                '</t:require>', {
+                    runtime: runtime
+                });
+            return runtime.promise.resolve(code).then(run).then(function () {
+                expect(false).to.be.ok;
+            },function(){
+                expect(true).to.be.ok;
             })
         });
 

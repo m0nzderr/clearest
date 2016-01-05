@@ -1,6 +1,6 @@
 {
   "name": "clearest",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {
@@ -36,13 +36,14 @@
     "should": "^7.1.0"
   },
   "scripts": {
-    "test-browser-build": "./node_modules/.bin/browserify test/browser/main.js -t browserify-istanbul -o .test.bundle.js",
+    "test-browser-build-cover": "./node_modules/.bin/browserify test/browser/main.js -t browserify-istanbul -o .test.bundle.js",
+    "test-browser-build": "./node_modules/.bin/browserify test/browser/main.js -d -o .test.bundle.js",
     "test-browser-run": "./node_modules/.bin/mocha-phantomjs test/browser/runner.html",
     "test-browser": "npm run test-browser-build && npm run test-browser-run",
     "test": "node_modules/.bin/mocha && npm run test-browser-build && npm run test-browser-run",
     "cover-browser": "./node_modules/.bin/mocha-phantomjs --hooks mocha-phantomjs-istanbul ./test/browser/runner.html",
     "cover-node": "istanbul cover ./node_modules/mocha/bin/_mocha -x **/thirdparty/**  --report lcovonly --config=.cover.node.json",
-    "cover": "npm run cover-node && npm run test-browser-build && npm run cover-browser && istanbul report",
-    "coveralls": "npm run cover-node && npm run test-browser-build && npm run cover-browser && istanbul report && istanbul-coveralls"
+    "cover": "npm run cover-node && npm run test-browser-build-cover && npm run cover-browser && istanbul report",
+    "coveralls": "npm run cover-node && npm run test-browser-build-cover && npm run cover-browser && istanbul report && istanbul-coveralls"
   }
 }

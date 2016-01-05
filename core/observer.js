@@ -187,12 +187,21 @@ function notify(o, k, event) {
  *
  * @param o
  * @param values
- * @param data optional data argument
+ * @param a optional data argument
  */
-function send(o, values, data) {
-    for (var k in values) {
-        var v = o[k] = values[k];
-        notify(o, k, data === undefined ? v : data);
+function send(o, values, a, b) {
+    if (typeof values === 'string') {
+        // field notation
+        o[values] = a;
+        notify(o, values, b === undefined ? a : b);
+    }
+    else {
+        // object notation
+
+        for (var k in values) {
+            var v = o[k] = values[k];
+            notify(o, k, a === undefined ? v : a);
+        }
     }
 }
 
