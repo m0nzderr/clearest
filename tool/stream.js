@@ -477,7 +477,10 @@ module.exports = {
                 // try loading module from buffer contents and running an interpreter
                 templateModule = interpreter(decoder.write(file.contents), file.path, {
                     require: function (module) {
-                        return require( path.resolve(path.dirname(file.path), module) );
+                        if (module.charAt(0)==='.' || module.charAt(0)==='/')
+                            return require( path.resolve(path.dirname(file.path), module) );
+                        else
+                            return require( module);
                     }
                 });
             } else throw Error("Unable to load compiled module for" + file.path);
