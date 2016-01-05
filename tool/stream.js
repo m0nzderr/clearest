@@ -146,6 +146,11 @@ module.exports = {
 
                 var absoluteLocation = path.join(config.sourceDir, fixer.fromPosix(location));
                 var sourceRelative = fixer.toPosix(path.relative(path.dirname(originalPath), absoluteLocation));
+
+		// prepend "./" to ensure require() will resolve it
+		if (sourceRelative.charAt(0) !== '.')
+			sourceRelative = './' + sourceRelative;
+
                 if (config.debug) {
                     config.trace(file, 'component', location, 'mapped to', sourceRelative)
                 }

@@ -40,10 +40,10 @@ var Core = require("./../core/api");
  *
  */
 Widget.DEFAULT_PARAMETERS = {
-    on:{
-	render:false,
-	build:false,
-	ready:false
+    on: {
+        render: false,
+        build: false,
+        ready: false
     },
     error: {
         /**
@@ -69,9 +69,9 @@ Widget.DEFAULT_PARAMETERS = {
          * }
          *
          */
-        capture: function(error, widget){
+        capture: function (error, widget) {
             if (error instanceof Error)
-                console.error(error,widget);
+                console.error(error, widget);
         },
         /**
          * Default error handler
@@ -81,8 +81,9 @@ Widget.DEFAULT_PARAMETERS = {
          * @param {Array} errors
          */
         handler: function (errors, widget) {
-            var event = this.event,
-                capture = this.capture,
+            var conf = widget.parameters.error,
+                event = conf.event,
+                capture = conf.capture,
                 app = widget.app,
                 view = widget.view;
 
@@ -234,9 +235,9 @@ function Widget(app, template, context, parameters) {
 
         app.render(view, presentation);
 
-	if (parameters.on.render) {
-		parameters.on.render.call(view,this);
-	}
+        if (parameters.on.render) {
+            parameters.on.render.call(view, this);
+        }
 
         // asynchronously build new components
         return _start();
@@ -251,9 +252,9 @@ function Widget(app, template, context, parameters) {
 
     function _finalize() {
 
-	if (parameters.on.ready) {
-		parameters.on.ready.call(view,this);
-	}
+        if (parameters.on.ready) {
+            parameters.on.ready.call(view, this);
+        }
 
         // process errors
         if (templateErrors.length > 0) {
@@ -295,9 +296,9 @@ function Widget(app, template, context, parameters) {
         this.view = view = targetView || view;
         widget._setId(view.id);
 
-	if (parameters.on.build) {
-		parameters.on.build.call(view,this);
-	}
+        if (parameters.on.build) {
+            parameters.on.build.call(view, this);
+        }
 
         // clear errors
         templateErrors.length = 0;
@@ -461,13 +462,13 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
     return function (widget) {
         var element = this;
 
-        var proxy = (handler.length == 0)?
+        var proxy = (handler.length == 0) ?
             //if no arguments, bind is just enough
-                handler.bind(element)
+            handler.bind(element)
             :
-                function(sender){
-                    handler.call(element, object[key], widget, sender);
-                }
+            function (sender) {
+                handler.call(element, object[key], widget, sender);
+            }
 
         // call proxy once
         proxy(object[key]);
@@ -512,24 +513,25 @@ Widget.prototype.on = function (event, handler /* options */) {
         var proxy = function ($event) {
             new (promise.Promise)(function(resolve){
                 resolve(handler.call(element, $event, widget))
-            }).then(
-                function(){ return app.process(); },
-                function (e) {widget._controllerError(e)}
-            );
+            }).then(function () {
+                return app.process();
+            }, function (e) {
+                widget._controllerError(e)
+            });
         };
 
         //controller:
         return {
             build: function () {
                 //proposal #17
-                events.forEach(function(event){
+                events.forEach(function (event) {
                     app.on(element, event, proxy);
                 })
 
             },
             destroy: function () {
                 //proposal #17
-                events.forEach(function(event) {
+                events.forEach(function (event) {
                     app.off(element, event, proxy);
                 });
             }

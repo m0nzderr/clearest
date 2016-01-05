@@ -63,20 +63,27 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 'e:custom-error = "this.errorFired = $event.detail;" >' +
                 '<button id="button1" e:click="throw {error1:42};"/>' +
                 '<button id="button2" e:click="= rt.promise.reject({error2:42})"/>' +
+                // test for issue #24:
+                '<button id="button3" e:click="var d = rt.promise.defer(); setTimeout(function(){d.reject({error3:42})},1); return d.promise"/>' +
                 '</w:div>' +
                 '</t:require>', {
                     runtime: runtime
                 });
             return run(code).then(function () {
-                app.trigger(app.find("button1"),"click");
+                app.trigger(app.find("button1"), "click");
                 return app.process();
-            }).then(function(){
+            }).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error1');
             }).then(function () {
-                app.trigger(app.find("button2"),"click");
+                app.trigger(app.find("button2"), "click");
                 return app.process();
-            }).then(function(){
+            }).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error2');
+            }).then(function () {
+                app.trigger(app.find("button3"), "click");
+                return app.process();
+            }).then(commons.delay(100)).then(function () {
+                expect(app.find("test").errorFired).to.have.property('error3');
             })
         });
 
@@ -91,7 +98,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 '</t:require>', {
                     runtime: runtime
                 });
-            return run(code).then(function(){
+            return run(code).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error1');
             })
         });
