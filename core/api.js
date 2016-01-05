@@ -322,6 +322,11 @@ Core.prototype.err = function(o, docatch) {
         }
     }
 
+    if (o && !isValue(o) && !isArray(o)) {
+        //FIXME: move to another layer
+        this._listen(o, CLEAREST +".error"); // subscribe for changes on '__clearest__.error' key
+    }
+
     if (!isError(o, type))
         return;
 

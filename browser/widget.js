@@ -81,9 +81,8 @@ Widget.DEFAULT_PARAMETERS = {
          * @param {Array} errors
          */
         handler: function (errors, widget) {
-            var conf = widget.parameters.error,
-                event = conf.event,
-                capture = conf.capture,
+            var event = this.event,
+                capture = this.capture,
                 app = widget.app,
                 view = widget.view;
 
@@ -296,6 +295,7 @@ function Widget(app, template, context, parameters) {
         this.view = view = targetView || view;
         widget._setId(view.id);
 
+
         if (parameters.on.build) {
             parameters.on.build.call(view, this);
         }
@@ -316,23 +316,59 @@ function Widget(app, template, context, parameters) {
     };
 
 
-    var requestFlag = 0,
+    // initialize request dobule buffer
+    var flag0 = 0, flag1 = 0, currentRq = 0,
+        curRebuild = rebuild0,
+        lastRebuild = rebuild1,
+        curUpdate = update0,
+        lastUpdate = update1,
         progress = null;
 
-    function requestRebuild() {
-        requestFlag |= FLAG_REBUILD;
+    function rebuild0() {
+        flag0 |= FLAG_REBUILD;
     }
 
-    function requestUpdate() {
-        requestFlag |= FLAG_UPDATE;
+    function rebuild1() {
+        flag1 |= FLAG_REBUILD;
+    }
+
+    function update0() {
+        flag0 |= FLAG_UPDATE;
+    }
+
+    function update1() {
+        flag1 |= FLAG_UPDATE;
+    }
+
+    function flipFlag() {
+        currentRq = 1 - currentRq;
+        curRebuild = currentRq ? rebuild1 : rebuild0;
+        lastRebuild = currentRq ? rebuild0 : rebuild1;
+        curUpdate = currentRq ? update1 : update0;
+        lastUpdate = currentRq ? update0 : update1;
+
+        unsubscribe(lastRebuild);
+        unsubscribe(lastUpdate);
+    }
+
+    function reqFlag() {
+        return currentRq ? flag1 : flag0;
+    }
+
+    function clearFlag() {
+        if (currentRq) {
+            flag1 = 0;
+        }
+        else
+            flag0 = 0;
     }
 
     this._listen = function (o, k, updateOnly) {
         if (updateOnly) {
-            subscribe(o, k, requestUpdate);
+            subscribe(o, k, curUpdate);
         }
         else {
-            subscribe(o, k, requestRebuild);
+            subscribe(o, k, curRebuild);
             if (!isClearest(o)) return;
             //if (inside(o).bind && inside(o).bind[k]) return;
             // subscribe to the same key of sequence components
@@ -352,22 +388,27 @@ function Widget(app, template, context, parameters) {
 
     this.process = function () {
         var widget = this;
+        var flag = reqFlag();
 
-        if (requestFlag) {
+        if (flag) {
             if (!progress) {
 
-                if (requestFlag & FLAG_REBUILD) {
+                flipFlag();
+
+
+                if (flag & FLAG_REBUILD) {
                     progress = widget.build();
-                } else if (requestFlag & FLAG_UPDATE) {
+                } else if (flag & FLAG_UPDATE) {
                     progress = _update(presentation);
                 }
                 ;
 
-                requestFlag = 0;
+                clearFlag();
 
                 if (isPromise(progress)) {
                     var after = progress.then(function () {
-                        if (requestFlag) {
+                        var flag = currentRq ? flag1 : flag0;
+                        if (flag) {
                             // restart chain
                             return widget.process();
                         } else {
@@ -488,8 +529,8 @@ Widget.prototype.obs = function (object, key, handler /* options */) {
  * Handles errors produced by controller code
  * @param error
  */
-Widget.prototype._controllerError = function (error) {
-    this.parameters.error.handler([error], this);
+Widget.prototype._controllerError = function (o) {
+    this.parameters.error.handler([isError(o) ? inside(o).error : o], this);
 }
 
 /**
@@ -511,7 +552,7 @@ Widget.prototype.on = function (event, handler /* options */) {
 
         // handler proxy
         var proxy = function ($event) {
-            new (promise.Promise)(function(resolve){
+            new (promise.Promise)(function (resolve) {
                 resolve(handler.call(element, $event, widget))
             }).then(function () {
                 return app.process();
