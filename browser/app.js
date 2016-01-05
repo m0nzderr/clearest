@@ -58,6 +58,10 @@ BrowserApp.prototype.render = function (view, presentation) {
 
     // remove old attributes
     for (var attr in localAttributes) {
+        if (attr ==='id'){
+            //FIXME: create another logic to prevent ids from being removed
+            continue;
+        }
         var key = KEY_ATTR + attr;
         if (plain || presentation[key] === undefined || presentation[key] === null) {
             view.removeAttribute(attr);

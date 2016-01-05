@@ -80,6 +80,9 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             // keep external intact
             expect(container.hasAttribute("external")).to.be.ok;
             expect(container.getAttribute("external")).to.be.equal("42");
+
+            container.removeAttribute("external");
+            container.removeAttribute("internal2");
         });
 
 

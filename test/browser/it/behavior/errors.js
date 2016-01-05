@@ -63,8 +63,6 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 'e:custom-error = "this.errorFired = $event.detail;" >' +
                 '<button id="button1" e:click="throw {error1:42};"/>' +
                 '<button id="button2" e:click="= rt.promise.reject({error2:42})"/>' +
-                // test for issue #24:
-                '<button id="button3" e:click="var d = rt.promise.defer(); setTimeout(function(){d.reject({error3:42})},1); return d.promise"/>' +
                 '</w:div>' +
                 '</t:require>', {
                     runtime: runtime
@@ -79,11 +77,6 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 return app.process();
             }).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error2');
-            }).then(function () {
-                app.trigger(app.find("button3"), "click");
-                return app.process();
-            }).then(commons.delay(100)).then(function () {
-                expect(app.find("test").errorFired).to.have.property('error3');
             })
         });
 
@@ -100,6 +93,22 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
                 });
             return run(code).then(function () {
                 expect(app.find("test").errorFired).to.have.property('error1');
+            })
+        });
+
+        it("should fail on errors in control code", function () {
+            var code = compile(
+                '<t:require rt="runtime">' +
+                '<w:div id="test" >' +
+                '<t:control> throw {error1:42}</t:control>' +
+                '</w:div>' +
+                '</t:require>', {
+                    runtime: runtime
+                });
+            return runtime.promise.resolve(code).then(run).then(function () {
+                expect(false).to.be.ok;
+            },function(){
+                expect(true).to.be.ok;
             })
         });
 
