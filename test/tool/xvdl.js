@@ -226,7 +226,12 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'))
             .should.be.exactly('S({foo:S(P.wid(function(P,S,$context){return {bar:0}},$context))})');
 
-        // implicit context should also switch
+        // stub
+        compiler.compile(dom.parseFromString('<w:foo w:stub="stub"><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S(P.use(stub,$context),P.wid(function(P,S,$context){return {bar:0}},$context))})');
+
+
+        // implicit context should switch
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'), {$context: "foo"})
             .should.be.exactly('S({foo:S(P.wid(function(P,S,foo){return {bar:0}},foo))})');
 

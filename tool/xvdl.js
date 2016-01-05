@@ -970,7 +970,11 @@ function XvdlCompiler(userConfig) {
 
 
                 var widgetArguments = [];
+
+                //FIXME: use namespaces instead of prefix!
                 var widgetPrefix = config.prefix.widget;
+                var templatePrefix = config.prefix.template;
+
 
                 if (node.hasAttribute(widgetPrefix + ":template")) {
 
@@ -1057,6 +1061,12 @@ function XvdlCompiler(userConfig) {
                         widgetArguments.push(scope.$context);
                     }
                     widgetArguments.push(codegen.object(widgetParams));
+                }
+
+                // add stub template
+                if (node.hasAttribute(widgetPrefix+ ":stub")) {
+                    // simulate t:use
+                    accumulator.push(apicall(API.use, [config.resolver.template(node.getAttribute(widgetPrefix+ ":stub")), scope.$context]));
                 }
 
                 // add widget controller
