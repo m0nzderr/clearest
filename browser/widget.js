@@ -400,14 +400,13 @@ function Widget(app, template, context, parameters) {
                     progress = widget.build();
                 } else if (flag & FLAG_UPDATE) {
                     progress = _update(presentation);
-                }
-                ;
+                };
 
                 clearFlag();
 
                 if (isPromise(progress)) {
                     var after = progress.then(function () {
-                        var flag = currentRq ? flag1 : flag0;
+                        var flag = reqFlag();
                         if (flag) {
                             // restart chain
                             return widget.process();
@@ -557,7 +556,8 @@ Widget.prototype.on = function (event, handler /* options */) {
             }).then(function () {
                 return app.process();
             }, function (e) {
-                widget._controllerError(e)
+                widget._controllerError(e);
+                return app.process();
             });
         };
 
