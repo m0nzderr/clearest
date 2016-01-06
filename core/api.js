@@ -180,20 +180,33 @@ Core.prototype.sel = function (o, k, iteration, filter) {
             undefined; // no element
     }
 
-    if (iteration === undefined &&
-        filter === undefined)
-        return item; // return data as is
+    if (!iteration &&
+        !filter)
+        return item; // just return data as is
 
-    if (!isArray(item))
-        return iteration(item, 0); //TODO: add filtering
+    if (!isArray(item)) {
+        // singletone object
+        if (filter) {
+            return filter(item,0) ? iteration(item, 0) : undefined;
+        } else {
+            return iteration(item, 0);
+        }
+    }
 
     // iterate over array
-    var output = [];
+    var output = [], filteredIndex = 0;
     each(o[k], function (item, index) {
-        //TODO: add filtering
-        output.push(iteration(
-            item, index
-        ))
+        if (filter){
+            if (filter(item, index)) {
+                output.push(iteration ? iteration(
+                    item, filteredIndex++
+                ) : item);
+            }
+        } else {
+            output.push(iteration(
+                item, index
+            ))
+        }
     });
     return output;
 }

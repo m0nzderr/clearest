@@ -204,8 +204,8 @@ function XvdlCompiler(userConfig) {
             closure: {
                 template: ['api', 'aggregator', '$context'],
                 widget: ['api', 'aggregator'], //TODO 2.2: only add 'aggregator' when its needed.
-                event: {args: ["$event","$widget"]},
-                observer: {args: ["$value","$widget","$sender"]},
+                event: {args: ["$event", "$widget"]},
+                observer: {args: ["$value", "$widget", "$sender"]},
                 error: {args: "$error"},
                 select: {indexSuffix: "$index"}
             },
@@ -222,14 +222,14 @@ function XvdlCompiler(userConfig) {
                     body: code
                 });
             },
-            eventClosureArguments: function(args,code){
+            eventClosureArguments: function (args, code) {
 
                 var numArgs = 0;
 
-                args.forEach(function(argument, index){
-                    if (code.indexOf(argument) > 0){
-                        if (numArgs < index+1 ) {
-                            numArgs = index+1
+                args.forEach(function (argument, index) {
+                    if (code.indexOf(argument) > 0) {
+                        if (numArgs < index + 1) {
+                            numArgs = index + 1
                         }
                     }
                 });
@@ -255,41 +255,41 @@ function XvdlCompiler(userConfig) {
              * @param def
              * @returns {*}
              */
-            eventHandler: function (args,def) {
+            eventHandler: function (args, def) {
 
                 def = def.trim();
 
                 if (def.charAt(0) == '=') {
                     return codegen.closure({
-                        args: closure.eventClosureArguments(args,def),
+                        args: closure.eventClosureArguments(args, def),
                         ret: def.slice(1)
                     })
                 } else if (def.charAt(0) == ':') {
                     return def.slice(1);
                 } else if (def.charAt(0) == '{' && def.charAt(def.length - 1) == '}') {
                     return codegen.closure({
-                        args: closure.eventClosureArguments(args,def),
+                        args: closure.eventClosureArguments(args, def),
                         body: def.slice(1, -1)
                     })
                 }
                 else if (def.charAt(def.length - 1) == ';') {
                     return codegen.closure({
-                        args: closure.eventClosureArguments(args,def),
+                        args: closure.eventClosureArguments(args, def),
                         body: def.slice(0, -1)
                     })
                 }
                 else if (def.indexOf('=') !== -1) {
                     return codegen.closure({
-                        args: closure.eventClosureArguments(args,def),
+                        args: closure.eventClosureArguments(args, def),
                         body: def
                     })
                 }
                 else if (def.charAt(def.length - 1) == ')') {
                     // return call
                     return codegen.closure({
-                            args: closure.eventClosureArguments(args,def),
-                            ret: def
-                        });
+                        args: closure.eventClosureArguments(args, def),
+                        ret: def
+                    });
                 }
                 else {
                     // return as it is
@@ -322,14 +322,14 @@ function XvdlCompiler(userConfig) {
                 var target = null;
                 var args = [];
 
-                if (tokens.length > 1){
+                if (tokens.length > 1) {
                     // event has specific target
-                    target = tokens.slice(0,-1).join('.');
+                    target = tokens.slice(0, -1).join('.');
                     args.push(target);
                     definition = tokens.pop();
                 }
 
-                args = [codegen.string( definition ), closure.eventHandler(config.closure.event.args,node.nodeValue)];
+                args = [codegen.string(definition), closure.eventHandler(config.closure.event.args, node.nodeValue)];
 
                 if (target) {
                     args.push(target);
@@ -356,7 +356,7 @@ function XvdlCompiler(userConfig) {
                     throw new compilerError("Attribute name must follow the [object].[field] syntax", node);
 
                 acc.push(
-                    apicall(API.observe, [path.context, codegen.string(path.field), closure.eventHandler(config.closure.observer.args,node.nodeValue)])
+                    apicall(API.observe, [path.context, codegen.string(path.field), closure.eventHandler(config.closure.observer.args, node.nodeValue)])
                 );
 
                 // has controller
@@ -374,7 +374,7 @@ function XvdlCompiler(userConfig) {
              */
             template: function (acc, node, scope) {
                 var flags = {};
-                var code = compileExpression(node, scope, false, flags) || codegen.string('',true);
+                var code = compileExpression(node, scope, false, flags) || codegen.string('', true);
                 var o = scope.o || {};
                 o['@' + node.localName] = code;
                 if (!scope.o) {
@@ -725,12 +725,12 @@ function XvdlCompiler(userConfig) {
                         throw compilerError("must be at least one expresson/attribute specified", node);
 
                     if (isEmpty(node)) {
-                        var flags = {needAggregatorCall:false};
+                        var flags = {needAggregatorCall: false};
                         // pass through all expressions as is
                         foreach(node.attributes, function (attribute) {
                             // compile {{..}}
                             var code = compileExpression(attribute, scope, true, flags);
-                            acc.push(code );
+                            acc.push(code);
                         });
                         return flags.needAggregatorCall;
                     } else {
@@ -921,11 +921,22 @@ function XvdlCompiler(userConfig) {
                 if (!context)
                     throw compilerError("Context is undefined", node);
 
+                var selectArgs;
+
                 if (isEmpty(node)) {
                     // <s:foo/>
-                    acc.push(
-                        apicall(API.select, [context, codegen.string(node.localName)])
-                    );
+
+                    selectArgs = [context, codegen.string(node.localName)];
+
+                    if (node.hasAttribute("where")) {
+                        selectArgs.push("false"); // filler
+                        selectArgs.push(codegen.closure({
+                            args: codegen.list(itemClosureArgs),
+                            ret: compileExpression(node.getAttribute("where"), scope, true)
+                        }));
+                    }
+
+
                 }
                 else {
                     // <s:foo>...</s:foo>
@@ -937,25 +948,33 @@ function XvdlCompiler(userConfig) {
                     if (!codegen.isValidIdentifier(newContext))
                         throw invalidIdentifier(newContext, node);
 
-                    var args = [newContext, newContext + config.closure.select.indexSuffix];
+                    var itemClosureArgs = [newContext, newContext + config.closure.select.indexSuffix];
 
-                    //TODO: implement @where
+                    selectArgs = [context,
+                        codegen.string(property),
+                        codegen.closure({
+                            args: codegen.list(itemClosureArgs),
+                            ret: compileChildNodes([], node, {$context: newContext}, {
+                                ignoreAttributes: true,
+                                keepMultiples: true
+                            })
+                        })];
+
+                    if (node.hasAttribute("where")) {
+                        selectArgs.push(codegen.closure({
+                            args: codegen.list(itemClosureArgs),
+                            ret: compileExpression(node.getAttribute("where"), scope, true)
+                        }));
+                    }
+
                     //TODO: implement @orderBy
                     //TODO: implement @filter
-                    acc.push(
-                        apicall(API.select, [
-                            context,
-                            codegen.string(property),
-                            codegen.closure({
-                                args: codegen.list(args),
-                                ret: compileChildNodes([], node, {$context: newContext}, {
-                                    ignoreAttributes: true,
-                                    keepMultiples: true
-                                })
-                            })
-                        ])
-                    );
+
                 }
+
+                acc.push(
+                    apicall(API.select, selectArgs)
+                );
 
                 // may return promises
                 return true;
@@ -999,7 +1018,7 @@ function XvdlCompiler(userConfig) {
                 if (node.hasAttribute(widgetPrefix + ":template")) {
 
                     if (node.getAttribute(widgetPrefix + ":template").trim().length == 0) {
-                        throw compilerError("Template source must be specified",node);
+                        throw compilerError("Template source must be specified", node);
                     }
 
                     // external widget: <w:* template='...'>...</w:*>
@@ -1077,16 +1096,16 @@ function XvdlCompiler(userConfig) {
                 });
 
                 if (hasWidgetParams) {
-                    if (widgetArguments.length ==1) {
+                    if (widgetArguments.length == 1) {
                         widgetArguments.push(scope.$context);
                     }
                     widgetArguments.push(codegen.object(widgetParams));
                 }
 
                 // add stub template
-                if (node.hasAttribute(widgetPrefix+ ":stub")) {
+                if (node.hasAttribute(widgetPrefix + ":stub")) {
                     // simulate t:use
-                    accumulator.push(apicall(API.use, [config.resolver.template(node.getAttribute(widgetPrefix+ ":stub")), scope.$context]));
+                    accumulator.push(apicall(API.use, [config.resolver.template(node.getAttribute(widgetPrefix + ":stub")), scope.$context]));
                 }
 
                 // add widget controller
@@ -1295,10 +1314,10 @@ function XvdlCompiler(userConfig) {
     }
 
 
-    function compileExpression(node, scope, jsMode, flags){
+    function compileExpression(node, scope, jsMode, flags) {
 
         var hasSelect = false, args = [], values = [];
-        var code = expression.compile(node.nodeValue, function (string) {
+        var code = expression.compile(node.nodeValue || node, function (string) {
             hasSelect = true;
             var expr = parseObjectPath(string, scope);
             var variable = "$" + (args.length + 1);

@@ -307,7 +307,6 @@ describe('tool / xvdl instructions', function () {
 
 
     it("s:*", function () {
-        //TODO: @where
         //TODO: @filter
         //TODO: @bind
         //TODO: @orderby
@@ -322,6 +321,11 @@ describe('tool / xvdl instructions', function () {
         // @from @as
         compiler.compile(dom.parseFromString('<s:bar from="foo" as="baz"><t:context/></s:bar>'))
             .should.be.exactly('S(P.sel(foo,"bar",function(baz,baz$index){return baz}))');
+
+        // @where
+        compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression}))');
+
     });
 
     it("@e:* (handler code generation)", function () {
