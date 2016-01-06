@@ -481,7 +481,7 @@ Widget.prototype.wid = function (template, context, parameters) {
         if (isFunction(context)) {
             return new Widget(widget.app, function (P, S) {
                 return P.get(template, [P, S, context(P, S)])
-            }, parameters);
+            }, undefined, parameters);
         }
         else {
             return new Widget(widget.app, template, context, parameters);
