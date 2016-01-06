@@ -319,16 +319,21 @@ function XvdlCompiler(userConfig) {
 
                 var definition = node.localName;
                 var tokens = definition.split(".");
+                var target = null;
                 var args = [];
 
                 if (tokens.length > 1){
                     // event has specific target
-                    var target = tokens.slice(0,-1).join('.');
+                    target = tokens.slice(0,-1).join('.');
                     args.push(target);
                     definition = tokens.pop();
                 }
-                args.push(codegen.string(definition ));
-                args.push(closure.eventHandler(config.closure.event.args,node.nodeValue));
+
+                args = [codegen.string( definition ), closure.eventHandler(config.closure.event.args,node.nodeValue)];
+
+                if (target) {
+                    args.push(target);
+                }
 
                 acc.push(
                     apicall(API.on, args)

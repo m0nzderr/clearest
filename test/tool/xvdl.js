@@ -378,7 +378,7 @@ describe('tool / xvdl instructions', function () {
     it("@e:*.* (extended events)", function () {
 
         compiler.compile(dom.parseFromString('<foo e:bar.click="boom"/>'))
-            .should.be.exactly('S({foo:S(P.on(bar,"click",boom))})');
+            .should.be.exactly('S({foo:S(P.on("click",boom,bar))})');
 
     });
 
