@@ -309,14 +309,29 @@ function XvdlCompiler(userConfig) {
             /**
              *
              * @e:foo = "handler"
+             * @e:foo.bar = "handler"
              *
              * @param acc
              * @param node
              * @param scope
              */
             event: function (acc, node, scope) {
+
+                var definition = node.localName;
+                var tokens = definition.split(".");
+                var args = [];
+
+                if (tokens.length > 1){
+                    // event has specific target
+                    var target = tokens.slice(0,-1).join('.');
+                    args.push(target);
+                    definition = tokens.pop();
+                }
+                args.push(codegen.string(definition ));
+                args.push(closure.eventHandler(config.closure.event.args,node.nodeValue));
+
                 acc.push(
-                    apicall(API.on, [codegen.string(node.localName), closure.eventHandler(config.closure.event.args,node.nodeValue)])
+                    apicall(API.on, args)
                 );
                 // has controller
                 return true;

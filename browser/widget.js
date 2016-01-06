@@ -373,7 +373,7 @@ function Widget(app, template, context, parameters) {
             //if (inside(o).bind && inside(o).bind[k]) return;
             // subscribe to the same key of sequence components
             if (isComposit(o))
-                each(o._.seq, function (o) {
+                each(inside(o).seq, function (o) {
                     widget._listen(o, k);
                 });
         }
@@ -539,7 +539,7 @@ Widget.prototype._controllerError = function (o) {
  * @param handler
  * @returns {Function}
  */
-Widget.prototype.on = function (event, handler /* options */) {
+Widget.prototype.on = function (event, handler, target) {
 
     //proposal #17
     var events = event.split(EVENT_SEPARATOR);
@@ -547,12 +547,12 @@ Widget.prototype.on = function (event, handler /* options */) {
     // control function
     return function (widget) {
         //  element
-        var element = this, app = widget.app; //$this = widget.app.wrapper(this);
+        var element = target || this, context = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
         var proxy = function ($event) {
             new (promise.Promise)(function (resolve) {
-                resolve(handler.call(element, $event, widget))
+                resolve(handler.call(context, $event, widget))
             }).then(function () {
                 return app.process();
             }, function (e) {
