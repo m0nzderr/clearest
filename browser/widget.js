@@ -138,6 +138,13 @@ function Widget(app, template, context, parameters) {
     this.parameters = parameters = (parameters === undefined) ? Widget.DEFAULT_PARAMETERS     // fast lane
         : mergeParameters(Widget.DEFAULT_PARAMETERS, parameters);   // slow lane;
 
+    function _inject(o, k, v){
+        var path = o[k];
+        if (path !== 'undefined') {
+            o[path] = v;
+        }
+    }
+
     // ---------------- private ----------------------------------------
     function _buildComponents() {
         var queue = [];
@@ -153,7 +160,12 @@ function Widget(app, template, context, parameters) {
                 if (ctl && ctl.build !== undefined) {
                     if (ctl.destroy !== undefined || ctl.process !== undefined)
                         controllers.push(ctl);
-                    // call build() method
+
+                        // do injections
+                        _inject(ctl, '@inject:app',app);
+                        _inject(ctl, '@inject:parent',widget);
+
+                        // call build() method
                         var result = ctl.build(componentView);
                         // add to queue, if necessary
                         if (isPromise(result)) {
