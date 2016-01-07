@@ -112,5 +112,30 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             })
         });
 
+        it("should app.process() should fail", function () {
+            var test = {};
+            var code = compile(
+                '<t:require rt="runtime" test="test" console="console">' +
+                '<w:div id="test">' +
+                '<t:if exist="ok" from="test">fail</t:if>' +
+                '<t:control> return {build:function(){ if (test.ok) throw {error1:42}}}</t:control>' +
+                '</w:div>' +
+                '</t:require>', {
+                    console : console,
+                    runtime: runtime,
+                    test: test
+                });
+            return runtime.promise.resolve(code).then(run).then(function () {
+                runtime.send(test,'ok',true);
+                return app.process();
+            }).then(function(){
+                expect(false).to.be.ok;
+            },function(e){
+                expect(true).to.be.ok;
+            });
+        });
+
+
+
     });
 }

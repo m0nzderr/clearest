@@ -154,11 +154,11 @@ function Widget(app, template, context, parameters) {
                     if (ctl.destroy !== undefined || ctl.process !== undefined)
                         controllers.push(ctl);
                     // call build() method
-                    var result = ctl.build(componentView);
-                    // add to queue, if necessary
-                    if (isPromise(result)) {
-                        queue.push(result);
-                    }
+                        var result = ctl.build(componentView);
+                        // add to queue, if necessary
+                        if (isPromise(result)) {
+                            queue.push(result);
+                        }
                 }
             });
             components[index] = controllers;
@@ -169,7 +169,7 @@ function Widget(app, template, context, parameters) {
             var def = promise.defer();
             promise.all(queue)
                 .then(undefined, function (error) {
-                    // handle build error
+                    // handle build rejection
                     widget._error(commons.error(error));
                 })
                 //TODO: check if failure chain must be considered
@@ -400,7 +400,8 @@ function Widget(app, template, context, parameters) {
                     progress = widget.build();
                 } else if (flag & FLAG_UPDATE) {
                     progress = _update(presentation);
-                };
+                }
+                ;
 
                 clearFlag();
 
