@@ -98,8 +98,7 @@ BrowserApp.prototype.process = function () {
             return root.process()
         })
         .then(null, function (error) {
-            if (error.stack)
-                console.error("application error:", error.stack ? error.stack : error);
+            console.error("Unhandeled application error:", error.stack ? error.stack : error);
             throw error;
         });
 };
