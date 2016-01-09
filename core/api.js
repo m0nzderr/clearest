@@ -13,7 +13,7 @@ var commons = require("./commons"),
     isArray = is.array,
     isFunction = is.fun,
     inside = commons.inside,
-    isClearest= is._,
+    isClearest = is._,
     isIncomplete = is.incomplete,
     complete = commons.complete,
     isPromise = is.promise,
@@ -37,7 +37,7 @@ function Core() {
     var components = this.components = [];
     var counter = {}, widgetId;
 
-     // generates unique id for a component
+    // generates unique id for a component
     function componentId(o, k) {
         var id = o[ID_ATTRIBUTE];
 
@@ -45,16 +45,17 @@ function Core() {
             // use widget id first
             if (!k) {
                 id = widgetId;
-            }else {
+            } else {
                 // generete id on the fly
                 if (counter[k] === undefined)
                     counter[k] = 0;
-                id = (widgetId? (widgetId + ID_SEPARATOR):'') + k + (++counter[k]);
+                id = (widgetId ? (widgetId + ID_SEPARATOR) : '') + k + (++counter[k]);
             }
             o[ID_ATTRIBUTE] = id;
         }
         return id;
     }
+
     // some common implementation parts
 
     // scans o for control code populating components, biding to events, etc.
@@ -86,9 +87,13 @@ function Core() {
         }
     }
 
-    this._scan=_scan;
-    this._setId=function(id){ widgetId = id;}
-    this._getId=function(id){ return widgetId;}
+    this._scan = _scan;
+    this._setId = function (id) {
+        widgetId = id;
+    }
+    this._getId = function (id) {
+        return widgetId;
+    }
 }
 
 
@@ -100,14 +105,16 @@ function Core() {
  * @private
  */
 /* istanbul ignore next */
-Core.prototype._listen = function (o, k, updateOnly) {}
+Core.prototype._listen = function (o, k, updateOnly) {
+}
 
 /**
  * Is called by api on rejection.
  * object contains wrapped error
  */
 /* istanbul ignore next */
-Core.prototype._error = function (o) {}
+Core.prototype._error = function (o) {
+}
 
 
 /**
@@ -116,8 +123,8 @@ Core.prototype._error = function (o) {}
  * @param {array} scope
  */
 /* istanbul ignore next */
-Core.prototype.ctl = function(ctl, scope){
-    return function(){
+Core.prototype.ctl = function (ctl, scope) {
+    return function () {
         return ctl.apply(this, scope);
     }
 };
@@ -167,27 +174,27 @@ Core.prototype.sel = function (o, k, iteration, filter) {
         isValue(o)
     ) return;
 
-    this._listen(o, k);
 
     var item = o[k];
-    if (item === undefined) {
+    if (item === undefined && isIncomplete(o)) {
         var api = this;
-        return isIncomplete(o) ?
-            // return completion promise
-            complete(o).then(function (o) {
+            return complete(o).then(function (o) {
                 return api.sel(o, k, iteration, filter);
-            }) :
-            undefined; // no element
+            });
     }
 
-    if (!iteration &&
-        !filter)
+    this._listen(o, k);
+
+    if (item === undefined)
+        return;
+
+    if (!iteration && !filter)
         return item; // just return data as is
 
     if (!isArray(item)) {
         // singletone object
         if (filter) {
-            return filter(item,0) ? iteration(item, 0) : undefined;
+            return filter(item, 0) ? iteration(item, 0) : undefined;
         } else {
             return iteration(item, 0);
         }
@@ -196,7 +203,7 @@ Core.prototype.sel = function (o, k, iteration, filter) {
     // iterate over array
     var output = [], filteredIndex = 0;
     each(o[k], function (item, index) {
-        if (filter){
+        if (filter) {
             if (filter(item, index)) {
                 output.push(iteration ? iteration(
                     item, filteredIndex++
@@ -227,20 +234,19 @@ Core.prototype.cnt = function (o, k) {
             isValue(o))
             return 0; // undefined, null, or values are not containers
 
-        this._listen(o, k); // subscribe for changes
-
         var item = o[k];
 
-        if (item === undefined) {
+        if (item === undefined && isIncomplete(o)) {
             var api = this;
-            return isIncomplete(o) ?
-                // return a promise
-                complete(o).then(function (o) {
+            return complete(o).then(function (o) {
                     return api.cnt(o, k);
-                })
-                :
-                0;// count = 0
+                });
         }
+
+        this._listen(o, k); // subscribe for changes
+
+        if (item === undefined)
+            return 0;
 
         if (isArray(item)) {
             return item.length; // array length
@@ -270,7 +276,7 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
                     var wrapped = commons.error(error);
                     // pass wrapped error through to the template
                     // store error inside api for further processing
-                    api._error( args[i] = wrapped );
+                    api._error(args[i] = wrapped);
                 })
             );
         }
@@ -282,7 +288,7 @@ Core.prototype.get = function (target, args /*, resolveIncomplete*/) {
         promise.all(jobs).finally(function () {
             // when arguments are ready (even with errors, template processing should not abort)
             promise.resolve(target) // ensure target is callable
-                .then(function(target){
+                .then(function (target) {
                     return target.apply(api, args); // call inside promise resolution, so it will reject on any failure
                 }).then(def.resolve, def.reject);
         });
@@ -300,10 +306,10 @@ Core.prototype.agg = aggregator;
  * Dependency injection/resolution mechanism (not a "require")
  * @param dependency
  */
-Core.prototype.inj = function(dependency){
+Core.prototype.inj = function (dependency) {
     if (dependency === undefined)
         return this;
-    throw 'dependency not found: '+dependency;
+    throw 'dependency not found: ' + dependency;
 }
 
 
@@ -320,7 +326,7 @@ Core.prototype.inj = function(dependency){
  *
  * @returns {*} error object os speficied type or undefined otherwise
  */
-Core.prototype.err = function(o, docatch) {
+Core.prototype.err = function (o, docatch) {
 
     var filter, type;
 
@@ -337,7 +343,7 @@ Core.prototype.err = function(o, docatch) {
 
     if (o && !isValue(o) && !isArray(o)) {
         //FIXME: move to another layer
-        this._listen(o, CLEAREST +".error"); // subscribe for changes on '__clearest__.error' key
+        this._listen(o, CLEAREST + ".error"); // subscribe for changes on '__clearest__.error' key
     }
 
     if (!isError(o, type))

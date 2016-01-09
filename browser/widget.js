@@ -358,6 +358,7 @@ function Widget(app, template, context, parameters) {
         lastRebuild = currentRq ? rebuild0 : rebuild1;
         curUpdate = currentRq ? update1 : update0;
         lastUpdate = currentRq ? update0 : update1;
+        flag1 = flag0 = 0;
 
         unsubscribe(lastRebuild);
         unsubscribe(lastUpdate);
@@ -365,14 +366,6 @@ function Widget(app, template, context, parameters) {
 
     function reqFlag() {
         return currentRq ? flag1 : flag0;
-    }
-
-    function clearFlag() {
-        if (currentRq) {
-            flag1 = 0;
-        }
-        else
-            flag0 = 0;
     }
 
     this._listen = function (o, k, updateOnly) {
@@ -397,6 +390,13 @@ function Widget(app, template, context, parameters) {
         templateErrors.push(o);
     };
 
+    function _process(flag){
+        if (flag & FLAG_REBUILD) {
+            return widget.build();
+        } else if (flag & FLAG_UPDATE) {
+            return _update(presentation);
+        };
+    }
 
     this.process = function () {
         var widget = this;
@@ -404,37 +404,20 @@ function Widget(app, template, context, parameters) {
 
         if (flag) {
             if (!progress) {
-
                 flipFlag();
-
-
-                if (flag & FLAG_REBUILD) {
-                    progress = widget.build();
-                } else if (flag & FLAG_UPDATE) {
-                    progress = _update(presentation);
-                }
-                ;
-
-                clearFlag();
-
+                progress =_process(flag);
                 if (isPromise(progress)) {
                     var after = progress.then(function () {
                         var flag = reqFlag();
-                        if (flag) {
-                            // restart chain
-                            return widget.process();
-                        } else {
-                            // done
-                            progress = null;
-                            return widget;
-                        }
+                        return flag ? _process(flag) : widget;
+                    }).finally(function(){
+                        progress = null;
                     });
 
                     progress = after;
                     return progress;
-
                 } else {
-                    // done
+                    // synchronous done
                     progress = null;
                     return widget;
                 }

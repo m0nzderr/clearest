@@ -168,24 +168,6 @@ function agg() {
 
     if (j.length) // if there are deferred jobs, aggregate sequence after resolution
     {
-        /*var def = new promise.defer();
-
-        promise.all(j)
-            .finally(function () {
-                // aggregate later
-                var res = agg.call({ctl: ctl}, seq);
-
-                if (isPromise(res))
-                    res.then(function (res) {
-                        def.resolve(res);
-                    });
-                else
-                    def.resolve(res);
-            });
-
-        return def.promise;
-         */
-
         return promise.all(j).then(function(){
             return agg.call({ctl: ctl}, seq);
         })
