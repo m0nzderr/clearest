@@ -86,6 +86,21 @@ function each(a, f, j) {
 }
 
 /**
+ * Selects first non-empty element of a deep array or a singletone
+ * @param a
+ */
+function any(a) {
+    if (a === undefined) return;
+    if (is.array(a))
+        for (var i = 0, l = a.length; i < l; i++) {
+            var b = any(a[i]);
+            if (b !== undefined) return b;
+        }
+    return a;
+}
+
+
+/**
  * Ensures that there is an object field f in o
  *
  * @param f field
@@ -190,6 +205,7 @@ module.exports = {
     fin: fin,
     inside: inside,
     each: each,
+    any: any,
     constant: constant,
     complete: complete,
     promise: promise,

@@ -122,7 +122,7 @@ describe("runtime library / core api", function () {
             })).deep.equals(["hello0", "world1"]);
         });
 
-        it("should apply filters", function () {
+        it("should apply where filter", function () {
             expect(api.sel({data: [{match: 1, text: "foo"}, {match: 0, text: "bar"}]}, 'data', function (e) {
                 return e.text;
             }, function (data) {
@@ -131,6 +131,18 @@ describe("runtime library / core api", function () {
             expect(api.sel({data: [{match: 1, text: "foo"}, {match: 0, text: "bar"}]}, 'data', false, function (data) {
                 return data.match
             })).to.be.deep.equals([{match: 1, text: "foo"}]);
+        });
+
+        it("should order and filter", function () {
+            expect(api.sel({data: [{text: "foo"}, {text: "bar"}]}, 'data', false, false, function (data) {
+                return data.text
+            })).to.be.deep.equals([{text: "bar"}, {text: "foo"}]);
+
+            expect(api.sel({data: [{match:1,text: "foo"}, {match:1,text: "bar"}]}, 'data', false, function (data) {
+                return data.match
+            }, function (data) {
+                return data.text
+            })).to.be.deep.equals([{match:1,text: "bar"}, {match:1,text: "foo"}]);
         });
 
         it("should deal with incomplete objects", function () {

@@ -154,16 +154,16 @@ function Widget(app, template, context, parameters) {
             var componentView = app.find(comp.id, view);
             var controllers = [];
             // initialize controllers
-
-            each(comp.init, function (init) {
-                var ctl = init.call(componentView, widget);
-                if (ctl && ctl.build !== undefined) {
-                    if (ctl.destroy !== undefined || ctl.process !== undefined)
-                        controllers.push(ctl);
+            if (componentView) { // nothing should be initialized without view
+                each(comp.init, function (init) {
+                    var ctl = init.call(componentView, widget);
+                    if (ctl && ctl.build !== undefined) {
+                        if (ctl.destroy !== undefined || ctl.process !== undefined)
+                            controllers.push(ctl);
 
                         // do injections
-                        _inject(ctl, '@inject:app',app);
-                        _inject(ctl, '@inject:parent',widget);
+                        _inject(ctl, '@inject:app', app);
+                        _inject(ctl, '@inject:parent', widget);
 
                         // call build() method
                         var result = ctl.build(componentView);
@@ -171,8 +171,9 @@ function Widget(app, template, context, parameters) {
                         if (isPromise(result)) {
                             queue.push(result);
                         }
-                }
-            });
+                    }
+                });
+            }
             components[index] = controllers;
         });
 

@@ -168,7 +168,7 @@ Core.prototype.use = function (templateModule, o) {
  * @param filter - filtering options
  * @returns {*}
  */
-Core.prototype.sel = function (o, k, iteration, filter) {
+Core.prototype.sel = function (o, k, iteration, filter, orderkey) {
     if (o === undefined ||
         o === null ||
         isValue(o)
@@ -178,9 +178,9 @@ Core.prototype.sel = function (o, k, iteration, filter) {
     var item = o[k];
     if (item === undefined && isIncomplete(o)) {
         var api = this;
-            return complete(o).then(function (o) {
-                return api.sel(o, k, iteration, filter);
-            });
+        return complete(o).then(function (o) {
+            return api.sel(o, k, iteration, filter);
+        });
     }
 
     this._listen(o, k);
@@ -188,8 +188,9 @@ Core.prototype.sel = function (o, k, iteration, filter) {
     if (item === undefined)
         return;
 
-    if (!iteration && !filter)
+    if (!iteration && !filter && !orderkey) {
         return item; // just return data as is
+    }
 
     if (!isArray(item)) {
         // singletone object
@@ -203,19 +204,42 @@ Core.prototype.sel = function (o, k, iteration, filter) {
     // iterate over array
     var output = [], filteredIndex = 0;
     each(o[k], function (item, index) {
+        var value;
         if (filter) {
             if (filter(item, index)) {
-                output.push(iteration ? iteration(
-                    item, filteredIndex++
-                ) : item);
+                value = iteration ? iteration(
+                    item, filteredIndex
+                ) : item;
+
+                output.push(
+                    orderkey ? {key: orderkey(item, filteredIndex), value: value} : value
+                );
+
+                filteredIndex++;
             }
         } else {
-            output.push(iteration(
+            value = iteration ? iteration(
                 item, index
-            ))
+            ) : item;
+            output.push(
+                orderkey ? {key: orderkey(item, index), value: value} : value
+            )
         }
     });
-    return output;
+
+    if (orderkey) {
+
+        output.sort(function (a, b) {
+            var ka = a.key, kb = b.key;
+            return ka > kb ? 1 : (ka < kb ? -1 : 0);
+        });
+
+        return output.map(function (item) {
+            return item.value
+        })
+    }
+    else
+        return output;
 }
 
 /**
@@ -239,8 +263,8 @@ Core.prototype.cnt = function (o, k) {
         if (item === undefined && isIncomplete(o)) {
             var api = this;
             return complete(o).then(function (o) {
-                    return api.cnt(o, k);
-                });
+                return api.cnt(o, k);
+            });
         }
 
         this._listen(o, k); // subscribe for changes

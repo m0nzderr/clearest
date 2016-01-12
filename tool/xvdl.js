@@ -936,6 +936,16 @@ function XvdlCompiler(userConfig) {
                         }));
                     }
 
+                    if (node.hasAttribute("orderby")) {
+                        if (!node.hasAttribute("where")) {
+                            selectArgs.push("false"); // filler
+                            selectArgs.push("false"); // filler
+                        }
+                        selectArgs.push(codegen.closure({
+                            args: codegen.list(itemClosureArgs),
+                            ret: compileExpression(node.getAttribute("orderby"), scope, true)
+                        }));
+                    }
 
                 }
                 else {
@@ -967,7 +977,15 @@ function XvdlCompiler(userConfig) {
                         }));
                     }
 
-                    //TODO: implement @orderBy
+                    if (node.hasAttribute("orderby")) {
+                        if (!node.hasAttribute("where"))
+                            selectArgs.push("false"); // filler
+                        selectArgs.push(codegen.closure({
+                            args: codegen.list(itemClosureArgs),
+                            ret: compileExpression(node.getAttribute("orderby"), scope, true)
+                        }));
+                    }
+
                     //TODO: implement @filter
 
                 }

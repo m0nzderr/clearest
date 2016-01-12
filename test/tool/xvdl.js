@@ -326,6 +326,14 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression"><t:context/></s:bar>'))
             .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression}))');
 
+        // @orderby
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" orderby="order-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},false,function(bar,bar$index){return order-expression}))');
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression" orderby="order-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression},function(bar,bar$index){return order-expression}))');
+
     });
 
     it("@e:* (handler code generation)", function () {

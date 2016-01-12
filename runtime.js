@@ -14,6 +14,8 @@ module.exports = {
     constant: commons.constant,
     is : commons.is,
     promise: commons.promise,
+    any: commons.any,
+    each: commons.first,
     inherit: commons.inherit,
     error: commons.error,
     notify: observer.notify,
