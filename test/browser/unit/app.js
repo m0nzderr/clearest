@@ -29,7 +29,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
 
         it("should handle basic events", function () {
 
-            var presentation = {button:{"@id":"testButton", $:"test"}};
+            var presentation = {button:{$id:"testButton", $:"test"}};
             var $ = app.wrapper;
             var container = app.find("container");
             app.render(container ,presentation);
@@ -54,7 +54,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
 
         it("should manage attributes", function () {
 
-            var presentation = {"@internal":"42"};
+            var presentation = {$internal:"42"};
             var container = app.find("container");
 
             container.removeAttribute("internal");
@@ -68,7 +68,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
             expect(container.hasAttribute("external")).to.be.ok;
             expect(container.getAttribute("external")).to.be.equal("42");
 
-            presentation = {"@internal2":"42"};
+            presentation = {$internal2:"42"};
 
             app.render(container ,presentation);
 

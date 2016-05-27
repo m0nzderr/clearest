@@ -18,7 +18,9 @@ var codegen = require("./codegen"),
 var API = constants.API,
     SYMBOL = constants.SYMBOL,
     COMMENT = commons.constant.COMMENT,
-    OBJECT_PATH_SEPARATOR = '.';
+    OBJECT_PATH_SEPARATOR = '.',
+    ATTRIBUTE_PREFIX = commons.constant.ATTRIBUTE_PREFIX,
+    TEXT_NODE = commons.constant.TEXT_NODE;
 
 var isValue = commons.is.value;
 
@@ -376,7 +378,7 @@ function XvdlCompiler(userConfig) {
                 var flags = {};
                 var code = compileExpression(node, scope, false, flags) || codegen.string('', true);
                 var o = scope.o || {};
-                o['@' + node.localName] = code;
+                o[ATTRIBUTE_PREFIX + node.localName] = code;
                 if (!scope.o) {
                     // add as separate object, object is not in scope
                     acc.push(code)

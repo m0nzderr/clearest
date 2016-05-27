@@ -17,9 +17,9 @@ var promise = require("rsvp");
 
 var constant = {
     CLEAREST: '__clearest__',
-    ATTR: '@',
-    TEXT: '$',
-    COMMENT: '!',
+    ATTRIBUTE_PREFIX: '$', // attribute prefix
+    TEXT_NODE: '$', // text node signature (same as attribute prefix)
+    COMMENT: '!',  // comment prefix
     ANY: '*'
 };
 

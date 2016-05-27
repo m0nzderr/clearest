@@ -14,9 +14,9 @@ var commons = require("./commons.js"),
     each = commons.each,
     isComposit = commons.is.composit;
 
-var TEXT = commons.constant.TEXT,
-    COMMENT = commons.constant.COMMENT,
-    ATTR = commons.constant.ATTR,
+var COMMENT = commons.constant.COMMENT,
+    ATTRIBUTE_PREFIX = commons.constant.ATTRIBUTE_PREFIX,
+    TEXT_NODE = commons.constant.TEXT_NODE,
     CLEAREST = commons.constant.CLEAREST,
     VOID_TAG_LIST = [
         "area",
@@ -39,8 +39,8 @@ var TEXT = commons.constant.TEXT,
     IS_VOID_TAG = {};
 
 // build IS_VOID_TAG lookup table
-VOID_TAG_LIST.forEach(function(tag){
-    IS_VOID_TAG[tag]=IS_VOID_TAG[tag.toUpperCase()]=true;
+VOID_TAG_LIST.forEach(function (tag) {
+    IS_VOID_TAG[tag] = IS_VOID_TAG[tag.toUpperCase()] = true;
 });
 
 // exports
@@ -63,7 +63,7 @@ function html(o, tag) {
         return buf;
     }
 
-    if (tag !== undefined && tag !== TEXT) {
+    if (tag !== undefined && tag !== TEXT_NODE) {
         if (tag === COMMENT) {
             head = '<!-- ';
         } else {
@@ -86,8 +86,10 @@ function html(o, tag) {
         var composit = isComposit(o), att;
 
         if (!composit || head !== undefined) { // no need to a composit objet without head
-            for (var k in o)
-                if (k !== CLEAREST && ((att = (k.charAt(0) === ATTR)) || !composit)) { // omit clearest data and composit properties
+            for (var k in o) {
+                var text = (k === TEXT_NODE);
+                var att = !text && (k.charAt(0) === ATTRIBUTE_PREFIX);
+                if (k !== CLEAREST && (att || !composit)) { // omit clearest data and composit properties
                     var ok = o[k];
                     if (ok !== undefined && ok !== null) { // omit null data
                         if (!att) { // data property
@@ -108,6 +110,7 @@ function html(o, tag) {
                         }
                     }
                 }
+            }
         }
 
         if (composit) {

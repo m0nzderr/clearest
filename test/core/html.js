@@ -41,7 +41,7 @@ describe("runtime library / html", function () {
             equal(html({
                 foo: 'bar',
                 qux: 'fix',
-                '@foo': 'hidden'
+                '$foo': 'hidden'
             }), '<foo>bar</foo><qux>fix</qux>', 'many value properties');
             equal(html({foo: [1, 'bar', 3]}), '<foo>1</foo><foo>bar</foo><foo>3</foo>', 'array properties');
             equal(html({foo: {}}), '<foo></foo>', 'object properties');
@@ -56,21 +56,21 @@ describe("runtime library / html", function () {
         });
 
         test("attributes objects", function () {
-            equal(html({foo: {'@bar': 'qux'}}), '<foo bar="qux"></foo>', 'attributes (no body)');
-            equal(html({foo: {'@bar': null}}), '<foo></foo>', 'attributes (null value)');
-            equal(html({foo: {'@bar': ''}}), '<foo bar=""></foo>', 'attributes (empty value)');
-            equal(html({foo: {'@bar': {}}}), '<foo bar=""></foo>', 'attributes (empty value)');
-            equal(html({foo: {'@bar': []}}), '<foo bar=""></foo>', 'attributes (empty value)');
-            equal(html({foo: {'@bar': 'qux', $: 'bar'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
-            equal(html({foo: {$: 'bar', '@bar': 'qux'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
-            equal(html({foo: {'@bar': ['qux', 1, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
-            equal(html({foo: {'@bar': ['qux', {$: 1}, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
+            equal(html({foo: {$bar: 'qux'}}), '<foo bar="qux"></foo>', 'attributes (no body)');
+            equal(html({foo: {$bar: null}}), '<foo></foo>', 'attributes (null value)');
+            equal(html({foo: {$bar: ''}}), '<foo bar=""></foo>', 'attributes (empty value)');
+            equal(html({foo: {$bar: {}}}), '<foo bar=""></foo>', 'attributes (empty value)');
+            equal(html({foo: {$bar: []}}), '<foo bar=""></foo>', 'attributes (empty value)');
+            equal(html({foo: {$bar: 'qux', $: 'bar'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
+            equal(html({foo: {$: 'bar', $bar: 'qux'}}), '<foo bar="qux">bar</foo>', 'attributes (with body)');
+            equal(html({foo: {$bar: ['qux', 1, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
+            equal(html({foo: {$bar: ['qux', {$: 1}, 2, 'data']}}), '<foo bar="qux12data"></foo>', 'complex attributes');
             equal(html({
                 foo: {
-                    '@bar': ['qux', {
+                    $bar: ['qux', {
                         foo: {
                             $: 1,
-                            '@hitme': 'its impossible!'
+                            $hitme: 'its impossible!'
                         }
                     }, 2, 'data']
                 }
@@ -84,10 +84,10 @@ describe("runtime library / html", function () {
                 data: 3,
                 foo: 2
             })), '<data>1</data><foo>1</foo><data>2</data><data>3</data><foo>2</foo>', 'interleved peoperties');
-            equal(html(agg({data: 1, foo: 1, '@bar': '1'}, {data: 2}, {
+            equal(html(agg({data: 1, foo: 1, $bar: '1'}, {data: 2}, {
                 data: 3,
                 foo: 2,
-                '@bar': '2'
+                $bar: '2'
             }), 'test'), '<test bar="12"><data>1</data><foo>1</foo><data>2</data><data>3</data><foo>2</foo></test>', 'attribute composition (may change!!!)');
             equal(html(agg({
                 data: 1,

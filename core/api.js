@@ -1,7 +1,7 @@
 /*
  * Clearest Framework
  * Provided under MIT License.
- * Copyright (c) 2012-2015  Illya Kokshenev <sou@illya.com.br>
+ * Copyright (c) 2012-2016  Illya Kokshenev <sou@illya.com.br>
  */
 "use strict";
 
@@ -21,7 +21,7 @@ var commons = require("./commons"),
     promise = commons.promise;
 
 
-var ID_ATTRIBUTE = commons.constant.ATTR + 'id',
+var ID_ATTRIBUTE = commons.constant.ATTRIBUTE_PREFIX + 'id',
     ID_SEPARATOR = '-',
     CLEAREST = commons.constant.CLEAREST,
     KEY_ANY = commons.constant.ANY;

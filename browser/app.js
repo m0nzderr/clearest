@@ -15,7 +15,7 @@ var html = require("../core/html"),
 
 //App = require("../interface/app");
 
-var KEY_ATTR = commons.constant.ATTR;
+var ATTRIBUTE_PREFIX = commons.constant.ATTRIBUTE_PREFIX;
 
 /**
  * Simplest builder implementation that wraps around browser implementation.
@@ -71,7 +71,7 @@ BrowserApp.prototype.render = function (view, presentation) {
             //FIXME: create another logic to prevent ids from being removed
             continue;
         }
-        var key = KEY_ATTR + attr;
+        var key = ATTRIBUTE_PREFIX + attr;
         if (plain || presentation[key] === undefined || presentation[key] === null) {
             view.removeAttribute(attr);
         }
@@ -80,10 +80,8 @@ BrowserApp.prototype.render = function (view, presentation) {
     if (!plain) {
         // add new attributes
         for (var key in presentation) {
-            if (key.charAt(0) === KEY_ATTR) {
-                var attr = key.slice(1);
-                view.setAttribute(attr, presentation[key]);
-                localAttributes[attr] = true;
+            if (key.length > 1 && key.charAt(0) === ATTRIBUTE_PREFIX) {
+                var attr = key.slice(1); view.setAttribute(attr, presentation[key]); localAttributes[attr] = true;
             }
         }
     }

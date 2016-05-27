@@ -63,8 +63,8 @@ var commons = require("./commons"),
     each = commons.each,
     in_ = commons.inside;
 
-var TEXT = commons.constant.TEXT,
-    ATTR = commons.constant.ATTR,
+var TEXT_NODE = commons.constant.TEXT_NODE,
+    ATTRIBUTE_PREFIX = commons.constant.ATTRIBUTE_PREFIX,
     CLEAREST = commons.constant.CLEAREST;
 
 //exports
@@ -105,7 +105,7 @@ function compose(seq) // sequence is a plain array
 
         if (el !== undefined && el !== null)
             if (isValue(el))
-                _put(TEXT, el);
+                _put(TEXT_NODE, el);
             else
                 for (var k in el)
                     if (k !== CLEAREST)
