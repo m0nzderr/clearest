@@ -28,7 +28,7 @@ if (typeof document !== 'undefined') { // simple trick to prevent this running b
         it("click 42 app", function () {
             return run(function (P, S, c) {
                 return {
-                    button: S({"@id": "button"}, "click-me", P.on("click", function () {
+                    button: S({$id: "button"}, "click-me", P.on("click", function () {
                         this.innerHTML = "42"
                     }))
                 }

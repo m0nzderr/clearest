@@ -17,9 +17,9 @@ var promise = require("rsvp");
 
 var constant = {
     CLEAREST: '__clearest__',
-    ATTR: '@',
-    TEXT: '$',
-    COMMENT: '!',
+    ATTRIBUTE_PREFIX: '$', // attribute prefix
+    TEXT_NODE: '$', // text node signature (same as attribute prefix)
+    COMMENT: '!',  // comment prefix
     ANY: '*'
 };
 
@@ -50,7 +50,7 @@ var is_ = function (o) {
             return is_(o) && o.__clearest__.complete !== undefined;
         },
         error: function (o, type) {
-            var itis = is_(o) && o.__clearest__.error !== undefined;
+            var itis = is_(o) && !!(o.__clearest__.error);
 
             if (!itis || type === undefined)
                 return itis;
@@ -84,6 +84,21 @@ function each(a, f, j) {
             each(a[i], f, j);
     else f(a, j);
 }
+
+/**
+ * Selects first non-empty element of a deep array or a singletone
+ * @param a
+ */
+function any(a) {
+    if (a === undefined) return;
+    if (is.array(a))
+        for (var i = 0, l = a.length; i < l; i++) {
+            var b = any(a[i]);
+            if (b !== undefined) return b;
+        }
+    return a;
+}
+
 
 /**
  * Ensures that there is an object field f in o
@@ -190,6 +205,7 @@ module.exports = {
     fin: fin,
     inside: inside,
     each: each,
+    any: any,
     constant: constant,
     complete: complete,
     promise: promise,

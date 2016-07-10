@@ -11,7 +11,7 @@ var Core = require("../../core/api"),
     commons = require("../../core/commons"),
     promise = commons.promise,
     delay = commons.delay;
-    expect = chai.expect;
+expect = chai.expect;
 
 var isError = commons.is.error,
     inside = commons.inside;
@@ -36,17 +36,17 @@ describe("runtime library / core api", function () {
             });
         });
 
-        it("should handle argument errors",function(){
+        it("should handle argument errors", function () {
 
             var api = new Core();
 
-            var errors =[];
+            var errors = [];
             // override internal error hook
-            api._error =function(o){
+            api._error = function (o) {
                 errors.push(o);
             };
 
-            return api.get(function (a,b,c) {
+            return api.get(function (a, b, c) {
                 expect(isError(b)).to.be.ok;
                 expect(isError(a)).to.be.ok;
                 expect(!isError(c)).to.be.ok;
@@ -60,13 +60,13 @@ describe("runtime library / core api", function () {
 
         });
 
-        it("should handle syncronous template errors (issue #21)",function(){
+        it("should handle syncronous template errors (issue #21)", function () {
 
             var api = new Core();
 
-            var errors =[];
+            var errors = [];
             // override internal error hook
-            api._error =function(o){
+            api._error = function (o) {
                 errors.push(o);
             };
 
@@ -74,7 +74,7 @@ describe("runtime library / core api", function () {
                 throw 'failed'
             }, [promise.resolve(42)]).then(function (result) {
                 expect(true).not.to.be.ok;
-            },function(err){
+            }, function (err) {
                 expect(err).to.be.ok;
             });
 
@@ -122,24 +122,46 @@ describe("runtime library / core api", function () {
             })).deep.equals(["hello0", "world1"]);
         });
 
+        it("should apply where filter", function () {
+            expect(api.sel({data: [{match: 1, text: "foo"}, {match: 0, text: "bar"}]}, 'data', function (e) {
+                return e.text;
+            }, function (data) {
+                return data.match
+            })).to.be.deep.equals(["foo"]);
+            expect(api.sel({data: [{match: 1, text: "foo"}, {match: 0, text: "bar"}]}, 'data', false, function (data) {
+                return data.match
+            })).to.be.deep.equals([{match: 1, text: "foo"}]);
+        });
+
+        it("should order and filter", function () {
+            expect(api.sel({data: [{text: "foo"}, {text: "bar"}]}, 'data', false, false, function (data) {
+                return data.text
+            })).to.be.deep.equals([{text: "bar"}, {text: "foo"}]);
+
+            expect(api.sel({data: [{match:1,text: "foo"}, {match:1,text: "bar"}]}, 'data', false, function (data) {
+                return data.match
+            }, function (data) {
+                return data.text
+            })).to.be.deep.equals([{match:1,text: "bar"}, {match:1,text: "foo"}]);
+        });
+
         it("should deal with incomplete objects", function () {
-            var o ={};
-            inside(o).complete=function(o){
+            var o = {};
+            inside(o).complete = function (o) {
                 return promise.resolve({data: "hello"});
             };
-            return promise.resolve(api.sel(o, 'data')).then(function(data){
+            return promise.resolve(api.sel(o, 'data')).then(function (data) {
                 expect(data).to.be.equals("hello");
             });
         });
 
-
         it("should not fail when incomplete resolution fails", function () {
-            var o ={data:'hello'};
-            inside(o).complete=function(o){
-                inside(o).error='failed';
+            var o = {data: 'hello'};
+            inside(o).complete = function (o) {
+                inside(o).error = 'failed';
                 return promise.reject(o);
             };
-            return promise.resolve(api.sel(o, 'data')).then(function(data){
+            return promise.resolve(api.sel(o, 'data')).then(function (data) {
                 // operation finishes
                 // operation finishes
                 expect(data).to.be.equals("hello");
@@ -212,17 +234,17 @@ describe("runtime library / core api", function () {
 
             var err;
 
-            err =  commons.error(1);
-            err.test=1;
+            err = commons.error(1);
+            err.test = 1;
             expect(commons.is.error(err)).to.be.ok;
-            api.err(err,1);
+            api.err(err, 1);
             expect(commons.is.error(err)).not.to.be.ok;
 
 
-            err =  commons.error(2);
-            err.test=2;
-            expect(commons.is.error(err,"1")).not.to.be.ok;
-            api.err(err,1,"1");
+            err = commons.error(2);
+            err.test = 2;
+            expect(commons.is.error(err, "1")).not.to.be.ok;
+            api.err(err, 1, "1");
             expect(commons.is.error(err)).to.be.ok;
         });
     });

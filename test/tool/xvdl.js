@@ -43,27 +43,27 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('{foo:S("bar1",{qux:" dox "},"bar2")}');
 
         compiler.compile(dom.parseFromString('<foo bar="qux"/>'))
-            .should.be.exactly('{foo:{"@bar":"qux"}}');
+            .should.be.exactly('{foo:{$bar:"qux"}}');
 
         // issue #19
         compiler.compile(dom.parseFromString('<foo bar=""/>'))
-            .should.be.exactly('{foo:{"@bar":""}}');
+            .should.be.exactly('{foo:{$bar:""}}');
 
 
         compiler.compile(dom.parseFromString('<foo bar="qux">dox</foo>'))
-            .should.be.exactly('{foo:S({"@bar":"qux"},"dox")}');
+            .should.be.exactly('{foo:S({$bar:"qux"},"dox")}');
 
 
         /* deprecated notation:
          xvdl.transform(dom.parseFromString('<foo bar="qux" qux="dox">bar</foo>'))
-         .should.be.exactly('{foo:{"@bar":"qux", "@qux":"dox", $:"bar"}}');
+         .should.be.exactly('{foo:{"$bar":"qux", "$qux":"dox", $:"bar"}}');
          */
 
         compiler.compile(dom.parseFromString('<foo bar=" qux " qux="dox"><bar/></foo>'))
-            .should.be.exactly('{foo:S({"@bar":" qux ","@qux":"dox"},{bar:0})}');
+            .should.be.exactly('{foo:S({$bar:" qux ",$qux:"dox"},{bar:0})}');
     });
 
-    it("t:fragment, t:comment and t:require", function () {
+    it("t:fragment, t:comment, t:ignore, t:import and t:require", function () {
 
         var compiler = new Compiler({symbol: {empty: '0', aggregator: 'S'}});
 
@@ -85,9 +85,15 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<t:comment env:build.target="cordova">bar</t:comment>'))
             .should.be.exactly('{"!":"bar"}');
 
-        // @dep should not leak into the code
+        // $dep should not leak into the code
         compiler.compile(dom.parseFromString('<t:require dep="mydep">bar</t:require>'))
             .should.be.exactly('"bar"');
+
+        compiler.compile(dom.parseFromString('<t:import tpl="mytemplate">bar</t:import>'))
+            .should.be.exactly('"bar"');
+
+        compiler.compile(dom.parseFromString('<t:ignore>whatever</t:ignore>'))
+            .should.be.exactly('0');
 
 
     });
@@ -103,6 +109,10 @@ describe('tool / xvdl instructions', function () {
 
         compiler.compile(dom.parseFromString('<t:if exist="a">bar</t:if>'))
             .should.be.exactly('S(P.get(function($1){return $1?"bar":0},P.cnt($context,["a"])))');
+
+        compiler.compile(dom.parseFromString('<t:if exist="$a">bar</t:if>'))
+            .should.be.exactly('S(P.get(function($1){return $1?"bar":0},P.cnt($context,["$a"])))');
+
 
         compiler.compile(dom.parseFromString('<t:if exist="a,b,!c" from="d" test="f"><t:then>foo</t:then><t:else>bar</t:else></t:if>'))
             .should.be.exactly('S(P.get(function($1,$2,$3){return $1&&$2&&!$3&&(f)?"foo":"bar"},P.cnt(d,["a","b","c"])))');
@@ -180,7 +190,7 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,{bar:0}))');
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><t:fragment foo="123"/></t:use>'), {$context: "bar"})
-            .should.be.exactly('S(P.use(foo,S({bar:0},{"@foo":"123"})))');
+            .should.be.exactly('S(P.use(foo,S({bar:0},{$foo:"123"})))');
         compiler.compile(dom.parseFromString('<t:use template="foo"><bar/><baz/></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,S({bar:0},{baz:0})))');
 
@@ -189,6 +199,13 @@ describe('tool / xvdl instructions', function () {
 
         compiler.compile(dom.parseFromString('<t:use template="foo" context="qux"></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,qux))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo" context="qux" from="source"></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,qux))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo" context="qux" from="scope"></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,qux))');
+
 
     });
 
@@ -205,11 +222,11 @@ describe('tool / xvdl instructions', function () {
 
         // attributes
         compiler.compile(dom.parseFromString('<w:foo bar1="bar1" t:bar2="bar2" w:template="bar"><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S({"@bar1":"bar1"},P.wid(bar,function(P,S){return S({"@bar2":"bar2"},{bar:0})}))})');
+            .should.be.exactly('S({foo:S({$bar1:"bar1"},P.wid(bar,function(P,S){return S({$bar2:"bar2"},{bar:0})}))})');
 
         // controllers
         compiler.compile(dom.parseFromString('<w:foo bar1="bar1" o:foo.bar="qux" w:template="bar"><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S({"@bar1":"bar1"},P.wid(bar,function(P,S){return S(P.obs(foo,"bar",qux),{bar:0})}))})');
+            .should.be.exactly('S({foo:S({$bar1:"bar1"},P.wid(bar,function(P,S){return S(P.obs(foo,"bar",qux),{bar:0})}))})');
 
         // error
         expect(function () {
@@ -226,13 +243,18 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'))
             .should.be.exactly('S({foo:S(P.wid(function(P,S,$context){return {bar:0}},$context))})');
 
-        // implicit context should also switch
+        // stub
+        compiler.compile(dom.parseFromString('<w:foo w:stub="stub"><bar/></w:foo>'))
+            .should.be.exactly('S({foo:S(P.use(stub,$context),P.wid(function(P,S,$context){return {bar:0}},$context))})');
+
+
+        // implicit context should switch
         compiler.compile(dom.parseFromString('<w:foo><bar/></w:foo>'), {$context: "foo"})
             .should.be.exactly('S({foo:S(P.wid(function(P,S,foo){return {bar:0}},foo))})');
 
         // attributes
         compiler.compile(dom.parseFromString('<w:foo bar1="bar1" t:bar2="bar2"><bar/></w:foo>'))
-            .should.be.exactly('S({foo:S({"@bar1":"bar1"},P.wid(function(P,S,$context){return S({"@bar2":"bar2"},{bar:0})},$context))})');
+            .should.be.exactly('S({foo:S({$bar1:"bar1"},P.wid(function(P,S,$context){return S({$bar2:"bar2"},{bar:0})},$context))})');
 
         compiler.compile(dom.parseFromString('<w:foo o:foo.bar="qux"/>'))
             .should.be.exactly('S({foo:S(P.wid(function(P,S,$context){return S(P.obs(foo,"bar",qux))},$context))})');
@@ -302,24 +324,36 @@ describe('tool / xvdl instructions', function () {
 
 
     it("s:*", function () {
-        //TODO: @where
-        //TODO: @filter
-        //TODO: @bind
-        //TODO: @orderby
+        //TODO: $filter
+        //TODO: $bind
+        //TODO: $orderby
 
         compiler.compile(dom.parseFromString('<s:bar/>'))
             .should.be.exactly('S(P.sel($context,"bar"))');
 
-        // @from
+        // $from
         compiler.compile(dom.parseFromString('<s:bar from="foo"><t:context/></s:bar>'))
             .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar}))');
 
-        // @from @as
+        // $from $as
         compiler.compile(dom.parseFromString('<s:bar from="foo" as="baz"><t:context/></s:bar>'))
             .should.be.exactly('S(P.sel(foo,"bar",function(baz,baz$index){return baz}))');
+
+        // $where
+        compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression}))');
+
+        // $orderby
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" orderby="order-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},false,function(bar,bar$index){return order-expression}))');
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression" orderby="order-expression"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression},function(bar,bar$index){return order-expression}))');
+
     });
 
-    it("@e:* (handler code generation)", function () {
+    it("$e:* (handler code generation)", function () {
 
         // return bar
         compiler.compile(dom.parseFromString('<foo e:click="=bar"/>'))
@@ -357,7 +391,7 @@ describe('tool / xvdl instructions', function () {
 
     });
 
-    it("@e:*", function () {
+    it("$e:*", function () {
 
         // handler
         compiler.compile(dom.parseFromString('<foo e:click="boom"/>'))
@@ -369,7 +403,15 @@ describe('tool / xvdl instructions', function () {
 
     });
 
-    it("@o:*.*", function () {
+
+    it("$e:*.* (extended events)", function () {
+
+        compiler.compile(dom.parseFromString('<foo e:bar.click="boom"/>'))
+            .should.be.exactly('S({foo:S(P.on("click",boom,bar))})');
+
+    });
+
+    it("$o:*.*", function () {
         compiler.compile(dom.parseFromString('<foo o:foo.bar="boom"/>'))
             .should.be.exactly('S({foo:S(P.obs(foo,"bar",boom))})');
 
@@ -395,31 +437,31 @@ describe('tool / xvdl instructions', function () {
 
         // single expression
         compiler.compile(dom.parseFromString('<foo bar="${bar}"/>'))
-            .should.be.exactly('{foo:{"@bar":bar}}');
+            .should.be.exactly('{foo:{$bar:bar}}');
 
         // basic concatenation ES5
         compiler.compile(dom.parseFromString('<foo bar="${qux}dox${fax}"/>'))
-            .should.be.exactly('{foo:{"@bar":qux+"dox"+fax}}');
+            .should.be.exactly('{foo:{$bar:qux+"dox"+fax}}');
 
         //TODO 2.1.0: add ES6 mode
         //compiler.compileeES6(dom.parseFromString('<foo t:bar="${qux}dox${fax}"/>'))
-        //    .should.be.exactly('{foo:{"@bar":`${qux}dox${fax}`}}');
+        //    .should.be.exactly('{foo:{"$bar":`${qux}dox${fax}`}}');
 
         // single select
         compiler.compile(dom.parseFromString('<foo bar="{{bar}}"/>'))
-            .should.be.exactly('S({foo:S({"@bar":P.sel($context,"bar")})})');
+            .should.be.exactly('S({foo:S({$bar:P.sel($context,"bar")})})');
 
         // single select from another object
         compiler.compile(dom.parseFromString('<foo bar="{{foo.bar.qux}}"/>'))
-            .should.be.exactly('S({foo:S({"@bar":P.sel(foo.bar,"qux")})})');
+            .should.be.exactly('S({foo:S({$bar:P.sel(foo.bar,"qux")})})');
 
         // concatenated select
         compiler.compile(dom.parseFromString('<foo bar="{{bar}} and {{qux}}"/>'))
-            .should.be.exactly('S({foo:S({"@bar":P.get(function($1,$2){return $1+" and "+$2},[P.sel($context,"bar"),P.sel($context,"qux")])})})');
+            .should.be.exactly('S({foo:S({$bar:P.get(function($1,$2){return $1+" and "+$2},[P.sel($context,"bar"),P.sel($context,"qux")])})})');
 
         // single select within js expression
         compiler.compile(dom.parseFromString('<foo bar="${func({{foo.bar.qux}})}"/>'))
-            .should.be.exactly('S({foo:S({"@bar":P.get(function($1){return func($1)},[P.sel(foo.bar,"qux")])})})');
+            .should.be.exactly('S({foo:S({$bar:P.get(function($1){return func($1)},[P.sel(foo.bar,"qux")])})})');
 
     });
 
@@ -469,14 +511,14 @@ describe('tool / xvdl instructions', function () {
             }).to.throw(Error);
         });
 
-        it("for t:use without @template", function () {
-            // t:use without @template
+        it("for t:use without $template", function () {
+            // t:use without $template
             chai.expect(function () {
                 compiler.compile(dom.parseFromString('<t:use/>'))
             }).to.throw(Error);
         });
 
-        it("for t:use with @context and body", function () {
+        it("for t:use with $context and body", function () {
             chai.expect(function () {
                 compiler.compile(dom.parseFromString('<t:use template="1" context="2">3</t:use>'))
             }).to.throw(Error);

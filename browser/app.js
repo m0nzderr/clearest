@@ -9,12 +9,13 @@ var html = require("../core/html"),
     commons = require("../core/commons"),
     promise = commons.promise,
     inside = commons.inside,
+    runtime = require("../runtime"),
     isClearest = commons.is._,
     isValue = commons.is.value;
 
 //App = require("../interface/app");
 
-var KEY_ATTR = commons.constant.ATTR;
+var ATTRIBUTE_PREFIX = commons.constant.ATTRIBUTE_PREFIX;
 
 /**
  * Simplest builder implementation that wraps around browser implementation.
@@ -31,6 +32,14 @@ function BrowserApp(document, wrapper) {
     this.wrapper = wrapper;
     this.root = null;
     this.queue = null;
+
+    // add window references (for debugging pruposes only)
+    if (typeof window !== 'undefined') {
+        window[commons.constant.CLEAREST] = {
+            app: this,
+            runtime: runtime
+        }
+    }
 }
 
 
@@ -58,11 +67,11 @@ BrowserApp.prototype.render = function (view, presentation) {
 
     // remove old attributes
     for (var attr in localAttributes) {
-        if (attr ==='id'){
+        if (attr === 'id') {
             //FIXME: create another logic to prevent ids from being removed
             continue;
         }
-        var key = KEY_ATTR + attr;
+        var key = ATTRIBUTE_PREFIX + attr;
         if (plain || presentation[key] === undefined || presentation[key] === null) {
             view.removeAttribute(attr);
         }
@@ -71,10 +80,8 @@ BrowserApp.prototype.render = function (view, presentation) {
     if (!plain) {
         // add new attributes
         for (var key in presentation) {
-            if (key.charAt(0) === KEY_ATTR) {
-                var attr = key.slice(1);
-                view.setAttribute(attr, presentation[key]);
-                localAttributes[attr] = true;
+            if (key.length > 1 && key.charAt(0) === ATTRIBUTE_PREFIX) {
+                var attr = key.slice(1); view.setAttribute(attr, presentation[key]); localAttributes[attr] = true;
             }
         }
     }
@@ -84,25 +91,32 @@ BrowserApp.prototype.render = function (view, presentation) {
 };
 
 BrowserApp.prototype.process = function () {
-    return promise.resolve(this.root.process());
+    return promise.resolve(this.root)
+        .then(function (root) {
+            return root.process()
+        })
+        .then(null, function (error) {
+            console.error("Unhandeled application error:", error.stack ? error.stack : error);
+            throw error;
+        });
 };
 
 //--- event handling ---//
-BrowserApp.prototype.on = function(element, event, handler, options) {
-    element.addEventListener(event, handler, options );
+BrowserApp.prototype.on = function (element, event, handler, options) {
+    element.addEventListener(event, handler, options);
 };
 
-BrowserApp.prototype.off = function(element, event, handler, options){
-    element.removeEventListener(event, handler, options );
+BrowserApp.prototype.off = function (element, event, handler, options) {
+    element.removeEventListener(event, handler, options);
 };
 
-BrowserApp.prototype.event = function(event,initializer){
+BrowserApp.prototype.event = function (event, initializer) {
     //TODO 2.1.0: add compatibility with older browsers
     return new CustomEvent(event, initializer);
 }
 
-BrowserApp.prototype.trigger = function(element, event){
-    if (typeof document !== 'undefined'){
+BrowserApp.prototype.trigger = function (element, event) {
+    if (typeof document !== 'undefined') {
         if (typeof event === 'string') {
             //FIXME: 2.1.0  remove deprecated code
             var e = document.createEvent("HTMLEvents");
@@ -114,7 +128,6 @@ BrowserApp.prototype.trigger = function(element, event){
         }
     }
 };
-
 
 
 module.exports = BrowserApp;

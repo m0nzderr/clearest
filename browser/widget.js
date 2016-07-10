@@ -40,10 +40,12 @@ var Core = require("./../core/api");
  *
  */
 Widget.DEFAULT_PARAMETERS = {
+    transient: false,
     on: {
         render: false,
         build: false,
-        ready: false
+        ready: false,
+        destroy: false
     },
     error: {
         /**
@@ -135,8 +137,17 @@ function Widget(app, template, context, parameters) {
     var widget = this,
         view, components = this.components;
 
+    this['@inject:parent']='parent'; // inject parent widget
+
     this.parameters = parameters = (parameters === undefined) ? Widget.DEFAULT_PARAMETERS     // fast lane
         : mergeParameters(Widget.DEFAULT_PARAMETERS, parameters);   // slow lane;
+
+    function _inject(o, k, v){
+        var path = o[k];
+        if (path) {
+            o[path] = v;
+        }
+    }
 
     // ---------------- private ----------------------------------------
     function _buildComponents() {
@@ -147,20 +158,26 @@ function Widget(app, template, context, parameters) {
             var componentView = app.find(comp.id, view);
             var controllers = [];
             // initialize controllers
+            if (componentView) { // nothing should be initialized without view
+                each(comp.init, function (init) {
+                    var ctl = init.call(componentView, widget);
+                    if (ctl && ctl.build !== undefined) {
+                        if (ctl.destroy !== undefined || ctl.process !== undefined)
+                            controllers.push(ctl);
 
-            each(comp.init, function (init) {
-                var ctl = init.call(componentView, widget);
-                if (ctl && ctl.build !== undefined) {
-                    if (ctl.destroy !== undefined || ctl.process !== undefined)
-                        controllers.push(ctl);
-                    // call build() method
-                    var result = ctl.build(componentView);
-                    // add to queue, if necessary
-                    if (isPromise(result)) {
-                        queue.push(result);
+                        // do injections
+                        _inject(ctl, '@inject:app', app);
+                        _inject(ctl, '@inject:parent', widget);
+
+                        // call build() method
+                        var result = ctl.build(componentView);
+                        // add to queue, if necessary
+                        if (isPromise(result)) {
+                            queue.push(result);
+                        }
                     }
-                }
-            });
+                });
+            }
             components[index] = controllers;
         });
 
@@ -169,7 +186,7 @@ function Widget(app, template, context, parameters) {
             var def = promise.defer();
             promise.all(queue)
                 .then(undefined, function (error) {
-                    // handle build error
+                    // handle build rejection
                     widget._error(commons.error(error));
                 })
                 //TODO: check if failure chain must be considered
@@ -189,13 +206,12 @@ function Widget(app, template, context, parameters) {
         // destroy components
         each(components, function (controller) {
             if (controller.destroy !== undefined) {
-                controller.destroy();
+                controller.destroy(view);
             }
         });
         // clearn up list
         components.length = 0;
     }
-
 
     // boot implementation
     function _start(_bootComponents) {
@@ -235,7 +251,7 @@ function Widget(app, template, context, parameters) {
         app.render(view, presentation);
 
         if (parameters.on.render) {
-            parameters.on.render.call(view, this);
+            parameters.on.render.call(view, widget);
         }
 
         // asynchronously build new components
@@ -252,7 +268,7 @@ function Widget(app, template, context, parameters) {
     function _finalize() {
 
         if (parameters.on.ready) {
-            parameters.on.ready.call(view, this);
+            parameters.on.ready.call(view, widget);
         }
 
         // process errors
@@ -290,30 +306,40 @@ function Widget(app, template, context, parameters) {
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
-    this.build = function (targetView) {
 
-        this.view = view = targetView || view;
+    this.build = function (targetView) {
+        if (parameters.transient)
+            setTimeout(__build.bind(widget,targetView),0);
+        else return __build(targetView);
+    }
+
+    function __build(targetView) {
+
+        widget.view = view = targetView || view;
         widget._setId(view.id);
 
-
         if (parameters.on.build) {
-            parameters.on.build.call(view, this);
+            parameters.on.build.call(view, widget);
         }
 
         // clear errors
         templateErrors.length = 0;
 
         // generate presentation and update view
-        var newPresentation = template(this, this.agg, context);
+        var newPresentation = template(widget, widget.agg, context);
+
+        var result;
 
         // use promises only when needed, that runs faster
         if (isPromise(newPresentation))
-            return promise.resolve(newPresentation)
+            result = promise.resolve(newPresentation)
                 .then(_update, _abort)
         else {
-            return _update(newPresentation);
+            result =_update(newPresentation);
         }
-    };
+
+        return result;
+    }
 
 
     // initialize request dobule buffer
@@ -346,6 +372,7 @@ function Widget(app, template, context, parameters) {
         lastRebuild = currentRq ? rebuild0 : rebuild1;
         curUpdate = currentRq ? update1 : update0;
         lastUpdate = currentRq ? update0 : update1;
+        flag1 = flag0 = 0;
 
         unsubscribe(lastRebuild);
         unsubscribe(lastUpdate);
@@ -353,14 +380,6 @@ function Widget(app, template, context, parameters) {
 
     function reqFlag() {
         return currentRq ? flag1 : flag0;
-    }
-
-    function clearFlag() {
-        if (currentRq) {
-            flag1 = 0;
-        }
-        else
-            flag0 = 0;
     }
 
     this._listen = function (o, k, updateOnly) {
@@ -373,7 +392,7 @@ function Widget(app, template, context, parameters) {
             //if (inside(o).bind && inside(o).bind[k]) return;
             // subscribe to the same key of sequence components
             if (isComposit(o))
-                each(o._.seq, function (o) {
+                each(inside(o).seq, function (o) {
                     widget._listen(o, k);
                 });
         }
@@ -385,6 +404,13 @@ function Widget(app, template, context, parameters) {
         templateErrors.push(o);
     };
 
+    function _process(flag){
+        if (flag & FLAG_REBUILD) {
+            return widget.build();
+        } else if (flag & FLAG_UPDATE) {
+            return _update(presentation);
+        };
+    }
 
     this.process = function () {
         var widget = this;
@@ -392,36 +418,20 @@ function Widget(app, template, context, parameters) {
 
         if (flag) {
             if (!progress) {
-
                 flipFlag();
-
-
-                if (flag & FLAG_REBUILD) {
-                    progress = widget.build();
-                } else if (flag & FLAG_UPDATE) {
-                    progress = _update(presentation);
-                };
-
-                clearFlag();
-
+                progress =_process(flag);
                 if (isPromise(progress)) {
                     var after = progress.then(function () {
                         var flag = reqFlag();
-                        if (flag) {
-                            // restart chain
-                            return widget.process();
-                        } else {
-                            // done
-                            progress = null;
-                            return widget;
-                        }
+                        return flag ? _process(flag) : widget;
+                    }).finally(function(){
+                        progress = null;
                     });
 
                     progress = after;
                     return progress;
-
                 } else {
-                    // done
+                    // synchronous done
                     progress = null;
                     return widget;
                 }
@@ -459,6 +469,11 @@ function Widget(app, template, context, parameters) {
      */
     this.destroy = function () {
         _destroyComponents();
+
+        if (parameters.on.destroy) {
+            parameters.on.destroy.call(view, widget);
+        }
+
         delete view;
     };
 
@@ -481,7 +496,7 @@ Widget.prototype.wid = function (template, context, parameters) {
         if (isFunction(context)) {
             return new Widget(widget.app, function (P, S) {
                 return P.get(template, [P, S, context(P, S)])
-            }, parameters);
+            }, undefined, parameters);
         }
         else {
             return new Widget(widget.app, template, context, parameters);
@@ -539,7 +554,7 @@ Widget.prototype._controllerError = function (o) {
  * @param handler
  * @returns {Function}
  */
-Widget.prototype.on = function (event, handler /* options */) {
+Widget.prototype.on = function (event, handler, target) {
 
     //proposal #17
     var events = event.split(EVENT_SEPARATOR);
@@ -547,12 +562,12 @@ Widget.prototype.on = function (event, handler /* options */) {
     // control function
     return function (widget) {
         //  element
-        var element = this, app = widget.app; //$this = widget.app.wrapper(this);
+        var element = target || this, context = this, app = widget.app; //$this = widget.app.wrapper(this);
 
         // handler proxy
         var proxy = function ($event) {
             new (promise.Promise)(function (resolve) {
-                resolve(handler.call(element, $event, widget))
+                resolve(handler.call(context, $event, widget))
             }).then(function () {
                 return app.process();
             }, function (e) {

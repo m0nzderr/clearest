@@ -1,6 +1,6 @@
 <t:fragment>
 <s:name/>
-<t:if exist="@like" test="$context['@like']=='yes'">
+<t:if exist="$like" test="$context.$like == 'yes'">
 <t:fragment style="color:red"/><!-- bleed attributes -->
 <small>(very good!)</small>
 </t:if>

@@ -109,17 +109,22 @@ function Processor(userConfig) {
 
 
     // called when template loads another template (component)
-    function requireTemplate(location) {
+    function requireTemplate(location, importVariable) {
 
 	var url = config.componentMapper? config.componentMapper(location): location;
 
-        if (config.isSelf(url)) {
-            // return variable if it is a self reference
-            return config.module.exportVar;
-        }
-        else {
-            compIndex++;
-            return declareDependency(config.module.component + compIndex, codegen.string(outputFilename(url)));
+        if (!importVariable) {
+            if (config.isSelf(url)) {
+                // return variable if it is a self reference
+                return config.module.exportVar;
+            }
+            else {
+                compIndex++;
+                return declareDependency(config.module.component + compIndex, codegen.string(outputFilename(url)));
+            }
+        } else {
+            // for t:import support
+            return declareDependency(importVariable, codegen.string(outputFilename(url)));
         }
     }
 
