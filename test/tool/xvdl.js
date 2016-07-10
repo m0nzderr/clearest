@@ -63,14 +63,14 @@ describe('tool / xvdl instructions', function () {
             .should.be.exactly('{foo:S({$bar:" qux ",$qux:"dox"},{bar:0})}');
     });
 
-    it("t:fragment, t:comment and t:require", function () {
+    it("t:fragment, t:comment, t:ignore, t:import and t:require", function () {
 
         var compiler = new Compiler({symbol: {empty: '0', aggregator: 'S'}});
 
         compiler.compile(dom.parseFromString('<t:fragment xmlns:t="http">bar</t:fragment>'))
             .should.be.exactly('"bar"');
 
-        // $dep should not leak into the code
+        // @dep should not leak into the code
         compiler.compile(dom.parseFromString('<t:require dep="mydep">bar</t:require>'))
             .should.be.exactly('"bar"');
 
@@ -88,6 +88,12 @@ describe('tool / xvdl instructions', function () {
         // $dep should not leak into the code
         compiler.compile(dom.parseFromString('<t:require dep="mydep">bar</t:require>'))
             .should.be.exactly('"bar"');
+
+        compiler.compile(dom.parseFromString('<t:import tpl="mytemplate">bar</t:import>'))
+            .should.be.exactly('"bar"');
+
+        compiler.compile(dom.parseFromString('<t:ignore>whatever</t:ignore>'))
+            .should.be.exactly('0');
 
 
     });
@@ -194,6 +200,13 @@ describe('tool / xvdl instructions', function () {
         compiler.compile(dom.parseFromString('<t:use template="foo" context="qux"></t:use>'), {$context: "bar"})
             .should.be.exactly('S(P.use(foo,qux))');
 
+        compiler.compile(dom.parseFromString('<t:use template="foo" context="qux" from="source"></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,qux))');
+
+        compiler.compile(dom.parseFromString('<t:use template="foo" context="qux" from="scope"></t:use>'), {$context: "bar"})
+            .should.be.exactly('S(P.use(foo,qux))');
+
+
     });
 
     it("w:* (external)", function () {
@@ -249,7 +262,7 @@ describe('tool / xvdl instructions', function () {
 
     });
 
-    it("$w:set.* (parameters)", function () {
+    it("@w:set.* (parameters)", function () {
 
         compiler.compile(dom.parseFromString('<w:foo w:set.bar="42"><bar/></w:foo>'))
             .should.be.exactly('S({foo:S(P.wid(function(P,S,$context){return {bar:0}},$context,{bar:42}))})');

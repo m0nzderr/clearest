@@ -40,10 +40,12 @@ var Core = require("./../core/api");
  *
  */
 Widget.DEFAULT_PARAMETERS = {
+    transient: false,
     on: {
         render: false,
         build: false,
-        ready: false
+        ready: false,
+        destroy: false
     },
     error: {
         /**
@@ -135,12 +137,14 @@ function Widget(app, template, context, parameters) {
     var widget = this,
         view, components = this.components;
 
+    this['@inject:parent']='parent'; // inject parent widget
+
     this.parameters = parameters = (parameters === undefined) ? Widget.DEFAULT_PARAMETERS     // fast lane
         : mergeParameters(Widget.DEFAULT_PARAMETERS, parameters);   // slow lane;
 
     function _inject(o, k, v){
         var path = o[k];
-        if (path !== 'undefined') {
+        if (path) {
             o[path] = v;
         }
     }
@@ -202,13 +206,12 @@ function Widget(app, template, context, parameters) {
         // destroy components
         each(components, function (controller) {
             if (controller.destroy !== undefined) {
-                controller.destroy();
+                controller.destroy(view);
             }
         });
         // clearn up list
         components.length = 0;
     }
-
 
     // boot implementation
     function _start(_bootComponents) {
@@ -248,7 +251,7 @@ function Widget(app, template, context, parameters) {
         app.render(view, presentation);
 
         if (parameters.on.render) {
-            parameters.on.render.call(view, this);
+            parameters.on.render.call(view, widget);
         }
 
         // asynchronously build new components
@@ -265,7 +268,7 @@ function Widget(app, template, context, parameters) {
     function _finalize() {
 
         if (parameters.on.ready) {
-            parameters.on.ready.call(view, this);
+            parameters.on.ready.call(view, widget);
         }
 
         // process errors
@@ -303,30 +306,40 @@ function Widget(app, template, context, parameters) {
      * is supposed to build all child conponents as well.
      * @param {*} targetView
      */
-    this.build = function (targetView) {
 
-        this.view = view = targetView || view;
+    this.build = function (targetView) {
+        if (parameters.transient)
+            setTimeout(__build.bind(widget,targetView),0);
+        else return __build(targetView);
+    }
+
+    function __build(targetView) {
+
+        widget.view = view = targetView || view;
         widget._setId(view.id);
 
-
         if (parameters.on.build) {
-            parameters.on.build.call(view, this);
+            parameters.on.build.call(view, widget);
         }
 
         // clear errors
         templateErrors.length = 0;
 
         // generate presentation and update view
-        var newPresentation = template(this, this.agg, context);
+        var newPresentation = template(widget, widget.agg, context);
+
+        var result;
 
         // use promises only when needed, that runs faster
         if (isPromise(newPresentation))
-            return promise.resolve(newPresentation)
+            result = promise.resolve(newPresentation)
                 .then(_update, _abort)
         else {
-            return _update(newPresentation);
+            result =_update(newPresentation);
         }
-    };
+
+        return result;
+    }
 
 
     // initialize request dobule buffer
@@ -456,6 +469,11 @@ function Widget(app, template, context, parameters) {
      */
     this.destroy = function () {
         _destroyComponents();
+
+        if (parameters.on.destroy) {
+            parameters.on.destroy.call(view, widget);
+        }
+
         delete view;
     };
 

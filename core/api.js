@@ -375,8 +375,10 @@ Core.prototype.err = function (o, docatch) {
 
     var error = inside(o).error;
 
-    if (docatch)
-        delete inside(o).error;
+    if (docatch) {
+        //delete inside(o).error;
+        inside(o).error = false;
+    }
 
     return filter ? filter(error) : error;
 

@@ -171,8 +171,8 @@ function XvdlCompiler(userConfig) {
     var config = {
             scopeCapture: true,
             resolver: {
-                template: function (url) {
-                    return url;
+                template: function (url, importVariable) {
+                    return importVariable || url;
                 },
                 dependency: function (name, module) {
                     return name;
@@ -482,6 +482,16 @@ function XvdlCompiler(userConfig) {
                 },
 
                 /**
+                 * t:ignore (exact opposite of t:fragment
+                 */
+                ignore: function (acc, node, scope) {
+                    if (!matchEnvConditions(node, scope)) {
+                        var flags = {keepMultiples: true};
+                        compileChildNodes(acc, node, scope, flags);
+                        return flags.needAggregatorCall;
+                    }
+                },
+                /**
                  * t:if @test @exist @from
                  *
                  * @param acc
@@ -666,7 +676,8 @@ function XvdlCompiler(userConfig) {
                         throw compilerError("instruction must have @template attribute", node);
 
                     var context = scope.$context,
-                        template = node.getAttribute("template");
+                        template = node.getAttribute("template"),
+                        origin = node.getAttribute("from") || 'source'; //TODO: externalize constant
 
                     if (!isEmpty(node)) {
                         if (node.hasAttribute("context"))
@@ -680,11 +691,21 @@ function XvdlCompiler(userConfig) {
                     }
 
 
-                    acc.push(
-                        //relay template through API call:
-                        apicall(API.use, [config.resolver.template(template), context])
-                    );
-
+                    //compile into API call:
+                    switch (origin) {
+                        case 'source':
+                        acc.push(
+                                apicall(API.use, [config.resolver.template(template), context])
+                            );
+                            break;
+                        case 'scope':
+                            acc.push(
+                                apicall(API.use, [template, context])
+                            )
+                        break;
+                        default:
+                            throw compilerError("Illegal template origin specified in @from attribute", node);
+                    }
                     return true;
                 },
 
@@ -858,6 +879,33 @@ function XvdlCompiler(userConfig) {
                     foreach(node.attributes, function (node) {
                         var variableName = config.resolver.dependency(node.nodeName, node.nodeValue);
 
+                        //TODO: implement scope management
+                        //scope.$root[variableName]=true;
+                    });
+
+
+                    if (!isEmpty(node)) {
+                        // generate body template, if provided
+                        var flags = {keepMultiples: true, ignoreAttributes: true};
+                        compileChildNodes(acc, node, scope, flags);
+                        return flags.needAggregatorCall;
+                    }
+                },
+                /**
+                 *
+                 * t:import
+                 *
+                 *  imports template from source
+                 *
+                 * @param acc
+                 * @param node
+                 * @param scope
+                 */
+                "import": function (acc, node, scope) {
+
+                    // add dependencis is conditions are matched
+                    foreach(node.attributes, function (node) {
+                        var variableName = config.resolver.template(node.nodeValue, node.nodeName);
                         //TODO: implement scope management
                         //scope.$root[variableName]=true;
                     });

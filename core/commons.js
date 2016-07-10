@@ -50,7 +50,7 @@ var is_ = function (o) {
             return is_(o) && o.__clearest__.complete !== undefined;
         },
         error: function (o, type) {
-            var itis = is_(o) && o.__clearest__.error !== undefined;
+            var itis = is_(o) && !!(o.__clearest__.error);
 
             if (!itis || type === undefined)
                 return itis;

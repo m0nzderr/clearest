@@ -13,6 +13,7 @@ var commons = require("./core/commons"),
 module.exports = {
     constant: commons.constant,
     is : commons.is,
+    inside : commons.inside,
     promise: commons.promise,
     any: commons.any,
     each: commons.first,
