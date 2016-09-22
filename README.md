@@ -46,14 +46,14 @@ Today, Clearest 2.0 is a complete rewrite of past experience, implemented to sta
 Is is still at alpha stage, so one should be aware of braking changes for some time.
 searching for better solutions to address component encapsulation, reusability and testability.
 
-### What's already done
+### What is already done
 Most of essential features, such as:
 * A fully featured XVDL compiler (up to current spec);
 * An asynchronous rendering engine (views can consume promises, etc.);
 * A core component container named ``widget'' that controls rendering cycle;
 * A Gulp-friendly build toolset for compilation and generation of production bundles;
 
-### What's should be done before 2.0-beta
+### What should be done before 2.0-beta
 * Transition to ES6
 * Improve error handling
 * Allow ``widgets'' to have custom rendering logic, so one could implement something like infinite scroll;
