@@ -159,22 +159,24 @@ module.exports = {
 
             file.path = processor.outputFilename(file.path);    // rename output file (as compiler/processor would see it)
 
+	    var noop = function(e){return e;}
             var opts = {
                 currentLocation: originalPath,
                 // extend environment vaiables with path information
                 environment: extend(true,
-                    config.environment, {
+                    config.environment, (config.computeEnvironment||noop)({
                         source: {
                             file: path.basename(originalPath),
                             path: originalPath,
-                            dir: path.dirname(originalPath)
+                            dir: path.dirname(originalPath),
+			    rel: file.relative
                         },
                         target: {
                             file: path.basename(file.path),
                             path: file.path,
                             dir: config.targetDir
                         }
-                    })
+                    }))
             };
 
             if (config.targetDir)

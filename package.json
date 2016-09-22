@@ -1,6 +1,6 @@
 {
   "name": "clearest",
-  "version": "0.0.20-alpha",
+  "version": "0.0.21-alpha",
   "description": "Clearest Framework",
   "main": "index.js",
   "repository": {
@@ -30,7 +30,7 @@
     "istanbul": "^0.4.0",
     "istanbul-coveralls": "^1.0.3",
     "mocha": "^2.3.3",
-    "mocha-phantomjs": "^4.0.1",
+    "mocha-phantomjs": "^4.1.0",
     "mocha-phantomjs-istanbul": "0.0.2",
     "should": "^7.1.0"
   },

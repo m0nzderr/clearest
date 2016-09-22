@@ -741,6 +741,40 @@ function XvdlCompiler(userConfig) {
                         return elementInstructions.template.get(acc, node, extend({}, scope, {$context: newContext}))
                     }
                 },
+
+                /**
+                 * t:select - explicit select
+                 * <t:select property="{{foo}}+{{bar}}" from="bar"/>
+                 */
+                select: function (acc, node, scope) {
+                    if (!node.hasAttribute("property"))
+                        throw compilerError("@propery attribute not specified", node);
+                    var flags = {};
+                    var properyExpression = compileExpression(node.getAttributeNode("property"),scope,true,flags);
+
+                    if (flags.needAggregatorCall) {
+                        // has select inside,
+
+                        var buff=[];
+                        elementInstructions.select(buff, node, scope, '$1');
+
+                        acc.push(
+                            apicall(API.get, [
+                                // template closure
+                                codegen.closure({
+                                    args: codegen.list(['$1']),
+                                    ret: buff[0]
+                                }),
+                                codegen.array([properyExpression])
+                            ])
+                        );
+
+                        return true;
+                    } else
+                        // plain js expression
+                        return elementInstructions.select(acc, node, scope, properyExpression)
+                },
+
                 get: function (acc, node, scope) {
 
                     // <t:get foo="expression"/>
@@ -961,9 +995,9 @@ function XvdlCompiler(userConfig) {
 
             /**
              * Select instruction
-             * s:* [@from @as (@where @orderby || @filter)]
+             * s:* [@from @as (@where (@orderby || @order)|| @filter)]
              */
-            select: function (acc, node, scope) {
+            select: function (acc, node, scope, propertyExpression) {
 
                 // deal witrh @from attribute
                 var context = node.getAttribute("from") || scope.$context;
@@ -976,7 +1010,7 @@ function XvdlCompiler(userConfig) {
                 if (isEmpty(node)) {
                     // <s:foo/>
 
-                    selectArgs = [context, codegen.string(node.localName)];
+                    selectArgs = [context, propertyExpression || codegen.string(node.localName)];
 
                     if (node.hasAttribute("where")) {
                         selectArgs.push("false"); // filler
@@ -995,8 +1029,9 @@ function XvdlCompiler(userConfig) {
                             args: codegen.list(itemClosureArgs),
                             ret: compileExpression(node.getAttribute("orderby"), scope, true)
                         }));
+                    } else if (node.hasAttribute("order")) {
+                        selectArgs.push(node.getAttribute("order"));
                     }
-
                 }
                 else {
                     // <s:foo>...</s:foo>
@@ -1027,13 +1062,18 @@ function XvdlCompiler(userConfig) {
                         }));
                     }
 
-                    if (node.hasAttribute("orderby")) {
+                    if (node.hasAttribute("orderby") || node.hasAttribute("order")) {
                         if (!node.hasAttribute("where"))
                             selectArgs.push("false"); // filler
-                        selectArgs.push(codegen.closure({
-                            args: codegen.list(itemClosureArgs),
-                            ret: compileExpression(node.getAttribute("orderby"), scope, true)
-                        }));
+
+                        if (!node.hasAttribute("order")) {
+                            selectArgs.push(codegen.closure({
+                                args: codegen.list(itemClosureArgs),
+                                ret: compileExpression(node.getAttribute("orderby"), scope, true)
+                            }));
+                        } else {
+                            selectArgs.push(node.getAttribute("order"));
+                        }
                     }
 
                     //TODO: implement @filter

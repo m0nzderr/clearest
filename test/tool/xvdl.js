@@ -326,7 +326,7 @@ describe('tool / xvdl instructions', function () {
     it("s:*", function () {
         //TODO: $filter
         //TODO: $bind
-        //TODO: $orderby
+
 
         compiler.compile(dom.parseFromString('<s:bar/>'))
             .should.be.exactly('S(P.sel($context,"bar"))');
@@ -350,6 +350,27 @@ describe('tool / xvdl instructions', function () {
 
         compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression" orderby="order-expression"><t:context/></s:bar>'))
             .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression},function(bar,bar$index){return order-expression}))');
+
+        // $order-function
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" order="myfun"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},false,myfun))');
+
+        compiler.compile(dom.parseFromString('<s:bar from="foo" where="bar-expression" order="myfun"><t:context/></s:bar>'))
+            .should.be.exactly('S(P.sel(foo,"bar",function(bar,bar$index){return bar},function(bar,bar$index){return bar-expression},myfun))');
+
+    });
+
+    // alternative to s:* with explicit syntax
+    it("t:select", function () {
+
+        // direct js
+        compiler.compile(dom.parseFromString('<t:select property="foo+bar"/>'))
+            .should.be.exactly('S(P.sel($context,foo+bar))');
+
+       // sub-select expression
+        compiler.compile(dom.parseFromString('<t:select property="{{bar}}" from="foo"/>'))
+            .should.be.exactly('S(P.get(function($1){return P.sel(foo,$1)},[P.sel($context,"bar")]))');
 
     });
 
