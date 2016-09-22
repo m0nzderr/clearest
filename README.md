@@ -1,61 +1,77 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Dependency Status][depstat-image]][depstat-url]
 # Clearest Framework
 
-This is another front-end development framework for NodeJS.
-Despite of being created recently on GitHub, the project already has a couple of years of mileage in highly complex projects.
+This is another experimental JS-based front-end engine for SPA building applications either for web or hybrid mobile environment.
 
-Previous versions were closed-source and based on a combination of XSLT with other custom-built tools.
-Since its version 2.0 it went open-source, being re-implemented from scratch to stay within NodeJS ecosystem.
+### Core objectives
+* _One engine, many friends._
 
-Of course, there is a room to improve, and it would be wise to consider it "experimental" for some time until it gets more stable.
-However, it might be worth a try for those who are looking for alternatives to AngularJS or ReactJS.
+  It should be able to talk with almost anything one could bootstrap alongside.
+  No need to develop specific ports of existing UI-kits (but might just be useful), libraries, etc.
 
-Here is why:
-* It is designed for development of modular MVC/MVVM apps with minimal coding effort;
-* It provides high-level, abstract, XML-based language for component development. Almost everything is done with a dozen of XML tags.
-* 99% of code is browser-independent (no such thing as DOM manipulation, it could work without a browser at all)
-* Sources are compiled before distribution: most of the job is done at compile time, no heavy processing or parsing at runtime;
-* Open architecture: no struggle with writing custom components or external plugins - it is supposed to work with almost anything you can browserify;
-* No restrictions on patterns or composition: put your logic anywhere you want (within XML "templates" or external JS files) and call it as you wish (view, model, controller or service);
-* It only needs a tiny runtime library (<)to run a compiled app (the heaviest dependency is a RSVP promises);
-* It is shipped as a gulp-ready tool which merges in almost any workflow;
+* _Good magic is the one you can total control of._
 
-[Documentation](doc/index.md) is on its way....
+  There should be quite few core mechanisms for data binding and asynchronous flow control one have to get familiar with
+  before start coding.
 
-Roadmap/Progress:
-```
-(<wip>) - 2.0.0-beta release estimated on Sep 1 2016.
- |
-( ) - Minimal complete documentation (getting started, usage of runtime library,
- :      gulp-browserify recipes, XVDL specification)
- .
- .    - Swiss knife libraries: css/dom helpers, hash navigation, models for browser storage and generic REST/ORM, etc.
- .
- .    - "Vendor" kit of generic UI components: layouts, forms, etc.
- .
- .    - Tutorials and sample apps (e.g.: todo list, search, etc.)
- .
-( ) - 2.1.0
- .
- . - Window to parallel universes: t:compile and macro
- .
- . - Hybrid-ready (touch events, cordova)
- .
- . - Optimizations and performance improvements (e.g., using web workers behind the scenes for smoother
- .	 rendering?)
- .
- .
-( ) - 2.2.0
- .
- . - Project web page, wiki
- .
- . - Improvement of dev-tools: e2e, sourcemaps for XVDL, IDE plugins, etc.
- .
- . - Browser-only toolkit for fiddling
- .
+* _Dogmatic vs. Pragmaic - choose your own sweet spot._
 
- V
-```
+  There may exist multiple ways to achieve the same result. One may bring his own patterns, discover new possibilities,
+  be creative to find what works best.
+
+* _Digest heavy meals while at home._
+
+  It should do all the heavy lifting on build stages, providing only a thin layer for applications at runtime.
+
+
+### Past, present and future
+Despite of being created recently on GitHub, most of its concepts already have several years of mileage in highly
+complex projects.
+
+Its ancestors were developed as closed-source tools for fast prototyping web applications. The core idea was to use XML
+model as a uniform abstraction for both content and view logic, so one could build an entire web application by only
+writing some XML templates for presentation, thinking of any static or dynamic content as some kind of XML documents
+(precisely speaking, trees of element and attribute nodes). These ideas gave rise to the so-called XVDL language.
+
+Very first versions were PHP-based and, of course, ran XSLT transformations under the hood.
+The next step was an attempt to bring all those server-side goodness into the browser, so one could build web client
+apps for virtually any kind of back-end. In particular, being able to produce SPA REST client applications was just
+enough, that's where the name Clearest came from.
+
+Instead of interpreting XVDL templates in browsers (with or without XSLT), it was chosen to go straight into JavaScript
+and compile any XVDL source early at the build stage. Produced JavaScript is then capable of generating all views
+dynamically on the fly (somewhat similar to what ReactJS does, but without virtual DOM at all).
+
+Today, Clearest 2.0 is a complete rewrite of past experience, implemented to stay within NodeJS ecosystem.
+Is is still at alpha stage, so one should be aware of braking changes for some time.
+searching for better solutions to address component encapsulation, reusability and testability.
+
+### What's already done
+Most of essential features, such as:
+* A fully featured XVDL compiler (up to current spec);
+* An asynchronous rendering engine (views can consume promises, etc.);
+* A core component container named ``widget'' that controls rendering cycle;
+* A Gulp-friendly build toolset for compilation and generation of production bundles;
+
+### What's should be done before 2.0-beta
+* Transition to ES6
+* Improve error handling
+* Allow ``widgets'' to have custom rendering logic, so one could implement something like infinite scroll;
+* Implement ``named template'' feature (somewhat similar to directives in Angular, but compilable at build stage)
+* [Documentation](doc/index.md) is on its way....
+* A ``swiss knife'' libraries for css/dom manipulation, navigation, ORM, and other useful patterns
+  (optional, not as inseparable part of the framework)
+* A repo of generic ``vendor'' UI templates
+* Repo with boilerplate application templates and build recepies;
+* Tutorials with a couple of sample apps.
+
+### What's next
+* Boost rendering with background workers;
+* Develop some improved dev-tools (e2e testing, XVDL sourcemaps, maybe plugins for IDEs);
+* Browser-only build environment for quick fiddling;
+* Add meta-XVDL instructions, something like t:compile and t:macro, so one could think of creating highly reusable ecosystem;
+  of components templates similar to LaTeX;
+* Creating some UI kits for hybrid or native mobile app development (XVDL it not limited to HTML constructs).
 
 [npm-url]: https://www.npmjs.com/package/clearest
 [npm-image]: https://badge.fury.io/js/clearest.svg
@@ -65,3 +81,27 @@ Roadmap/Progress:
 [coveralls-image]: https://img.shields.io/coveralls/m0nzderr/clearest/master.svg
 [depstat-url]: https://david-dm.org/m0nzderr/clearest/master
 [depstat-image]: https://david-dm.org/m0nzderr/clearest/master.svg
+
+### Changelog
+#### 21-alpha (22/09/2016)
+* Added t:ignore instruction with build conditions support (e.g., @env:some.env.variable="value")
+* Added t:import instruction and an optional attribute @from="<scope|source>" in t:use instruction,
+   with the following use cases:
+    ```xml
+        <!-- at some point, variable refers to (compiled!) template code -->
+        <t:import foo="path/to/foo.xml"/>
+        ...
+        <!-- at some other point, the template is invoked (rendered) from a variable, not a path -->
+        <t:use template="foo" from="scope">...</t:use>
+    ```
+* Added an alternative @order="<function($item): number>" attribute for s:* instructions, to be used for providing
+  ordering functions instead of expressions.
+* Added compiler options property ```computeEnvironment: <function($environment)>``` to overrides
+  environment variables on the fly for each compiled source. Use case:
+  ```JavaScript
+     computeEnvironment: ($env) => {
+       $env.source.md5 = md5($env.source.rel);
+      return $env;
+    }
+  ````
+
