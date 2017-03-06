@@ -1036,9 +1036,9 @@ function XvdlCompiler(userConfig) {
                 else {
                     // <s:foo>...</s:foo>
 
-                    var property = node.localName;
+                    var property = propertyExpression || codegen.string(node.localName);
                     // deal witrh @as attribute
-                    var newContext = node.getAttribute("as") || property;
+                    var newContext = node.getAttribute("as") || node.localName;
 
                     if (!codegen.isValidIdentifier(newContext))
                         throw invalidIdentifier(newContext, node);
@@ -1046,7 +1046,7 @@ function XvdlCompiler(userConfig) {
                     var itemClosureArgs = [newContext, newContext + config.closure.select.indexSuffix];
 
                     selectArgs = [context,
-                        codegen.string(property),
+                        property,
                         codegen.closure({
                             args: codegen.list(itemClosureArgs),
                             ret: compileChildNodes([], node, {$context: newContext}, {

@@ -364,9 +364,14 @@ describe('tool / xvdl instructions', function () {
     // alternative to s:* with explicit syntax
     it("t:select", function () {
 
-        // direct js
+        // direct property expression
         compiler.compile(dom.parseFromString('<t:select property="foo+bar"/>'))
             .should.be.exactly('S(P.sel($context,foo+bar))');
+
+        // t:select with body (issue #29)
+        compiler.compile(dom.parseFromString('<t:select property="foo+bar" as="bar"><t:context/></t:select>'))
+            .should.be.exactly('S(P.sel($context,foo+bar,function(bar,bar$index){return bar}))');
+
 
        // sub-select expression
         compiler.compile(dom.parseFromString('<t:select property="{{bar}}" from="foo"/>'))

@@ -83,6 +83,8 @@ Most of essential features, such as:
 [depstat-image]: https://david-dm.org/m0nzderr/clearest/master.svg
 
 ### Changelog
+#### 22-alpha (06/03/2017)
+* Fixed #29: <t:select ...> with body </select>
 #### 21-alpha (22/09/2016)
 * Added t:ignore instruction with build conditions support (e.g., @env:some.env.variable="value")
 * Added t:import instruction and an optional attribute @from="<scope|source>" in t:use instruction,
