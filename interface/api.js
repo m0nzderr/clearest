@@ -78,6 +78,7 @@ Api.prototype.sel = function (o, k, iteration, filter) {/* istanbul ignore next 
  *
  * @param o object
  * @param k property/key (string) or array of strings
+ * @param quiet (boolean), optional.
  * @returns int count or array of counts
  */
 Api.prototype.cnt = function (o, k) {/* istanbul ignore next */  notImplemented()}

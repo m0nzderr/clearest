@@ -667,6 +667,62 @@ function XvdlCompiler(userConfig) {
                 },
 
                 /**
+                 *
+                 * t:observe
+                 *
+                 * @param acc
+                 * @param node
+                 * @param scope
+                 */
+                observe: function(acc, node, scope){
+
+                    if (hasChildrenOfType(node, node.ELEMENT_NODE))
+                        throw compilerError("only text content allowed inside t:observe instruction", node);
+
+                    if (!node.hasAttribute("node"))
+                        throw compilerError("@node attribute not specified", node);
+
+                    var context = node.getAttribute("from") || scope.$context;
+                    var handlerCode = textContent(node);
+
+                    var flags = {};
+                    var nodeExpression = compileExpression(node.getAttributeNode("node"),scope,false,flags);
+
+
+
+                    var observeInstruction = function(nodeExpression) {
+                        var args = [context, nodeExpression];
+                        if (handlerCode) {
+                            args.push(closure.eventHandler(config.closure.observer.args,
+                                codegen.block(handlerCode) // ensure that code is embraced in {}
+                            ))
+                        }
+                        return apicall(API.observe, args);
+                    };
+
+                    if (flags.needAggregatorCall) {
+                        // need to wrap into get instruction
+                        acc.push(
+                            apicall(API.get, [
+                                // template closure
+                                codegen.closure({
+                                    args: codegen.list(['$1']),
+                                    ret: observeInstruction('$1')
+                                }),
+                                codegen.array([nodeExpression])
+                            ])
+                        );
+
+                        return true;
+                    } else {
+                        acc.push(
+                            observeInstruction(nodeExpression)
+                        );
+                        return true;
+                    }
+                },
+
+                /**
                  * t:use
                  *
                  */
@@ -744,13 +800,13 @@ function XvdlCompiler(userConfig) {
 
                 /**
                  * t:select - explicit select
-                 * <t:select property="{{foo}}+{{bar}}" from="bar"/>
+                 * <t:select node="${{{foo}}+{{bar}}}" from="bar"/>
                  */
                 select: function (acc, node, scope) {
-                    if (!node.hasAttribute("property"))
-                        throw compilerError("@propery attribute not specified", node);
+                    if (!node.hasAttribute("node"))
+                        throw compilerError("@node attribute not specified", node);
                     var flags = {};
-                    var properyExpression = compileExpression(node.getAttributeNode("property"),scope,true,flags);
+                    var properyExpression = compileExpression(node.getAttributeNode("node"),scope,false,flags);
 
                     if (flags.needAggregatorCall) {
                         // has select inside,

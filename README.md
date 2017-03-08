@@ -83,8 +83,50 @@ Most of essential features, such as:
 [depstat-image]: https://david-dm.org/m0nzderr/clearest/master.svg
 
 ### Changelog
-#### 22-alpha (06/03/2017)
+#### 22-alpha (07/03/2017)
+Breaking changes:
+ * t:select @property attribute renamed to @node
+    and now is in string expression mode.
+
+   Obsolete syntax:
+   ```xml
+        1: <t:select property="'foo'" ...>
+        2: <t:select property="foo" ...>
+        3: <t:select property="foo+bar" ...>
+        4: <t:select property="'my'+{{foo}}" ...>
+    ```
+    New equivalent syntax:
+   ```xml
+        1: <t:select node="foo" ...>
+        2: <t:select node="${foo}" ...>
+        3: <t:select node="${foo+bar}" ...>
+        4: <t:select node="my{{foo}}" ...>
+    ```
+Features:
+ * t:observe instruction
+
+   Usage:
+   1. Explicit form of @o:*.*
+   ```xml<t:observe node="foo" from="bar">doStuff(this,$value)</observe>```
+   is equivalent to
+   ```o:bar.foo="doStuff(this,$value)"```
+
+   Context object is used when @from is omitted (same as in s:* and t:select)
+
+   2. Explicit binding to widget renderer:
+   ```xml<t:observe node="foo" from="bar"/>```
+   produces equivalent behavior to
+   ```<t:if exist="foo" from="bar"/>"```
+
+   TODO: add integ. tests for widget behavior.
+
+   3. @node property allows expressions, same as in t:select:
+   ```xml<t:observe node="my{{foo}}and${bar+42}"```
+
+
+Bugs:
 * Fixed #29: <t:select ...> with body </select>
+
 #### 21-alpha (22/09/2016)
 * Added t:ignore instruction with build conditions support (e.g., @env:some.env.variable="value")
 * Added t:import instruction and an optional attribute @from="<scope|source>" in t:use instruction,

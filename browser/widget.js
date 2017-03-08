@@ -513,29 +513,34 @@ Widget.prototype.wid = function (template, context, parameters) {
  * @returns {Function}
  */
 Widget.prototype.obs = function (object, key, handler /* options */) {
-    // control function
-    return function (widget) {
-        var element = this;
+    if (handler) {
+        // control function
+        return function (widget) {
+            var element = this;
 
-        var proxy = (handler.length == 0) ?
-            //if no arguments, bind is just enough
-            handler.bind(element)
-            :
-            function (sender) {
-                handler.call(element, object[key], widget, sender);
-            }
+            var proxy = (handler.length == 0) ?
+                //if no arguments, bind is just enough
+                handler.bind(element)
+                :
+                function (sender) {
+                    handler.call(element, object[key], widget, sender);
+                }
 
-        // call proxy once
-        proxy(object[key]);
-        //controller:
-        return {
-            build: function () {
-                subscribe(object, key, proxy)
-            },
-            destroy: function () {
-                unsubscribe(proxy)
+            // call proxy once
+            proxy(object[key]);
+            //controller:
+            return {
+                build: function () {
+                    subscribe(object, key, proxy)
+                },
+                destroy: function () {
+                    unsubscribe(proxy)
+                }
             }
         }
+    } else {
+        // make current widget an observer
+        this._listen(object,key);
     }
 };
 

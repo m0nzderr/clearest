@@ -86,6 +86,20 @@ function each(a, f, j) {
 }
 
 /**
+ * keys(o)
+ *
+ * Returns array of object keys as (Object.keys), omitting internal ('__clearest__')
+ *
+ * @param o
+ */
+function keys(o){
+    return Object.keys(o)
+        .filter(
+            function(k){return k !== CLEAREST}
+    )
+}
+
+/**
  * Selects first non-empty element of a deep array or a singletone
  * @param a
  */
@@ -205,6 +219,7 @@ module.exports = {
     fin: fin,
     inside: inside,
     each: each,
+    keys: keys,
     any: any,
     constant: constant,
     complete: complete,

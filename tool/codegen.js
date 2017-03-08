@@ -106,6 +106,10 @@ function closure(o) {
         , o);
 }
 
+function block(code) {
+    return "{"+code+"}";
+}
+
 function string(text, preserveSpaces, unquoted) {
     if (!preserveSpaces) {
         text = text.trim();
@@ -127,6 +131,7 @@ module.exports = {
     list: list,
     array: array,
     closure: closure,
+    block: block,
     string: string,
     isValidIdentifier: isValidIdentifier
 };

@@ -365,16 +365,28 @@ describe('tool / xvdl instructions', function () {
     it("t:select", function () {
 
         // direct property expression
-        compiler.compile(dom.parseFromString('<t:select property="foo+bar"/>'))
+        compiler.compile(dom.parseFromString('<t:select node="foo"/>'))
+            .should.be.exactly('S(P.sel($context,"foo"))');
+
+        compiler.compile(dom.parseFromString('<t:select node="${foo+bar}"/>'))
             .should.be.exactly('S(P.sel($context,foo+bar))');
 
+        compiler.compile(dom.parseFromString('<t:select node="my{{foo}}"/>'))
+            .should.be.exactly('S(P.get(function($1){return P.sel($context,$1)},[P.get(function($1){return "my"+$1},[P.sel($context,"foo")])]))');
+
+
         // t:select with body (issue #29)
-        compiler.compile(dom.parseFromString('<t:select property="foo+bar" as="bar"><t:context/></t:select>'))
+        compiler.compile(dom.parseFromString('<t:select node="${foo+bar}" as="bar"><t:context/></t:select>'))
             .should.be.exactly('S(P.sel($context,foo+bar,function(bar,bar$index){return bar}))');
+
+        //
+        compiler.compile(dom.parseFromString('<t:select node="${foo+bar}" as="null"/>'))
+            .should.be.exactly('S(P.sel($context,foo+bar))');
+
 
 
        // sub-select expression
-        compiler.compile(dom.parseFromString('<t:select property="{{bar}}" from="foo"/>'))
+        compiler.compile(dom.parseFromString('<t:select node="{{bar}}" from="foo"/>'))
             .should.be.exactly('S(P.get(function($1){return P.sel(foo,$1)},[P.sel($context,"bar")]))');
 
     });
@@ -430,14 +442,14 @@ describe('tool / xvdl instructions', function () {
     });
 
 
-    it("$e:*.* (extended events)", function () {
+    it("@e:*.* (extended events)", function () {
 
         compiler.compile(dom.parseFromString('<foo e:bar.click="boom"/>'))
             .should.be.exactly('S({foo:S(P.on("click",boom,bar))})');
 
     });
 
-    it("$o:*.*", function () {
+    it("@o:*.*", function () {
         compiler.compile(dom.parseFromString('<foo o:foo.bar="boom"/>'))
             .should.be.exactly('S({foo:S(P.obs(foo,"bar",boom))})');
 
@@ -459,7 +471,27 @@ describe('tool / xvdl instructions', function () {
 
     });
 
-    it("@* (with template expressions)", function () {
+    it("t:observe", function () {
+        // should bind on context
+        compiler.compile(dom.parseFromString('<t:observe node="foo"/>'))
+            .should.be.exactly('S(P.obs($context,"foo"))');
+
+        compiler.compile(dom.parseFromString('<t:observe node="foo" from="bar"/>'))
+            .should.be.exactly('S(P.obs(bar,"foo"))');
+
+        compiler.compile(dom.parseFromString('<t:observe node="my{{foo}}" from="bar"/>'))
+            .should.be.exactly('S(P.get(function($1){return P.obs(bar,$1)},[P.get(function($1){return "my"+$1},[P.sel($context,"foo")])]))');
+
+
+        compiler.compile(dom.parseFromString('<t:observe node="${foo}" from="bar"/>'))
+            .should.be.exactly('S(P.obs(bar,foo))');
+
+        compiler.compile(dom.parseFromString('<el><t:observe node="foo" from="bar">return [$value,$widget,$sender]</t:observe></el>'))
+            .should.be.exactly('S({el:S(P.obs(bar,"foo",function($value,$widget,$sender){return [$value,$widget,$sender]}))})');
+    });
+
+
+        it("@* (with template expressions)", function () {
 
         // single expression
         compiler.compile(dom.parseFromString('<foo bar="${bar}"/>'))
