@@ -83,6 +83,10 @@ Most of essential features, such as:
 [depstat-image]: https://david-dm.org/m0nzderr/clearest/master.svg
 
 ### Changelog
+
+#### 23-alpha (10/03/2017)
+Closes issues: #31
+
 #### 22-alpha (07/03/2017)
 Breaking changes:
  * t:select @property attribute renamed to @node

@@ -44,6 +44,12 @@ describe("core  ", function () {
 
         });
 
+        it('subscribe: issue #31', function () {
+            var o={};
+            subscribe(o, '*', function(){});
+            subscribe(o, 'bar', function(){});
+        });
+
         it('subscribe should follow the contract', function () {
 
             function obs1() {

@@ -74,6 +74,8 @@ Widget.DEFAULT_PARAMETERS = {
         capture: function (error, widget) {
             if (error instanceof Error)
                 console.error(error, widget);
+            else
+                console.error('Unknown error:',error, widget);
         },
         /**
          * Default error handler

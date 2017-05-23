@@ -54,12 +54,12 @@ function subscribe(o, k, observer) {
         }
         if (!exist) {
             // check for subk
-            /*if (!subk) {
+            if (!subk) {
              // new key
              sub[k] = [observer];
              index = 0;
              }
-             else {*/
+             else {
             index = subk.indexOf(observer);
             if (index < 0) {
                 // try to reuse memory
@@ -71,7 +71,7 @@ function subscribe(o, k, observer) {
             }
             else
                 exist = true;    // subscription already exists
-            //}
+            }
         }
     }
 
