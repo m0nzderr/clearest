@@ -91,7 +91,7 @@ function Core() {
     this._setId = function (id) {
         widgetId = id;
     }
-    this._getId = function (id) {
+    this.id = function (id) {
         return widgetId;
     }
 }
